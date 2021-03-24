@@ -9,16 +9,16 @@ import (
 )
 
 func main() {
-	cfgApi := egowebapi.Config{
+	/*cfgApi := egowebapi.Config{
 		Port:    3000,
 		Timeout: egowebapi.NewTimeout(30,30,30),
 	}
 	api := egowebapi.New("api", cfgApi).SetControllers(controllers.Api())
-	api.Start()
+	api.Start()*/
 
 	cfgWeb := egowebapi.Config{
 		Port:    3003,
-		Timeout: egowebapi.NewTimeout(30,30,30),
+		Timeout: egowebapi.NewTimeout(30, 30, 30),
 	}
 	web := egowebapi.New("web", cfgWeb).SetControllers(controllers.Web())
 	web.Start()
@@ -31,7 +31,7 @@ func main() {
 		}
 		switch strings.ToLower(input) {
 		case "exit":
-			fmt.Println(api.Stop())
+			//fmt.Println(api.Stop())
 			fmt.Println(web.Stop())
 			break
 		}

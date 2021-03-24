@@ -4,7 +4,7 @@ import "path/filepath"
 
 type Config struct {
 	Port    int
-	Root string
+	Root    string
 	Secure  *Secure
 	Timeout Timeout
 }
@@ -15,10 +15,10 @@ type Secure struct {
 	Cert string
 }
 
-func (s *Secure) Get() (key string, cert string) {
+func (s *Secure) Get() (cert string, key string) {
 	key = filepath.Join(s.Path, s.Key)
 	cert = filepath.Join(s.Path, s.Cert)
-	return key, cert
+	return cert, key
 }
 
 type Timeout struct {

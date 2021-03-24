@@ -1,46 +1,59 @@
 package api
 
 import (
+	"fmt"
 	"github.com/egovorukhin/egowebapi"
-	"github.com/valyala/fasthttp"
+	"github.com/egovorukhin/egowebapi/example/src/user"
+	"github.com/gofiber/fiber"
 )
 
 type User struct {
 	*egowebapi.Controller
 }
 
-func NewUser(path string) *egowebapi.Controller {
+func NewUser(path string) User {
 
 	a := User{
-		Controller: &egowebapi.Controller{
-			Name:        "User",
-			Description: "Контроллер для пользователей",
-		},
+		Controller: egowebapi.NewController("User", "Контроллер для пользователей"),
 	}
 
-	routes := egowebapi.NewRoutes(
-		egowebapi.NewRoute(path, "GET", "Вернуть пользователей", a.Get),
-		egowebapi.NewRoute(path, "POST", "Добавить пользователя", a.Post),
-		egowebapi.NewRoute(path, "PUT", "Изменить пользователя", a.Put),
-		egowebapi.NewRoute(path, "DELETE", "Удалить подльзователя", a.Delete),
+	path = a.CheckPath(path, a)
+
+	a.SetRoutes(
+		egowebapi.NewRoute("GET", path+"/{id}", a.Get, "Вернуть пользователя по id"),
+		egowebapi.NewRoute("GET", path, a.Get, "Вернуть пользователей"),
+		egowebapi.NewRoute("POST", path, a.Post, "Добавить пользователя"),
+		egowebapi.NewRoute("PUT", path, a.Put, "Изменить пользователя"),
+		egowebapi.NewRoute("DELETE", path+"/{id}", a.Delete, "Удалить подльзователя"),
 	)
-	a.Routes = routes
 
-	return a.Controller
+	return a
 }
 
-func (a *User) Get(ctx *fasthttp.RequestCtx) {
-	ctx.Write([]byte("Hello, World!"))
+func (a User) Get(c *fiber.Ctx) {
+	id := c.Params("id")
+	if id != "" {
+		c.Write(fmt.Sprintf("id: %s, %s", id, user.Get(id).String()))
+		return
+	}
+	s := ""
+	for k, v := range user.GetUsers() {
+		s += fmt.Sprintf("id: %s, %s\n", k, v.String())
+	}
+	c.Write(s)
 }
 
-func (a *User) Post(ctx *fasthttp.RequestCtx) {
+func (a User) Post(c *fiber.Ctx) {
+	id := c.Query("id")
+	lastname := c.Query("lastname")
+	firstname := c.Query("firstname")
+	user.Set(id, lastname, firstname)
+}
+
+func (a User) Put(c *fiber.Ctx) {
 
 }
 
-func (a *User) Put(ctx *fasthttp.RequestCtx) {
-
-}
-
-func (a *User) Delete(ctx *fasthttp.RequestCtx) {
-
+func (a User) Delete(c *fiber.Ctx) {
+	user.Delete(c.Params("id"))
 }

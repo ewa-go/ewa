@@ -2,33 +2,33 @@ package web
 
 import (
 	"github.com/egovorukhin/egowebapi"
-	"github.com/valyala/fasthttp"
+	"github.com/gofiber/fiber"
 )
 
 type Index struct {
 	*egowebapi.Controller
 }
 
-func NewIndex(path string) *egowebapi.Controller {
+func NewIndex(path string) Index {
 
 	a := Index{
 		Controller: egowebapi.NewController("Index", "Страница Index.html"),
 	}
 
-	routes := egowebapi.NewRoutes(
-		egowebapi.NewRoute(path, "GET", "Метод GET", a.Get),
-		egowebapi.NewRoute(path, "POST", "Метод POST", a.Post),
+	path = a.CheckPath(path, a)
+
+	a.SetRoutes(
+		egowebapi.NewRoute("GET", path, a.Get),
+		egowebapi.NewRoute("POST", path, a.Post),
 	)
-	a.Routes = routes
 
-	return a.Controller
+	return a
 }
 
-func (a *Index) Get(ctx *fasthttp.RequestCtx) {
-	_ = a.View(ctx.Response.BodyWriter(), "", nil)
+func (a Index) Get(c *fiber.Ctx) {
+	_ = c.Render("index", nil)
 }
 
-func (a *Index) Post(ctx *fasthttp.RequestCtx) {
+func (a Index) Post(c *fiber.Ctx) {
 
 }
-

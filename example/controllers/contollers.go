@@ -8,13 +8,12 @@ import (
 
 func Api() egowebapi.Controllers {
 	return egowebapi.Controllers{
-		api.NewUser(""),
+		api.NewUser("").Controller,
 	}
 }
 
 func Web() egowebapi.Controllers {
-	path := "/"
 	return egowebapi.Controllers{
-		web.NewIndex(path),
+		web.NewIndex("/").Controller,
 	}
 }
