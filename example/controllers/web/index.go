@@ -2,7 +2,7 @@ package web
 
 import (
 	"github.com/egovorukhin/egowebapi"
-	"github.com/gofiber/fiber"
+	"github.com/gofiber/fiber/v2"
 )
 
 type Index struct {
@@ -11,8 +11,8 @@ type Index struct {
 func (a *Index) Get() *egowebapi.Route {
 	return &egowebapi.Route{
 		Path: egowebapi.AddPath(""),
-		Handler: func(ctx *fiber.Ctx) {
-			_ = ctx.Render("index", nil)
+		Handler: func(ctx *fiber.Ctx) error {
+			return ctx.Render("index", nil)
 		},
 	}
 }

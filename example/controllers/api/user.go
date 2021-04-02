@@ -1,8 +1,9 @@
 package api
 
 import (
-	"github.com/egovorukhin/egowebapi"
-	"github.com/gofiber/fiber"
+	ewa "github.com/egovorukhin/egowebapi"
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/basicauth"
 )
 
 var users = map[string]*User{}
@@ -12,52 +13,65 @@ type User struct {
 	Firstname string
 }
 
-func (u *User) Get() *egowebapi.Route {
-	return egowebapi.NewRoute(func(c *fiber.Ctx) {
-		//c.Accepts("application/json")
-		id := c.Params("id")
-		if id != "" {
-			if err := c.JSON(users[id]); err != nil {
-				c.SendStatus(500)
+func (u *User) Get() *ewa.Route {
+	return ewa.NewRoute(
+
+		func(c *fiber.Ctx) error {
+
+			//c.Accepts("application/json")
+			id := c.Params("id")
+			if id != "" {
+				if err := c.JSON(users[id]); err != nil {
+					c.SendStatus(500)
+					return err
+				}
+				return nil
 			}
-			return
-		}
-		if err := c.JSON(users); err != nil {
-			c.SendStatus(500)
-		}
-	}, "", "/:id")
+			if err := c.JSON(users); err != nil {
+				c.SendStatus(500)
+				return err
+			}
+
+			return nil
+
+		},
+		"", "/:id")
 }
 
-func (u *User) Post() *egowebapi.Route {
-	return &egowebapi.Route{
-		Path: egowebapi.AddPath(""),
-		Handler: func(c *fiber.Ctx) {
+func (u *User) Post() *ewa.Route {
+	return &ewa.Route{
+		Path: ewa.AddPath(""),
+		Handler: func(c *fiber.Ctx) error {
+			ba := c.Get("Authorization")
 			id := c.Query("id")
 			u.Lastname = c.Query("lastname")
 			u.Firstname = c.Query("firstname")
 			users[id] = u
+			return nil
 		},
 	}
 }
 
-func (u *User) Put() *egowebapi.Route {
+func (u *User) Put() *ewa.Route {
 	return nil
 }
 
-func (u *User) Delete() *egowebapi.Route {
-	return &egowebapi.Route{
-		Path: egowebapi.AddPath("/:id"),
-		Handler: func(c *fiber.Ctx) {
+func (u *User) Delete() *ewa.Route {
+	return &ewa.Route{
+		Path: ewa.AddPath("/:id"),
+		Handler: func(c *fiber.Ctx) error {
 			delete(users, c.Params("id"))
+			return nil
 		},
 	}
 }
 
-func (u *User) Options() *egowebapi.Route {
-	return &egowebapi.Route{
-		Path: egowebapi.AddPath(""),
-		Handler: func(ctx *fiber.Ctx) {
+func (u *User) Options() *ewa.Route {
+	return &ewa.Route{
+		Path: ewa.AddPath(""),
+		Handler: func(ctx *fiber.Ctx) error {
 			ctx.Append("Allow", "GET, POST, DELETE, OPTIONS")
+			return nil
 		},
 	}
 }

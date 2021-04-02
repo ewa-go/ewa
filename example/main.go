@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/egovorukhin/egowebapi"
+	ewa "github.com/egovorukhin/egowebapi"
 	"github.com/egovorukhin/egowebapi/example/controllers/api"
 	"github.com/egovorukhin/egowebapi/example/controllers/web"
 	"os"
@@ -11,28 +11,33 @@ import (
 
 func main() {
 
-	//API
-	cfgApi := egowebapi.Config{
-		Port:    3003,
-		Timeout: egowebapi.NewTimeout(30, 30, 30),
-	}
-	rest, _ := egowebapi.New("api", cfgApi)
-	rest.SetRest(new(api.User), "")
-	rest.Start()
-
 	//WEB
-	cfgWeb := egowebapi.Config{
+	cfg := ewa.Config{
 		Port:    3000,
-		Timeout: egowebapi.NewTimeout(30, 30, 30),
-		Views: &egowebapi.Views{
+		Timeout: ewa.NewTimeout(30, 30, 30),
+		Views: &ewa.Views{
 			Root: "www",
 			Ext:  ".html",
 		},
 		Static: "www",
 	}
-	http, _ := egowebapi.New("http", cfgWeb)
-	http.SetWeb(new(web.Index), "")
-	http.Start()
+	//BasicAuth
+	users := map[string]string{
+		"user": "Qq123456",
+	}
+	authorizer := func(user string, pass string) bool {
+		if user == "user" && pass == "Qq123456" {
+			return true
+		}
+		return false
+	}
+	ba := ewa.NewBasicAuth(users, authorizer, nil)
+	//Инициализируем сервер
+	ws, _ := ewa.New("Example", cfg)
+	ws.RegisterWeb(new(web.Index), "")
+	ws.RegisterRest(new(api.User), "")
+	ws.SetBasicAuth(ba)
+	ws.Start()
 
 	for {
 		var input string
@@ -42,8 +47,7 @@ func main() {
 		}
 		switch strings.ToLower(input) {
 		case "exit":
-			//fmt.Println(api.Stop())
-			fmt.Println(http.Stop())
+			fmt.Println(ws.Stop())
 			os.Exit(0)
 		}
 	}

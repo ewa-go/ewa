@@ -1,6 +1,6 @@
 package egowebapi
 
-import "github.com/gofiber/fiber"
+import "github.com/gofiber/fiber/v2"
 
 type Handler fiber.Handler
 

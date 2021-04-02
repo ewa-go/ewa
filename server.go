@@ -1,9 +1,9 @@
 package egowebapi
 
 import (
-	"crypto/tls"
 	"fmt"
-	"github.com/gofiber/fiber"
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/basicauth"
 	"github.com/gofiber/template/html"
 	"github.com/valyala/fasthttp"
 	"os"
@@ -20,14 +20,16 @@ type Server struct {
 	Name    string
 	Started bool
 	Config  Config
+	BasicAuth
 	//Controllers Controllers
 }
 
 type IServer interface {
 	Start()
 	Stop() error
-	SetWeb(i IWeb, path string) *Server
-	SetRest(i IRest, path string) *Server
+	RegisterWeb(i IWeb, path string) *Server
+	RegisterRest(i IRest, path string) *Server
+	SetBasicAuth(auth BasicAuth) *Server
 }
 
 func New(name string, config Config) (IServer, error) {
@@ -40,7 +42,7 @@ func New(name string, config Config) (IServer, error) {
 		return nil, err
 	}
 	//Настройки
-	settings := &fiber.Settings{
+	settings := fiber.Config{
 		ReadTimeout:  time.Duration(read) * time.Second,
 		WriteTimeout: time.Duration(write) * time.Second,
 		IdleTimeout:  time.Duration(idle) * time.Second,
@@ -75,15 +77,12 @@ func (s *Server) start() {
 	//Если Secure == nil, то запускаем без сертификата
 	if s.Config.Secure != nil {
 		//Формируем сертификат
-		cert, err := tls.LoadX509KeyPair(s.Config.Secure.Get())
-		if err != nil {
-			//log
-			return
-		}
+		cert, key := s.Config.Secure.Get()
 		//Запускаем слушатель с TLS настройкой
-		if err := s.Listen(
+		if err := s.ListenTLS(
 			fmt.Sprintf(":%d", s.Config.Port),
-			&tls.Config{Certificates: []tls.Certificate{cert}},
+			cert,
+			key,
 		); err != fasthttp.ErrConnectionClosed {
 			//s.Logger.Printf("%s", err)
 		}
@@ -95,17 +94,22 @@ func (s *Server) start() {
 	}
 }
 
+func (s *Server) SetBasicAuth(auth BasicAuth) *Server {
+	s.Use(basicauth.New(auth.Config))
+	return s
+}
+
 func (s *Server) rest(i IRest, method string, path string) {
 	route := new(Route)
 	method = strings.ToUpper(method)
 	switch method {
-	case "PUT":
+	case fiber.MethodPut:
 		route = i.Put()
 		break
-	case "DELETE":
+	case fiber.MethodDelete:
 		route = i.Delete()
 		break
-	case "OPTIONS":
+	case fiber.MethodOptions:
 		route = i.Options()
 		break
 	default:
@@ -124,10 +128,10 @@ func (s *Server) web(i IWeb, method string, path string) {
 	route := new(Route)
 	method = strings.ToUpper(method)
 	switch method {
-	case "GET":
+	case fiber.MethodGet:
 		route = i.Get()
 		break
-	case "POST":
+	case fiber.MethodPost:
 		route = i.Post()
 		break
 	}
@@ -138,20 +142,20 @@ func (s *Server) web(i IWeb, method string, path string) {
 	}
 }
 
-func (s *Server) SetWeb(i IWeb, path string) *Server {
+func (s *Server) RegisterWeb(i IWeb, path string) *Server {
 	path = s.checkPath(path, i)
-	s.web(i, "GET", path)
-	s.web(i, "POST", path)
+	s.web(i, fiber.MethodGet, path)
+	s.web(i, fiber.MethodPost, path)
 
 	return s
 }
 
-func (s *Server) SetRest(i IRest, path string) *Server {
+func (s *Server) RegisterRest(i IRest, path string) *Server {
 	path = s.checkPath(path, i)
-	s.SetWeb(i, path)
-	s.rest(i, "PUT", path)
-	s.rest(i, "DELETE", path)
-	s.rest(i, "OPTIONS", path)
+	s.RegisterWeb(i, path)
+	s.rest(i, fiber.MethodPut, path)
+	s.rest(i, fiber.MethodDelete, path)
+	s.rest(i, fiber.MethodOptions, path)
 
 	return s
 }
@@ -179,7 +183,7 @@ func (s *Server) getPkgPath(v interface{}) string {
 		t = value.Type()
 	}
 	pkg := strings.Replace(
-		regexp.MustCompile(`controllers(.*)$`).FindString(t.PkgPath()), //t.Elem().PkgPath()),
+		regexp.MustCompile(`controllers(.*)$`).FindString(t.PkgPath()),
 		"controllers",
 		"",
 		-1,
