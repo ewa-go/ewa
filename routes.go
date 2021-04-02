@@ -1,23 +1,21 @@
 package egowebapi
 
-import (
-	"github.com/gofiber/fiber"
-)
+import "github.com/gofiber/fiber"
+
+type Handler fiber.Handler
 
 type Route struct {
-	Method      string
-	Path        string
-	Description []string
-	Handler     fiber.Handler
+	Path    []string
+	Handler Handler
 }
 
-type Routes []*Route
+func AddPath(path ...string) []string {
+	return path
+}
 
-func NewRoute(method string, path string, handler fiber.Handler, description ...string) *Route {
+func NewRoute(handler Handler, path ...string) *Route {
 	return &Route{
-		Method:      method,
-		Path:        path,
-		Handler:     handler,
-		Description: description,
+		Path:    path,
+		Handler: handler,
 	}
 }

@@ -4,15 +4,21 @@ import "path/filepath"
 
 type Config struct {
 	Port    int
-	Root    string
+	Views   *Views
 	Secure  *Secure
 	Timeout Timeout
+	Static  string
 }
 
 type Secure struct {
 	Path string
 	Key  string
 	Cert string
+}
+
+type Views struct {
+	Root string
+	Ext  string
 }
 
 func (s *Secure) Get() (cert string, key string) {
