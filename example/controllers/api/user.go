@@ -3,31 +3,33 @@ package api
 import (
 	ewa "github.com/egovorukhin/egowebapi"
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/basicauth"
 )
 
-var users = map[string]*User{}
+var users = Users{}
 
 type User struct {
+	Id        string
 	Lastname  string
 	Firstname string
 }
+
+type Users []User
 
 func (u *User) Get() *ewa.Route {
 	return ewa.NewRoute(
 
 		func(c *fiber.Ctx) error {
 
-			//c.Accepts("application/json")
 			id := c.Params("id")
 			if id != "" {
-				if err := c.JSON(users[id]); err != nil {
+				_, user := GetUser(id)
+				if err := c.JSON(user); err != nil {
 					c.SendStatus(500)
 					return err
 				}
 				return nil
 			}
-			if err := c.JSON(users); err != nil {
+			if err := c.JSON(GetUsers()); err != nil {
 				c.SendStatus(500)
 				return err
 			}
@@ -42,25 +44,33 @@ func (u *User) Post() *ewa.Route {
 	return &ewa.Route{
 		Path: ewa.AddPath(""),
 		Handler: func(c *fiber.Ctx) error {
-			ba := c.Get("Authorization")
-			id := c.Query("id")
-			u.Lastname = c.Query("lastname")
-			u.Firstname = c.Query("firstname")
-			users[id] = u
+			user := &User{}
+			user.Id = c.Query("id")
+			user.Lastname = c.Query("lastname")
+			user.Firstname = c.Query("firstname")
+			SetUser(*user)
 			return nil
 		},
 	}
 }
 
 func (u *User) Put() *ewa.Route {
-	return nil
+	return &ewa.Route{
+		Path: ewa.AddPath("/:id"),
+		Handler: func(c *fiber.Ctx) error {
+			u.Id = c.Params("id")
+			u.Update()
+			return nil
+		},
+	}
 }
 
 func (u *User) Delete() *ewa.Route {
 	return &ewa.Route{
 		Path: ewa.AddPath("/:id"),
 		Handler: func(c *fiber.Ctx) error {
-			delete(users, c.Params("id"))
+			u.Id = c.Params("id")
+			u.Remove()
 			return nil
 		},
 	}
@@ -74,4 +84,31 @@ func (u *User) Options() *ewa.Route {
 			return nil
 		},
 	}
+}
+
+func GetUsers() Users {
+	return users
+}
+
+func GetUser(id string) (int, *User) {
+	for i, user := range users {
+		if user.Id == id {
+			return i, &user
+		}
+	}
+	return -1, nil
+}
+
+func SetUser(u User) {
+	users = append(users, u)
+}
+
+func (u *User) Update() {
+	i, _ := GetUser(u.Id)
+	users[i] = *u
+}
+
+func (u *User) Remove() {
+	i, _ := GetUser(u.Id)
+	users = append(users[:i], users[i+1:]...)
 }
