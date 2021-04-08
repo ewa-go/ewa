@@ -17,8 +17,8 @@ type Secure struct {
 }
 
 type Views struct {
-	Root string
-	Ext  string
+	Root   string
+	Engine string
 }
 
 func (s *Secure) Get() (cert string, key string) {

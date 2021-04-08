@@ -13,16 +13,16 @@ func main() {
 
 	//WEB
 	cfg := ewa.Config{
-		Port:    3000,
+		Port:    3003,
 		Timeout: ewa.NewTimeout(30, 30, 30),
 		Views: &ewa.Views{
-			Root: "www",
-			Ext:  ".html",
+			Root:   "www",
+			Engine: ".html",
 		},
 		Static: "www",
 	}
 	//BasicAuth
-	users := map[string]string{
+	/*users := map[string]string{
 		"user": "Qq123456",
 	}
 	authorizer := func(user string, pass string) bool {
@@ -31,12 +31,12 @@ func main() {
 		}
 		return false
 	}
-	ba := ewa.NewBasicAuth(users, authorizer, nil)
+	ba := ewa.NewBasicAuth(users, authorizer, nil)*/
 	//Инициализируем сервер
 	ws, _ := ewa.New("Example", cfg)
 	ws.RegisterWeb(new(web.Index), "/")
 	ws.RegisterRest(new(api.User), "")
-	ws.SetBasicAuth(ba)
+	//ws.SetBasicAuth(ba)
 	ws.Start()
 
 	for {

@@ -42,7 +42,7 @@ func (u *User) Get() *ewa.Route {
 
 func (u *User) Post() *ewa.Route {
 	return &ewa.Route{
-		Path: ewa.AddPath(""),
+		Path: nil,
 		Handler: func(c *fiber.Ctx) error {
 			user := &User{}
 			user.Id = c.Query("id")
@@ -78,7 +78,7 @@ func (u *User) Delete() *ewa.Route {
 
 func (u *User) Options() *ewa.Route {
 	return &ewa.Route{
-		Path: ewa.AddPath(""),
+		Path: nil,
 		Handler: func(ctx *fiber.Ctx) error {
 			ctx.Append("Allow", "GET, POST, DELETE, OPTIONS")
 			return nil

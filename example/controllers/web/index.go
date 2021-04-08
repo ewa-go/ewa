@@ -10,9 +10,9 @@ type Index struct {
 
 func (a *Index) Get() *egowebapi.Route {
 	return &egowebapi.Route{
-		Path: egowebapi.AddPath(""),
+		Path: nil,
 		Handler: func(ctx *fiber.Ctx) error {
-			return ctx.Render("/web/index", nil)
+			return ctx.Render("index", nil)
 		},
 	}
 }

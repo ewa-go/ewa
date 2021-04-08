@@ -37,7 +37,7 @@ func New(name string, config Config) (IServer, error) {
 
 	//Таймауты
 	read, write, idle := config.Timeout.Get()
-
+	//Получаем расположение исполняемого файла
 	exe, err := os.Executable()
 	if err != nil {
 		return nil, err
@@ -50,7 +50,7 @@ func New(name string, config Config) (IServer, error) {
 	}
 	//Указываем нужны ли страницы
 	if config.Views != nil {
-		settings.Views = html.New(filepath.Join(filepath.Dir(exe), config.Views.Root), config.Views.Ext)
+		settings.Views = html.New(filepath.Join(filepath.Dir(exe), config.Views.Root), config.Views.Engine)
 	}
 	//Инициализируем сервер
 	server := fiber.New(settings)
