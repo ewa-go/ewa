@@ -5,8 +5,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-type Index struct {
-}
+type Index struct{}
 
 func (a *Index) Get() *egowebapi.Route {
 	return &egowebapi.Route{
