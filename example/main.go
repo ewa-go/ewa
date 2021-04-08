@@ -34,7 +34,7 @@ func main() {
 	ba := ewa.NewBasicAuth(users, authorizer, nil)
 	//Инициализируем сервер
 	ws, _ := ewa.New("Example", cfg)
-	ws.RegisterWeb(new(web.Index), "")
+	ws.RegisterWeb(new(web.Index), "/")
 	ws.RegisterRest(new(api.User), "")
 	ws.SetBasicAuth(ba)
 	ws.Start()

@@ -117,12 +117,7 @@ func (s *Server) rest(i IRest, method string, path string) {
 		s.web(i, method, path)
 		return
 	}
-
-	if route != nil {
-		for _, rpath := range route.Path {
-			s.Add(method, p.Join(path, rpath), route.Handler)
-		}
-	}
+	s.add(method, path, route)
 }
 
 func (s *Server) web(i IWeb, method string, path string) {
@@ -136,10 +131,20 @@ func (s *Server) web(i IWeb, method string, path string) {
 		route = i.Post()
 		break
 	}
-	if route != nil {
-		for _, rpath := range route.Path {
-			s.Add(method, p.Join(path, rpath), route.Handler)
-		}
+	s.add(method, path, route)
+}
+
+func (s *Server) add(method string, path string, route *Route) {
+	if route == nil {
+		return
+	}
+
+	if route.Path == nil {
+		route.Path = []string{""}
+	}
+
+	for _, rpath := range route.Path {
+		s.Add(method, p.Join(path, rpath), route.Handler)
 	}
 }
 

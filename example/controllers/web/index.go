@@ -12,7 +12,7 @@ func (a *Index) Get() *egowebapi.Route {
 	return &egowebapi.Route{
 		Path: egowebapi.AddPath(""),
 		Handler: func(ctx *fiber.Ctx) error {
-			return ctx.Render("index", nil)
+			return ctx.Render("/web/index", nil)
 		},
 	}
 }
