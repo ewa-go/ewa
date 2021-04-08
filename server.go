@@ -26,6 +26,7 @@ type Server struct {
 
 type IServer interface {
 	Start()
+	StartAsync()
 	Stop() error
 	RegisterWeb(i IWeb, path string) *Server
 	RegisterRest(i IRest, path string) *Server
@@ -65,11 +66,11 @@ func New(name string, config Config) (IServer, error) {
 	}, nil
 }
 
-func (s *Server) Start() {
-	go s.start()
+func (s *Server) StartAsync() {
+	go s.Start()
 }
 
-func (s *Server) start() {
+func (s *Server) Start() {
 
 	//Флаг старта
 	s.Started = true
