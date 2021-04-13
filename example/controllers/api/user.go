@@ -37,12 +37,12 @@ func (u *User) Get() *ewa.Route {
 			return nil
 
 		},
-		"", "/:id")
+		"", "/:id").SetDescription("Возвращаем всех пользователей либо по id")
 }
 
 func (u *User) Post() *ewa.Route {
 	return &ewa.Route{
-		Path: nil,
+		Description: "Добавляем пользователя",
 		Handler: func(c *fiber.Ctx) error {
 			user := &User{}
 			user.Id = c.Query("id")
@@ -56,7 +56,8 @@ func (u *User) Post() *ewa.Route {
 
 func (u *User) Put() *ewa.Route {
 	return &ewa.Route{
-		Path: ewa.AddPath("/:id"),
+		Description: "Изменяем пользователя по id",
+		Params:      ewa.SetParams("/:id"),
 		Handler: func(c *fiber.Ctx) error {
 			u.Id = c.Params("id")
 			u.Update()
@@ -67,7 +68,8 @@ func (u *User) Put() *ewa.Route {
 
 func (u *User) Delete() *ewa.Route {
 	return &ewa.Route{
-		Path: ewa.AddPath("/:id"),
+		Description: "Удаляем пользователя по id",
+		Params:      ewa.SetParams("/:id"),
 		Handler: func(c *fiber.Ctx) error {
 			u.Id = c.Params("id")
 			u.Remove()
@@ -76,13 +78,10 @@ func (u *User) Delete() *ewa.Route {
 	}
 }
 
-func (u *User) Options() *ewa.Route {
-	return &ewa.Route{
-		Path: nil,
-		Handler: func(ctx *fiber.Ctx) error {
-			ctx.Append("Allow", "GET, POST, DELETE, OPTIONS")
-			return nil
-		},
+func (u *User) Options(swagger *ewa.Swagger) ewa.Handler {
+	return func(ctx *fiber.Ctx) error {
+		ctx.Append("Allow", "GET, POST, PUT, DELETE, OPTIONS")
+		return ctx.JSON(swagger)
 	}
 }
 

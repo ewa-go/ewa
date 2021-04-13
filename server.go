@@ -21,7 +21,6 @@ type Server struct {
 	Started bool
 	Config  Config
 	BasicAuth
-	//Controllers Controllers
 }
 
 type IServer interface {
@@ -29,7 +28,7 @@ type IServer interface {
 	StartAsync()
 	Stop() error
 	RegisterWeb(i IWeb, path string) *Server
-	RegisterRest(i IRest, path string) *Server
+	RegisterRest(i IRest, path string, name string) *Server
 	SetBasicAuth(auth BasicAuth) *Server
 }
 
@@ -100,7 +99,7 @@ func (s *Server) SetBasicAuth(auth BasicAuth) *Server {
 	return s
 }
 
-func (s *Server) rest(i IRest, method string, path string) {
+func (s *Server) rest(i IRest, method string, path string) *Option {
 	route := new(Route)
 	method = strings.ToUpper(method)
 	switch method {
@@ -110,19 +109,16 @@ func (s *Server) rest(i IRest, method string, path string) {
 	case fiber.MethodDelete:
 		route = i.Delete()
 		break
-	case fiber.MethodOptions:
-		route = i.Options()
-		break
 	default:
 		s.web(i, method, path)
-		return
+		return nil
 	}
-	s.add(method, path, route)
+	return s.add(method, path, route)
 }
 
-func (s *Server) web(i IWeb, method string, path string) {
-	route := new(Route)
+func (s *Server) web(i IWeb, method string, path string) *Option {
 	method = strings.ToUpper(method)
+	route := new(Route)
 	switch method {
 	case fiber.MethodGet:
 		route = i.Get()
@@ -131,37 +127,50 @@ func (s *Server) web(i IWeb, method string, path string) {
 		route = i.Post()
 		break
 	}
-	s.add(method, path, route)
+	return s.add(method, path, route)
 }
 
-func (s *Server) add(method string, path string, route *Route) {
+func (s *Server) add(method string, path string, route *Route) *Option {
 	if route == nil {
-		return
+		return nil
 	}
 
-	if route.Path == nil {
-		route.Path = []string{""}
+	if route.Params == nil {
+		route.Params = []string{""}
 	}
 
-	for _, rpath := range route.Path {
+	for _, rpath := range route.Params {
 		s.Add(method, p.Join(path, rpath), route.Handler)
+	}
+
+	return &Option{
+		Params:      route.Params,
+		Description: route.Description,
+		Method:      method,
 	}
 }
 
 func (s *Server) RegisterWeb(i IWeb, path string) *Server {
-	path = s.checkPath(path, i)
+	//Устанавливаем имя и путь
+	_, path = s.getPkgNameAndPath(path, "", i)
+
 	s.web(i, fiber.MethodGet, path)
 	s.web(i, fiber.MethodPost, path)
 
 	return s
 }
 
-func (s *Server) RegisterRest(i IRest, path string) *Server {
-	path = s.checkPath(path, i)
-	s.RegisterWeb(i, path)
-	s.rest(i, fiber.MethodPut, path)
-	s.rest(i, fiber.MethodDelete, path)
-	s.rest(i, fiber.MethodOptions, path)
+func (s *Server) RegisterRest(i IRest, path string, name string) *Server {
+	//Устанавливаем имя и путь
+	name, path = s.getPkgNameAndPath(path, name, i)
+	//Устанавливаем Swagger
+	swagger := newSwagger(name, path)
+	swagger.AddOption(s.web(i, fiber.MethodGet, path))
+	swagger.AddOption(s.web(i, fiber.MethodPost, path))
+	swagger.AddOption(s.rest(i, fiber.MethodPut, path))
+	swagger.AddOption(s.rest(i, fiber.MethodDelete, path))
+	//Создаем исполнитеоля для Options
+	s.Add(fiber.MethodOptions, path, i.Options(swagger))
 
 	return s
 }
@@ -171,16 +180,13 @@ func (s *Server) Stop() error {
 	return s.Shutdown()
 }
 
-//Проверяем на пустоту путь, если путь пуст то забираем из PkgPath
-func (s *Server) checkPath(path string, v interface{}) string {
-	if path == "" {
-		path = s.getPkgPath(v)
-	}
-	return path
-}
-
 //Ищем все после пакета controllers
-func (s *Server) getPkgPath(v interface{}) string {
+func (s *Server) getPkgNameAndPath(path, name string, v interface{}) (string, string) {
+	//Если имя и путь установлены вручную, то выходим
+	if path != "" && name != "" {
+		return name, path
+	}
+	//Извлекаем имя и путь до controllers
 	var t reflect.Type
 	value := reflect.ValueOf(v)
 	if value.Type().Kind() == reflect.Ptr {
@@ -194,5 +200,11 @@ func (s *Server) getPkgPath(v interface{}) string {
 		"",
 		-1,
 	)
-	return strings.Join([]string{pkg, strings.ToLower(t.Name())}, "/")
+	if path == "" {
+		path = strings.Join([]string{pkg, strings.ToLower(t.Name())}, "/")
+	}
+	if name == "" {
+		name = t.Name()
+	}
+	return name, path
 }
