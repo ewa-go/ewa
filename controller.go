@@ -9,24 +9,43 @@ type IController interface {
 }*/
 
 type IWeb interface {
-	Get() *Route
-	Post() *Route
+	Get(route *Route)
+	Post(route *Route)
 }
 
 type IRest interface {
 	IWeb
-	Put() *Route
-	Delete() *Route
+	Put(route *Route)
+	Delete(route *Route)
 	Options(swagger *Swagger) Handler
 }
 
 type Handler fiber.Handler
+
+//Route
 
 type Route struct {
 	Params      []string
 	Description string
 	Handler     Handler
 }
+
+func (r *Route) SetHandler(handler Handler) *Route {
+	r.Handler = handler
+	return r
+}
+
+func (r *Route) SetParams(params ...string) *Route {
+	r.Params = params
+	return r
+}
+
+func (r *Route) SetDescription(s string) *Route {
+	r.Description = s
+	return r
+}
+
+//Swagger
 
 type Options []*Option
 
@@ -51,20 +70,4 @@ func newSwagger(name string, path string) *Swagger {
 
 func (s *Swagger) AddOption(option *Option) {
 	s.Options = append(s.Options, option)
-}
-
-func SetParams(params ...string) []string {
-	return params
-}
-
-func NewRoute(handler Handler, params ...string) *Route {
-	return &Route{
-		Params:  params,
-		Handler: handler,
-	}
-}
-
-func (r *Route) SetDescription(s string) *Route {
-	r.Description = s
-	return r
 }

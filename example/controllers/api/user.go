@@ -15,67 +15,61 @@ type User struct {
 
 type Users []User
 
-func (u *User) Get() *ewa.Route {
-	return ewa.NewRoute(
-
-		func(c *fiber.Ctx) error {
-
+func (u *User) Get(route *ewa.Route) {
+	route.SetParams("", "/:id").
+		SetDescription("Возвращаем всех пользователей либо по id").
+		SetHandler(func(c *fiber.Ctx) error {
 			id := c.Params("id")
 			if id != "" {
 				_, user := GetUser(id)
 				if err := c.JSON(user); err != nil {
-					c.SendStatus(500)
+					c.SendStatus(501)
 					return err
 				}
 				return nil
 			}
 			if err := c.JSON(GetUsers()); err != nil {
-				c.SendStatus(500)
+				c.SendStatus(501)
 				return err
 			}
 
 			return nil
-
-		},
-		"", "/:id").SetDescription("Возвращаем всех пользователей либо по id")
+		})
 }
 
-func (u *User) Post() *ewa.Route {
-	return &ewa.Route{
-		Description: "Добавляем пользователя",
-		Handler: func(c *fiber.Ctx) error {
-			user := &User{}
-			user.Id = c.Query("id")
-			user.Lastname = c.Query("lastname")
-			user.Firstname = c.Query("firstname")
-			SetUser(*user)
-			return nil
-		},
-	}
+func (u *User) Post(route *ewa.Route) {
+	route.SetDescription("Добавляем пользователя").
+		SetHandler(
+			func(c *fiber.Ctx) error {
+				user := &User{}
+				user.Id = c.Query("id")
+				user.Lastname = c.Query("lastname")
+				user.Firstname = c.Query("firstname")
+				SetUser(*user)
+				return nil
+			})
 }
 
-func (u *User) Put() *ewa.Route {
-	return &ewa.Route{
-		Description: "Изменяем пользователя по id",
-		Params:      ewa.SetParams("/:id"),
-		Handler: func(c *fiber.Ctx) error {
-			u.Id = c.Params("id")
-			u.Update()
-			return nil
-		},
-	}
+func (u *User) Put(route *ewa.Route) {
+	route.SetParams("/:id").
+		SetDescription("Изменяем пользователя по id").
+		SetHandler(
+			func(c *fiber.Ctx) error {
+				u.Id = c.Params("id")
+				u.Update()
+				return nil
+			})
 }
 
-func (u *User) Delete() *ewa.Route {
-	return &ewa.Route{
-		Description: "Удаляем пользователя по id",
-		Params:      ewa.SetParams("/:id"),
-		Handler: func(c *fiber.Ctx) error {
-			u.Id = c.Params("id")
-			u.Remove()
-			return nil
-		},
-	}
+func (u *User) Delete(route *ewa.Route) {
+	route.SetParams("/:id").
+		SetDescription("Удаляем пользователя по id").
+		SetHandler(
+			func(c *fiber.Ctx) error {
+				u.Id = c.Params("id")
+				u.Remove()
+				return nil
+			})
 }
 
 func (u *User) Options(swagger *ewa.Swagger) ewa.Handler {

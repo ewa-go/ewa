@@ -104,10 +104,10 @@ func (s *Server) rest(i IRest, method string, path string) *Option {
 	method = strings.ToUpper(method)
 	switch method {
 	case fiber.MethodPut:
-		route = i.Put()
+		i.Put(route)
 		break
 	case fiber.MethodDelete:
-		route = i.Delete()
+		i.Delete(route)
 		break
 	default:
 		s.web(i, method, path)
@@ -121,10 +121,10 @@ func (s *Server) web(i IWeb, method string, path string) *Option {
 	route := new(Route)
 	switch method {
 	case fiber.MethodGet:
-		route = i.Get()
+		i.Get(route)
 		break
 	case fiber.MethodPost:
-		route = i.Post()
+		i.Post(route)
 		break
 	}
 	return s.add(method, path, route)

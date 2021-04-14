@@ -7,15 +7,13 @@ import (
 
 type Index struct{}
 
-func (a *Index) Get() *ewa.Route {
-	return &ewa.Route{
-		Params: nil,
-		Handler: func(ctx *fiber.Ctx) error {
-			return ctx.Render("index", nil)
-		},
+func (a *Index) Get(route *ewa.Route) {
+	route.SetDescription("Страница Index.html")
+	route.Handler = func(ctx *fiber.Ctx) error {
+		return ctx.Render("index", nil)
 	}
 }
 
-func (a *Index) Post() *ewa.Route {
-	return nil
+func (a *Index) Post(route *ewa.Route) {
+
 }
