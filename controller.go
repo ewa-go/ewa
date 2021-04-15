@@ -71,3 +71,11 @@ func newSwagger(name string, path string) *Swagger {
 func (s *Swagger) AddOption(option *Option) {
 	s.Options = append(s.Options, option)
 }
+
+func (s *Swagger) Allow(ctx *fiber.Ctx) {
+	var methods []string
+	for _, option := range s.Options {
+		methods = append(methods, option.Method)
+	}
+	ctx.Append("Allow", methods...)
+}

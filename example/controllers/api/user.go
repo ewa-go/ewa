@@ -74,7 +74,8 @@ func (u *User) Delete(route *ewa.Route) {
 
 func (u *User) Options(swagger *ewa.Swagger) ewa.Handler {
 	return func(ctx *fiber.Ctx) error {
-		ctx.Append("Allow", "GET, POST, PUT, DELETE, OPTIONS")
+		//ctx.Append("Allow", "GET, POST, PUT, DELETE, OPTIONS")
+		swagger.Allow(ctx)
 		return ctx.JSON(swagger)
 	}
 }
