@@ -20,6 +20,14 @@ type IRest interface {
 	Options(swagger *Swagger) Handler
 }
 
+type IController interface {
+	Path() string
+}
+
+type Controller struct {
+	Path string
+}
+
 type Handler fiber.Handler
 
 //Route

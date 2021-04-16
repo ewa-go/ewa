@@ -28,7 +28,7 @@ type IServer interface {
 	StartAsync()
 	Stop() error
 	RegisterWeb(i IWeb, path string) *Server
-	RegisterRest(i IRest, path string, name string) *Server
+	RegisterRest(i IRest, path string, name string, suffix ...Suffix) *Server
 	SetBasicAuth(auth BasicAuth) *Server
 }
 
@@ -160,9 +160,14 @@ func (s *Server) RegisterWeb(i IWeb, path string) *Server {
 	return s
 }
 
-func (s *Server) RegisterRest(i IRest, path string, name string) *Server {
+type Suffix struct {
+	Index int
+	Value string
+}
+
+func (s *Server) RegisterRest(i IRest, path string, name string, suffix ...Suffix) *Server {
 	//Устанавливаем имя и путь
-	name, path = s.getPkgNameAndPath(path, name, i)
+	name, path = s.getPkgNameAndPath(path, name, i, suffix...)
 	//Устанавливаем Swagger
 	swagger := newSwagger(name, path)
 	swagger.AddOption(s.web(i, fiber.MethodGet, path))
@@ -181,7 +186,7 @@ func (s *Server) Stop() error {
 }
 
 //Ищем все после пакета controllers
-func (s *Server) getPkgNameAndPath(path, name string, v interface{}) (string, string) {
+func (s *Server) getPkgNameAndPath(path, name string, v interface{}, suffix ...Suffix) (string, string) {
 	//Если имя и путь установлены вручную, то выходим
 	if path != "" && name != "" {
 		return name, path
@@ -201,10 +206,24 @@ func (s *Server) getPkgNameAndPath(path, name string, v interface{}) (string, st
 		-1,
 	)
 	if path == "" {
-		path = strings.Join([]string{pkg, strings.ToLower(t.Name())}, "/")
+		array := strings.Split(pkg, "/")
+		for _, s := range suffix {
+			array = insert(array, s.Index, s.Value)
+		}
+		array = append(array, strings.ToLower(t.Name()))
+		path = strings.Join(array, "/")
 	}
 	if name == "" {
 		name = t.Name()
 	}
 	return name, path
+}
+
+func insert(a []string, index int, value string) []string {
+	if len(a) == index { // nil or empty slice or after last element
+		return append(a, value)
+	}
+	a = append(a[:index+1], a[index:]...) // index < len(a)
+	a[index] = value
+	return a
 }

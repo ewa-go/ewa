@@ -8,6 +8,7 @@ import (
 var users = Users{}
 
 type User struct {
+	ewa.Controller
 	Id        string
 	Lastname  string
 	Firstname string
@@ -15,10 +16,18 @@ type User struct {
 
 type Users []User
 
+func (u User) Path() string {
+	return "api/:system/"
+}
+
 func (u *User) Get(route *ewa.Route) {
 	route.SetParams("", "/:id").
 		SetDescription("Возвращаем всех пользователей либо по id").
 		SetHandler(func(c *fiber.Ctx) error {
+
+			c.Set("System", c.Params("system"))
+			c.Set("Version", c.Params("version"))
+
 			id := c.Params("id")
 			if id != "" {
 				_, user := GetUser(id)
