@@ -77,7 +77,9 @@ func newSwagger(name string, path string) *Swagger {
 }
 
 func (s *Swagger) AddOption(option *Option) {
-	s.Options = append(s.Options, option)
+	if option != nil {
+		s.Options = append(s.Options, option)
+	}
 }
 
 func (s *Swagger) Allow(ctx *fiber.Ctx) {

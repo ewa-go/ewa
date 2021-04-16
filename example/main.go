@@ -43,7 +43,7 @@ func main() {
 	}
 	ws, _ := ewa.New("Example", cfg)
 	ws.RegisterWeb(new(web.Index), "/")
-	ws.RegisterRest(new(api.User), "", "", system, version)
+	ws.RegisterRest(new(api.User), "", "person", system, version)
 	//ws.SetBasicAuth(ba)
 	ws.Start()
 

@@ -131,7 +131,7 @@ func (s *Server) web(i IWeb, method string, path string) *Option {
 }
 
 func (s *Server) add(method string, path string, route *Route) *Option {
-	if route == nil {
+	if route.Handler == nil {
 		return nil
 	}
 
@@ -210,13 +210,13 @@ func (s *Server) getPkgNameAndPath(path, name string, v interface{}, suffix ...S
 		for _, s := range suffix {
 			array = insert(array, s.Index, s.Value)
 		}
-		array = append(array, strings.ToLower(t.Name()))
 		path = strings.Join(array, "/")
 	}
 	if name == "" {
-		name = t.Name()
+		name = strings.Title(t.Name())
 	}
-	return name, path
+
+	return strings.Title(name), path + "/" + strings.ToLower(name)
 }
 
 func insert(a []string, index int, value string) []string {

@@ -60,14 +60,15 @@ func (u *User) Post(route *ewa.Route) {
 }
 
 func (u *User) Put(route *ewa.Route) {
-	route.SetParams("/:id").
-		SetDescription("Изменяем пользователя по id").
-		SetHandler(
-			func(c *fiber.Ctx) error {
-				u.Id = c.Params("id")
-				u.Update()
-				return nil
-			})
+	route = nil
+	/*route.SetParams("/:id").
+	SetDescription("Изменяем пользователя по id").
+	SetHandler(
+		func(c *fiber.Ctx) error {
+			u.Id = c.Params("id")
+			u.Update()
+			return nil
+		})*/
 }
 
 func (u *User) Delete(route *ewa.Route) {
