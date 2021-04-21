@@ -45,6 +45,8 @@ func main() {
 	ws.RegisterWeb(new(web.Index), "/")
 	ws.RegisterRest(new(api.User), "", "person", system, version)
 	//ws.SetBasicAuth(ba)
+	//Cors = nil - DefaultConfig
+	ws.SetCors(nil)
 	ws.Start()
 
 	for {

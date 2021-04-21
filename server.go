@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/basicauth"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/template/html"
 	"github.com/valyala/fasthttp"
 	"os"
@@ -23,6 +24,8 @@ type Server struct {
 	BasicAuth
 }
 
+type Cors cors.Config
+
 type IServer interface {
 	Start()
 	StartAsync()
@@ -30,6 +33,7 @@ type IServer interface {
 	RegisterWeb(i IWeb, path string) *Server
 	RegisterRest(i IRest, path string, name string, suffix ...Suffix) *Server
 	SetBasicAuth(auth BasicAuth) *Server
+	SetCors(config *Cors) *Server
 }
 
 func New(name string, config Config) (IServer, error) {
@@ -92,11 +96,6 @@ func (s *Server) Start() {
 			//s.server.Logger.Printf("%s", err)
 		}
 	}
-}
-
-func (s *Server) SetBasicAuth(auth BasicAuth) *Server {
-	s.Use(basicauth.New(auth.Config))
-	return s
 }
 
 func (s *Server) rest(i IRest, method string, path string) *Option {
@@ -177,6 +176,20 @@ func (s *Server) RegisterRest(i IRest, path string, name string, suffix ...Suffi
 	//Создаем исполнитеоля для Options
 	s.Add(fiber.MethodOptions, path, i.Options(swagger))
 
+	return s
+}
+
+func (s *Server) SetBasicAuth(auth BasicAuth) *Server {
+	s.Use(basicauth.New(basicauth.Config(auth)))
+	return s
+}
+
+func (s *Server) SetCors(config *Cors) *Server {
+	cfg := cors.ConfigDefault
+	if config != nil {
+		cfg = cors.Config(*config)
+	}
+	s.Use(cors.New(cfg))
 	return s
 }
 
