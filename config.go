@@ -3,11 +3,12 @@ package egowebapi
 import "path/filepath"
 
 type Config struct {
-	Port    int
-	Views   *Views
-	Secure  *Secure
-	Timeout Timeout
-	Static  string
+	Port      int
+	Views     *Views
+	Secure    *Secure
+	Timeout   Timeout
+	Static    string
+	BasicAuth *BasicAuth
 }
 
 type Secure struct {

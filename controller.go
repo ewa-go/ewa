@@ -28,39 +28,16 @@ type Controller struct {
 	Path string
 }
 
-type Handler fiber.Handler
-
-//Route
-
-type Route struct {
-	Params      []string
-	Description string
-	Handler     Handler
-}
-
-func (r *Route) SetHandler(handler Handler) *Route {
-	r.Handler = handler
-	return r
-}
-
-func (r *Route) SetParams(params ...string) *Route {
-	r.Params = params
-	return r
-}
-
-func (r *Route) SetDescription(s string) *Route {
-	r.Description = s
-	return r
-}
-
 //Swagger
 
 type Options []*Option
 
 type Option struct {
 	Params      []string
-	Description string
+	Headers     []string
 	Method      string
+	Body        string
+	Description string
 }
 
 type Swagger struct {

@@ -11,6 +11,13 @@ import (
 
 func main() {
 
+	//BasicAuth
+	authorizer := func(user string, pass string) bool {
+		if user == "user" && pass == "Qq123456" {
+			return true
+		}
+		return false
+	}
 	//WEB
 	cfg := ewa.Config{
 		Port:    3003,
@@ -19,19 +26,9 @@ func main() {
 			Root:   "www",
 			Engine: ".html",
 		},
-		Static: "www",
+		Static:    "www",
+		BasicAuth: ewa.NewBasicAuth(authorizer, nil),
 	}
-	//BasicAuth
-	/*users := map[string]string{
-		"user": "Qq123456",
-	}
-	authorizer := func(user string, pass string) bool {
-		if user == "user" && pass == "Qq123456" {
-			return true
-		}
-		return false
-	}
-	ba := ewa.NewBasicAuth(users, authorizer, nil)*/
 	//Инициализируем сервер
 	system := ewa.Suffix{
 		Index: 2,

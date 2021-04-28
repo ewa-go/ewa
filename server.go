@@ -1,9 +1,9 @@
 package egowebapi
 
 import (
+	"encoding/base64"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/basicauth"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/template/html"
 	"github.com/valyala/fasthttp"
@@ -21,7 +21,6 @@ type Server struct {
 	Name    string
 	Started bool
 	Config  Config
-	BasicAuth
 }
 
 type Cors cors.Config
@@ -32,7 +31,6 @@ type IServer interface {
 	Stop() error
 	RegisterWeb(i IWeb, path string) *Server
 	RegisterRest(i IRest, path string, name string, suffix ...Suffix) *Server
-	SetBasicAuth(auth BasicAuth) *Server
 	SetCors(config *Cors) *Server
 }
 
@@ -129,6 +127,49 @@ func (s *Server) web(i IWeb, method string, path string) *Option {
 	return s.add(method, path, route)
 }
 
+func (s *Server) parseBasicAuth(auth string) (username, password string, ok bool) {
+	const prefix = "Basic "
+	// Case insensitive prefix match. See Issue 22736.
+	if len(auth) < len(prefix) || !strings.EqualFold(auth[:len(prefix)], prefix) {
+		return
+	}
+	c, err := base64.StdEncoding.DecodeString(auth[len(prefix):])
+	if err != nil {
+		return
+	}
+	cs := string(c)
+	i := strings.IndexByte(cs, ':')
+	if i < 0 {
+		return
+	}
+	return cs[:i], cs[i+1:], true
+}
+
+func (s *Server) basicAuth(handler Handler) Handler {
+	return func(ctx *fiber.Ctx) error {
+
+		auth := ctx.Get("Authorization")
+		if auth == "" {
+			if s.Config.BasicAuth.Unauthorized == nil {
+				ctx.Set("WWW-Authenticate", `Basic realm="Необходимо указать имя пользователя и пароль"`)
+				return ctx.SendStatus(fiber.StatusUnauthorized)
+			}
+			return s.Config.BasicAuth.Unauthorized(ctx)
+		}
+
+		username, password, ok := s.parseBasicAuth(auth)
+		if !ok || !s.Config.BasicAuth.Authorizer(username, password) {
+			if s.Config.BasicAuth.Unauthorized == nil {
+				ctx.Set("WWW-Authenticate", `Basic realm="Необходимо указать имя пользователя и пароль"`)
+				return ctx.SendStatus(fiber.StatusUnauthorized)
+			}
+			return s.Config.BasicAuth.Unauthorized(ctx)
+		}
+
+		return handler(ctx)
+	}
+}
+
 func (s *Server) add(method string, path string, route *Route) *Option {
 	if route.Handler == nil {
 		return nil
@@ -139,7 +180,11 @@ func (s *Server) add(method string, path string, route *Route) *Option {
 	}
 
 	for _, rpath := range route.Params {
-		s.Add(method, p.Join(path, rpath), route.Handler)
+		h := route.Handler
+		if s.Config.BasicAuth != nil && route.IsBasicAuth {
+			h = s.basicAuth(h)
+		}
+		s.Add(method, p.Join(path, rpath), h)
 	}
 
 	return &Option{
@@ -176,11 +221,6 @@ func (s *Server) RegisterRest(i IRest, path string, name string, suffix ...Suffi
 	//Создаем исполнитеоля для Options
 	s.Add(fiber.MethodOptions, path, i.Options(swagger))
 
-	return s
-}
-
-func (s *Server) SetBasicAuth(auth BasicAuth) *Server {
-	s.Use(basicauth.New(basicauth.Config(auth)))
 	return s
 }
 
