@@ -23,7 +23,7 @@ func (u User) Path() string {
 func (u *User) Get(route *ewa.Route) {
 	route.SetParams("", "/:id").
 		SetDescription("Возвращаем всех пользователей либо по id").
-		SetBasicAuth(true).
+		BasicAuth().
 		SetHandler(func(c *fiber.Ctx) error {
 
 			c.Set("System", c.Params("system"))
@@ -40,7 +40,7 @@ func (u *User) Get(route *ewa.Route) {
 }
 
 func (u *User) Post(route *ewa.Route) {
-	route.SetBasicAuth(true).
+	route.BasicAuth().
 		SetDescription("Добавляем пользователя").
 		SetHandler(
 			func(c *fiber.Ctx) error {

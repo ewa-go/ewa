@@ -6,6 +6,7 @@ type Route struct {
 	Params      []string
 	Description string
 	IsBasicAuth bool
+	IsJWT       bool
 	Handler     Handler
 }
 
@@ -26,7 +27,12 @@ func (r *Route) SetDescription(s string) *Route {
 	return r
 }
 
-func (r *Route) SetBasicAuth(b bool) *Route {
-	r.IsBasicAuth = b
+func (r *Route) BasicAuth() *Route {
+	r.IsBasicAuth = true
+	return r
+}
+
+func (r *Route) JWT() *Route {
+	r.IsBasicAuth = true
 	return r
 }

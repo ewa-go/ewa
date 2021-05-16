@@ -20,7 +20,7 @@ func main() {
 	}
 	//WEB
 	cfg := ewa.Config{
-		Port:    3003,
+		Port:    3005,
 		Timeout: ewa.NewTimeout(30, 30, 30),
 		Views: &ewa.Views{
 			Root:   "www",

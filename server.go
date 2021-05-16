@@ -258,18 +258,19 @@ func (s *Server) getPkgNameAndPath(path, name string, v interface{}, suffix ...S
 		"",
 		-1,
 	)
+	if name == "" {
+		name = strings.Title(t.Name())
+	}
+
 	if path == "" {
 		array := strings.Split(pkg, "/")
 		for _, s := range suffix {
 			array = insert(array, s.Index, s.Value)
 		}
-		path = strings.Join(array, "/")
-	}
-	if name == "" {
-		name = strings.Title(t.Name())
+		path = strings.Join(array, "/") + "/" + strings.ToLower(name)
 	}
 
-	return strings.Title(name), path + "/" + strings.ToLower(name)
+	return strings.Title(name), path
 }
 
 func insert(a []string, index int, value string) []string {
