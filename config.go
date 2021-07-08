@@ -1,14 +1,20 @@
 package egowebapi
 
-import "path/filepath"
+import (
+	"github.com/gofiber/fiber/v2/middleware/session"
+	"path/filepath"
+)
 
 type Config struct {
-	Port      int
-	Views     *Views
-	Secure    *Secure
-	Timeout   Timeout
-	Static    string
-	BasicAuth *BasicAuth
+	Port       int
+	Views      *Views
+	Secure     *Secure
+	Timeout    Timeout
+	Static     string
+	BasicAuth  *BasicAuth
+	Session    *Session
+	Permission *Permission
+	Store      *session.Config
 }
 
 type Secure struct {

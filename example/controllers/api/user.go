@@ -24,6 +24,7 @@ func (u *User) Get(route *ewa.Route) {
 	route.SetParams("", "/:id").
 		SetDescription("Возвращаем всех пользователей либо по id").
 		BasicAuth().
+		Session().
 		SetHandler(func(c *fiber.Ctx) error {
 
 			c.Set("System", c.Params("system"))

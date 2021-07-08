@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/session"
 	"github.com/gofiber/template/html"
 	"github.com/valyala/fasthttp"
 	"os"
@@ -21,9 +22,11 @@ type Server struct {
 	Name    string
 	Started bool
 	Config  Config
+	//store   *session.Store
 }
 
 type Cors cors.Config
+type Store session.Config
 
 type IServer interface {
 	Start()
@@ -32,6 +35,7 @@ type IServer interface {
 	RegisterWeb(i IWeb, path string) *Server
 	RegisterRest(i IRest, path string, name string, suffix ...Suffix) *Server
 	SetCors(config *Cors) *Server
+	//SetStore(config *Store) * Server
 }
 
 func New(name string, config Config) (IServer, error) {
@@ -88,11 +92,12 @@ func (s *Server) Start() {
 		); err != fasthttp.ErrConnectionClosed {
 			//s.Logger.Printf("%s", err)
 		}
-	} else {
-		//Запускаем слушатель
-		if err := s.Listen(fmt.Sprintf(":%d", s.Config.Port)); err != fasthttp.ErrConnectionClosed {
-			//s.server.Logger.Printf("%s", err)
-		}
+		return
+	}
+
+	//Запускаем слушатель
+	if err := s.Listen(fmt.Sprintf(":%d", s.Config.Port)); err != fasthttp.ErrConnectionClosed {
+		//s.server.Logger.Printf("%s", err)
 	}
 }
 
@@ -179,12 +184,22 @@ func (s *Server) add(method string, path string, route *Route) *Option {
 		route.Params = []string{""}
 	}
 
-	for _, rpath := range route.Params {
+	for _, param := range route.Params {
 		h := route.Handler
+		//Проверка разрешений
+		if route.IsPermission {
+			h = s.Config.Permission.check(h)
+		}
+		//Подключаем сессии
+		if route.IsSession {
+			h = s.Config.Session.check(h)
+		}
+		//Подключаем basic auth
 		if s.Config.BasicAuth != nil && route.IsBasicAuth {
 			h = s.basicAuth(h)
 		}
-		s.Add(method, p.Join(path, rpath), h)
+
+		s.Add(method, p.Join(path, param), h)
 	}
 
 	return &Option{
@@ -218,7 +233,7 @@ func (s *Server) RegisterRest(i IRest, path string, name string, suffix ...Suffi
 	swagger.AddOption(s.web(i, fiber.MethodPost, path))
 	swagger.AddOption(s.rest(i, fiber.MethodPut, path))
 	swagger.AddOption(s.rest(i, fiber.MethodDelete, path))
-	//Создаем исполнитеоля для Options
+	//Создаем исполнителя для Options
 	s.Add(fiber.MethodOptions, path, i.Options(swagger))
 
 	return s
@@ -232,6 +247,15 @@ func (s *Server) SetCors(config *Cors) *Server {
 	s.Use(cors.New(cfg))
 	return s
 }
+
+/*func (s *Server) SetStore(config *Store) *Server {
+	cfg := session.ConfigDefault
+	if config != nil {
+		cfg = session.Config(*config)
+	}
+	s.store = session.New(cfg)
+	return s
+}*/
 
 func (s *Server) Stop() error {
 	s.Started = false
