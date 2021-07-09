@@ -34,8 +34,10 @@ func main() {
 		return ctx.Render("error", fiber.Map{"Code": code, "Text": err})
 	}
 	//Permission
-	checkPermission := func(route string) bool {
-		if route != "" {
+	checkPermission := func(key, route string) bool {
+
+		user, _ := storage.GetStorage(key)
+		if user == "user" && route == "/section1/1_1" {
 			return false
 		}
 		return true

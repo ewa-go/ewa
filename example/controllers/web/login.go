@@ -26,6 +26,7 @@ func (l *Login) Post(route *ewa.Route) {
 }
 
 func (l *Login) handler(ctx *fiber.Ctx, key string) error {
+
 	err := ctx.BodyParser(l)
 	if err != nil {
 		_, err = ctx.WriteString(err.Error())
