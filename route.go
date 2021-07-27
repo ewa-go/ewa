@@ -90,10 +90,12 @@ func (r *Route) Logout(logoutHandler AuthHandler, route string) *Route {
 			return ctx.Status(401).SendString(err.Error())
 		}
 
-		cookie := new(fiber.Cookie)
+		ctx.ClearCookie(sessionId)
+
+		/*cookie := new(fiber.Cookie)
 		cookie.Name = ""
 		cookie.Expires = time.Now()
-		ctx.Cookie(cookie)
+		ctx.Cookie(cookie)*/
 
 		return ctx.Redirect(route)
 	}
