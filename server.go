@@ -1,7 +1,6 @@
 package egowebapi
 
 import (
-	"encoding/base64"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -132,51 +131,8 @@ func (s *Server) web(i IWeb, method string, path string) *Option {
 	return s.add(method, path, route)
 }
 
-func (s *Server) parseBasicAuth(auth string) (username, password string, ok bool) {
-	const prefix = "Basic "
-	// Case insensitive prefix match. See Issue 22736.
-	if len(auth) < len(prefix) || !strings.EqualFold(auth[:len(prefix)], prefix) {
-		return
-	}
-	c, err := base64.StdEncoding.DecodeString(auth[len(prefix):])
-	if err != nil {
-		return
-	}
-	cs := string(c)
-	i := strings.IndexByte(cs, ':')
-	if i < 0 {
-		return
-	}
-	return cs[:i], cs[i+1:], true
-}
-
-func (s *Server) basicAuth(handler Handler) Handler {
-	return func(ctx *fiber.Ctx) error {
-
-		auth := ctx.Get("Authorization")
-		if auth == "" {
-			if s.Config.BasicAuth.Unauthorized == nil {
-				ctx.Set("WWW-Authenticate", `Basic realm="Необходимо указать имя пользователя и пароль"`)
-				return ctx.SendStatus(fiber.StatusUnauthorized)
-			}
-			return s.Config.BasicAuth.Unauthorized(ctx)
-		}
-
-		username, password, ok := s.parseBasicAuth(auth)
-		if !ok || !s.Config.BasicAuth.Authorizer(username, password) {
-			if s.Config.BasicAuth.Unauthorized == nil {
-				ctx.Set("WWW-Authenticate", `Basic realm="Необходимо указать имя пользователя и пароль"`)
-				return ctx.SendStatus(fiber.StatusUnauthorized)
-			}
-			return s.Config.BasicAuth.Unauthorized(ctx)
-		}
-
-		return handler(ctx)
-	}
-}
-
 func (s *Server) add(method string, path string, route *Route) *Option {
-	if route.Handler == nil {
+	if route.Handler == nil && route.WebHandler == nil {
 		return nil
 	}
 
@@ -186,17 +142,17 @@ func (s *Server) add(method string, path string, route *Route) *Option {
 
 	for _, param := range route.Params {
 		h := route.Handler
+		//Подключаем basic auth
+		if s.Config.BasicAuth != nil && route.IsBasicAuth {
+			h = s.Config.BasicAuth.check(h)
+		}
+		//Подключаем сессии
+		if route.IsSession && route.WebHandler != nil {
+			h = s.Config.Session.check(route.WebHandler)
+		}
 		//Проверка разрешений
 		if route.IsPermission {
 			h = s.Config.Permission.check(h)
-		}
-		//Подключаем сессии
-		if route.IsSession {
-			h = s.Config.Session.check(h)
-		}
-		//Подключаем basic auth
-		if s.Config.BasicAuth != nil && route.IsBasicAuth {
-			h = s.basicAuth(h)
 		}
 
 		s.Add(method, p.Join(path, param), h)

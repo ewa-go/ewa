@@ -14,6 +14,7 @@ type Route struct {
 	IsSession    bool
 	IsPermission bool
 	Handler      Handler
+	WebHandler   WebHandler
 }
 
 const sessionId = "session_id"

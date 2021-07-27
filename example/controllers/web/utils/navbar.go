@@ -44,10 +44,6 @@ func NewItem(id, name, url string) *Item {
 	}
 }
 
-func SetUser(user string) {
-	navbar.User = user
-}
-
 func (n NavBar) add(nav *Nav) NavBar {
 	n.Navs = append(n.Navs, nav)
 	return n
@@ -81,7 +77,8 @@ func NewNav(id, name string, url string, subMenus []*Menu) *Nav {
 	}
 }
 
-func GetNavBar(id string) NavBar {
+func GetNavBar(id string, user string) NavBar {
+	navbar.User = user
 	for _, nav := range navbar.Navs {
 		nav.Item.Active = false
 		if nav.Item.Id == id {

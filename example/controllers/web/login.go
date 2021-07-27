@@ -3,7 +3,6 @@ package web
 import (
 	"errors"
 	ewa "github.com/egovorukhin/egowebapi"
-	"github.com/egovorukhin/egowebapi/example/controllers/web/utils"
 	"github.com/egovorukhin/egowebapi/example/src/storage"
 	"github.com/gofiber/fiber/v2"
 	"time"
@@ -35,7 +34,6 @@ func (l *Login) handler(ctx *fiber.Ctx, key string) error {
 
 	if l.Username == "user" && l.Password == "Qq123456" {
 		storage.SetStorage(key, l.Username)
-		utils.SetUser(l.Username)
 		return nil
 	}
 

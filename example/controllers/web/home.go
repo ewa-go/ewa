@@ -12,8 +12,8 @@ type Home struct {
 
 func (h *Home) Get(route *ewa.Route) {
 	route.SetDescription("Страница Home.html").Session()
-	route.Handler = func(ctx *fiber.Ctx) error {
-		h.NavBar = utils.GetNavBar("")
+	route.WebHandler = func(ctx *fiber.Ctx, identity *ewa.Identity) error {
+		h.NavBar = utils.GetNavBar("", identity.User)
 		return ctx.Render("home", h, "layouts/base")
 	}
 }

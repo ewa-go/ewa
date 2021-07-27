@@ -13,8 +13,8 @@ type Section_1_1 struct {
 
 func (h *Section_1_1) Get(route *ewa.Route) {
 	route.SetDescription("Страница Home.html").Session().Permission()
-	route.Handler = func(ctx *fiber.Ctx) error {
-		h.NavBar = utils.GetNavBar("section_1_1")
+	route.WebHandler = func(ctx *fiber.Ctx, identity *ewa.Identity) error {
+		h.NavBar = utils.GetNavBar("section_1_1", identity.User)
 		h.Title = "Привет раздел 1.1"
 		return ctx.Render("section1/1_1", h, "layouts/base")
 	}
