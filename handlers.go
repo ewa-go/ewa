@@ -2,7 +2,7 @@ package egowebapi
 
 import "github.com/gofiber/fiber/v2"
 
-type PermissionHandler func(key, route string) bool
+type PermissionHandler func(key, path string) bool
 type CheckHandler func(key string) (string, error)
 type ErrorHandler func(ctx *fiber.Ctx, code int, err string) error
 type AuthHandler func(ctx *fiber.Ctx, key string) error

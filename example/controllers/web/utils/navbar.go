@@ -21,21 +21,19 @@ type Menu struct {
 
 type SubItems []*Item
 
-type NavBar struct {
+type Navbar struct {
 	Navs []*Nav
 	User string
 }
 
-var navbar = NewNavBar()
-
-func NewMenu(id, name, url string, subItem []*Item) *Menu {
+func newMenu(id, name, url string, subItem []*Item) *Menu {
 	return &Menu{
-		Item:     NewItem(id, name, url),
+		Item:     newItem(id, name, url),
 		SubItems: subItem,
 	}
 }
 
-func NewItem(id, name, url string) *Item {
+func newItem(id, name, url string) *Item {
 	return &Item{
 		Id:     id,
 		Name:   name,
@@ -44,42 +42,46 @@ func NewItem(id, name, url string) *Item {
 	}
 }
 
-func (n NavBar) add(nav *Nav) NavBar {
+func (n Navbar) add(nav *Nav) Navbar {
 	n.Navs = append(n.Navs, nav)
 	return n
 }
 
-func NewNavBar() (n NavBar) {
+func createNavbar() Navbar {
 
-	n = NavBar{}
-	n = n.add(NewNav("section1", "Раздел 1", "", SubMenus{
-		NewMenu("section_1_1", "Раздел 1.1", "/section1/1_1", nil),
-		NewMenu("section_1_2", "Раздел 1.2", "/section1/1_2", nil),
+	n := Navbar{}
+	n = n.add(newNav("section1", "Раздел 1", "", SubMenus{
+		newMenu("section_1_1", "Раздел 1.1", "", SubItems{
+			newItem("section1/1_1/document", "Документ", "/section1/1_1/document"),
+			newItem("section1/1_1/list", "Список", "/section1/1_1/list"),
+		}),
+		newMenu("section_1_2", "Раздел 1.2", "/section1/1_2", nil),
 	})).
-		add(NewNav("ucce", "UCCE", "", SubMenus{NewMenu("ucce/rules", "Правила", "/ucce/rules", nil)})).
-		add(NewNav("asterisk", "Asterisk", "", SubMenus{NewMenu("asterisk/rules", "Правила", "/ucce/rules", nil)})).
-		add(NewNav("callfinder", "Call Finder", "", SubMenus{
-			NewMenu("callfinder/calls", "Поиск звонков", "/callfinder/calls", nil),
-			NewMenu("callfinder/cucm", "CUCM", "/callfinder/cucm", nil),
-			NewMenu("callfinder/cube", "CUBE", "/callfinder/cube", nil),
-			NewMenu("callfinder/asterisk", "Asterisk", "/callfinder/asterisk", nil),
+		add(newNav("ucce", "UCCE", "", SubMenus{newMenu("ucce/rules", "Правила", "/ucce/rules", nil)})).
+		add(newNav("asterisk", "Asterisk", "", SubMenus{newMenu("asterisk/rules", "Правила", "/ucce/rules", nil)})).
+		add(newNav("callfinder", "Call Finder", "", SubMenus{
+			newMenu("callfinder/calls", "Поиск звонков", "/callfinder/calls", nil),
+			newMenu("callfinder/cucm", "CUCM", "/callfinder/cucm", nil),
+			newMenu("callfinder/cube", "CUBE", "/callfinder/cube", nil),
+			newMenu("callfinder/asterisk", "Asterisk", "/callfinder/asterisk", nil),
 		})).
-		add(NewNav("settings", "Настройки", "", SubMenus{NewMenu("settings/rules", "Правила", "/settings/rules", nil)})).
-		add(NewNav("about", "О программе", "/about", nil))
+		add(newNav("settings", "Настройки", "", SubMenus{newMenu("settings/rules", "Правила", "/settings/rules", nil)})).
+		add(newNav("about", "О программе", "/about", nil))
 
 	return n
 }
 
-func NewNav(id, name string, url string, subMenus []*Menu) *Nav {
+func newNav(id, name string, url string, subMenus []*Menu) *Nav {
 	return &Nav{
-		Item:     NewItem(id, name, url),
+		Item:     newItem(id, name, url),
 		SubMenus: subMenus,
 	}
 }
 
-func GetNavBar(id string, user string) NavBar {
-	navbar.User = user
-	for _, nav := range navbar.Navs {
+func NewNavbar(id string, user string) (n Navbar) {
+	n = createNavbar()
+	n.User = user
+	for _, nav := range n.Navs {
 		nav.Item.Active = false
 		if nav.Item.Id == id {
 			nav.Item.Active = true
@@ -93,5 +95,5 @@ func GetNavBar(id string, user string) NavBar {
 			}
 		}
 	}
-	return navbar
+	return n
 }

@@ -5,7 +5,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/session"
-	"github.com/gofiber/template/html"
 	"github.com/valyala/fasthttp"
 	"os"
 	p "path"
@@ -42,7 +41,7 @@ func New(name string, config Config) (IServer, error) {
 	//Таймауты
 	read, write, idle := config.Timeout.Get()
 	//Получаем расположение исполняемого файла
-	exe, err := os.Executable()
+	exePath, err := os.Executable()
 	if err != nil {
 		return nil, err
 	}
@@ -51,16 +50,33 @@ func New(name string, config Config) (IServer, error) {
 		ReadTimeout:  time.Duration(read) * time.Second,
 		WriteTimeout: time.Duration(write) * time.Second,
 		IdleTimeout:  time.Duration(idle) * time.Second,
+		ErrorHandler: func(ctx *fiber.Ctx, err error) error {
+			code := fiber.StatusInternalServerError
+
+			if e, ok := err.(*fiber.Error); ok {
+				code = e.Code
+			}
+			err = ctx.Status(code).SendFile(fmt.Sprintf("/%d%s", code, config.Views.Extension))
+			if err != nil {
+				return ctx.Status(500).SendString("Internal Server Error")
+			}
+			return nil
+		},
 	}
 	//Указываем нужны ли страницы
 	if config.Views != nil {
-		settings.Views = html.New(filepath.Join(filepath.Dir(exe), config.Views.Root), config.Views.Engine)
+		if config.Views.Extension != None {
+			settings.Views = config.Views.Extension.Engine(filepath.Join(filepath.Dir(exePath), config.Views.Directory), config.Views.Engine)
+		}
+		if config.Views.Layout != "" {
+			settings.ViewsLayout = config.Views.Layout
+		}
 	}
 	//Инициализируем сервер
 	server := fiber.New(settings)
 	//Устанавливаем статические файлы
 	if config.Static != "" {
-		server.Static("/", filepath.Join(filepath.Dir(exe), config.Static))
+		server.Static("/", filepath.Join(filepath.Dir(exePath), config.Static))
 	}
 
 	return &Server{

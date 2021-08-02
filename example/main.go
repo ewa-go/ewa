@@ -7,6 +7,7 @@ import (
 	"github.com/egovorukhin/egowebapi/example/controllers/api"
 	"github.com/egovorukhin/egowebapi/example/controllers/web"
 	"github.com/egovorukhin/egowebapi/example/controllers/web/section1"
+	"github.com/egovorukhin/egowebapi/example/controllers/web/section1/1_1"
 	"github.com/egovorukhin/egowebapi/example/src/storage"
 	"github.com/gofiber/fiber/v2"
 	"os"
@@ -47,8 +48,11 @@ func main() {
 		Port:    3005,
 		Timeout: ewa.NewTimeout(30, 30, 30),
 		Views: &ewa.Views{
-			Root:   "views",
-			Engine: ".html",
+			Directory: "views",
+			Extension: ewa.Html,
+			Engine: &ewa.Engine{
+				Reload: true,
+			},
 		},
 		Static:    "views",
 		BasicAuth: ewa.NewBasicAuth(authorizer, nil),
@@ -74,7 +78,8 @@ func main() {
 	ws.RegisterWeb(new(web.Home), "/")
 	ws.RegisterWeb(new(web.Login), "/login")
 	ws.RegisterWeb(new(web.Logout), "/logout")
-	ws.RegisterWeb(new(section1.Section_1_1), "/section1/1_1")
+	ws.RegisterWeb(new(__1.Document), "/section1/1_1/document")
+	ws.RegisterWeb(new(__1.List), "/section1/1_1/list")
 	ws.RegisterWeb(new(section1.Section_1_2), "/section1/1_2")
 	ws.RegisterRest(new(api.User), "", "person", system, version)
 	//ws.SetBasicAuth(ba)

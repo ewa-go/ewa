@@ -1,4 +1,4 @@
-package section1
+package __1
 
 import (
 	ewa "github.com/egovorukhin/egowebapi"
@@ -6,20 +6,20 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-type Section_1_2 struct {
+type Document struct {
 	utils.Navbar
 	Title string
 }
 
-func (h *Section_1_2) Get(route *ewa.Route) {
+func (h *Document) Get(route *ewa.Route) {
 	route.SetDescription("Страница Home.html").Session().Permission()
 	route.WebHandler = func(ctx *fiber.Ctx, identity *ewa.Identity) error {
-		h.Navbar = utils.NewNavbar("section_1_2", identity.User)
-		h.Title = "Привет раздел 1.2"
-		return ctx.Render("section1/1_2", h, "layouts/base")
+		h.Navbar = utils.NewNavbar("section1/1_1/document", identity.User)
+		h.Title = "Привет раздел 1.1"
+		return ctx.Render("section1/1_1/document", h, "layouts/base")
 	}
 }
 
-func (h *Section_1_2) Post(route *ewa.Route) {
+func (h *Document) Post(route *ewa.Route) {
 	route.Handler = nil
 }

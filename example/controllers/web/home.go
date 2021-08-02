@@ -7,13 +7,13 @@ import (
 )
 
 type Home struct {
-	utils.NavBar
+	utils.Navbar
 }
 
 func (h *Home) Get(route *ewa.Route) {
 	route.SetDescription("Страница Home.html").Session()
 	route.WebHandler = func(ctx *fiber.Ctx, identity *ewa.Identity) error {
-		h.NavBar = utils.GetNavBar("", identity.User)
+		h.Navbar = utils.NewNavbar("", identity.User)
 		return ctx.Render("home", h, "layouts/base")
 	}
 }
