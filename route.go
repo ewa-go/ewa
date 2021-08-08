@@ -70,7 +70,6 @@ func (r *Route) Login(loginHandler AuthHandler, expires time.Time) *Route {
 
 		cookie := new(fiber.Cookie)
 		cookie.Name = sessionId
-		cookie.Secure = true
 		cookie.Value = key
 		cookie.Expires = expires
 		ctx.Cookie(cookie)

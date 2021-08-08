@@ -7,7 +7,7 @@ import (
 	"github.com/egovorukhin/egowebapi/example/controllers/api"
 	"github.com/egovorukhin/egowebapi/example/controllers/web"
 	"github.com/egovorukhin/egowebapi/example/controllers/web/section1"
-	"github.com/egovorukhin/egowebapi/example/controllers/web/section1/1_1"
+	__1 "github.com/egovorukhin/egowebapi/example/controllers/web/section1/1_1"
 	"github.com/egovorukhin/egowebapi/example/src/storage"
 	"github.com/gofiber/fiber/v2"
 	"os"
@@ -15,6 +15,26 @@ import (
 )
 
 func main() {
+
+	/*	app := fiber.New()
+		app.Get("/", func(c *fiber.Ctx) error {
+			// Create cookie
+			cookie := new(fiber.Cookie)
+			cookie.Name = "john"
+			cookie.Value = "doe"
+			cookie.Expires = time.Now().Add(24 * time.Hour)
+
+			// Set cookie
+			c.Cookie(cookie)
+
+			return nil
+		})
+
+		err := app.Listen(":3005")
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Scanln()*/
 
 	//BasicAuth
 	authorizer := func(user string, pass string) bool {
@@ -51,7 +71,7 @@ func main() {
 			Directory: "views",
 			Extension: ewa.Html,
 			Engine: &ewa.Engine{
-				Reload: true,
+				Reload: false,
 			},
 		},
 		Static:    "views",
