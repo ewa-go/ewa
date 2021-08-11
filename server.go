@@ -50,18 +50,22 @@ func New(name string, config Config) (IServer, error) {
 		ReadTimeout:  time.Duration(read) * time.Second,
 		WriteTimeout: time.Duration(write) * time.Second,
 		IdleTimeout:  time.Duration(idle) * time.Second,
-		ErrorHandler: func(ctx *fiber.Ctx, err error) error {
+		/*ErrorHandler: func(ctx *fiber.Ctx, err error) error {
 			code := fiber.StatusInternalServerError
 
 			if e, ok := err.(*fiber.Error); ok {
 				code = e.Code
 			}
-			err = ctx.Status(code).SendFile(fmt.Sprintf("/%d%s", code, config.Views.Extension))
-			if err != nil {
-				return ctx.Status(500).SendString("Internal Server Error")
+			if config.Views != nil {
+				err = ctx.Status(code).SendFile(fmt.Sprintf("/%d%s", code, config.Views.Extension))
+				if err != nil {
+					return ctx.Status(500).SendString("Internal Server Error")
+				}
+			} else {
+				ctx.Status(code)
 			}
 			return nil
-		},
+		},*/
 	}
 	//Указываем нужны ли страницы
 	if config.Views != nil {
