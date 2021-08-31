@@ -15,15 +15,15 @@ import (
 )
 
 type Config struct {
-	Port       int
-	Views      *Views
-	Secure     *Secure
-	Timeout    Timeout
-	Static     string
-	BasicAuth  *BasicAuth
-	Session    *Session
-	Permission *Permission
-	Store      *session.Config
+	Port      int
+	Views     *Views
+	Secure    *Secure
+	Timeout   Timeout
+	Static    string
+	BasicAuth *BasicAuth
+	Session   *Session
+	//Permission *Permission
+	Store *session.Config
 }
 
 type Secure struct {

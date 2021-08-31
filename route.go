@@ -15,6 +15,7 @@ type Route struct {
 	IsPermission bool
 	Handler      Handler
 	WebHandler   WebHandler
+	WsHandler
 }
 
 const sessionId = "session_id"
@@ -46,17 +47,18 @@ func (r *Route) JWT() *Route {
 	return r
 }
 
-// Session Вешаем получение аутентификации сессии
-func (r *Route) Session() *Route {
+// Session Вешаем получение аутентификации сессии, IsPermission ставим флаг для проверки маршрута на право доступа
+func (r *Route) Session(IsPermission bool) *Route {
 	r.IsSession = true
+	r.IsPermission = IsPermission
 	return r
 }
 
 // Permission Вешаем получение аутентификации сессии
-func (r *Route) Permission() *Route {
+/*func (r *Route) Permission() *Route {
 	r.IsPermission = true
 	return r
-}
+}*/
 
 // Login Вешаем получение аутентификации сессии
 func (r *Route) Login(loginHandler AuthHandler, expires time.Time) *Route {

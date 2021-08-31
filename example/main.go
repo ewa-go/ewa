@@ -44,11 +44,11 @@ func main() {
 		return false
 	}
 	//Session
-	checkSession := func(key string) (string, error) {
+	checkSession := func(key string) (string, string, error) {
 		if value, ok := storage.GetStorage(key); ok {
-			return value, nil
+			return value, "", nil
 		}
-		return "", errors.New("Элемент не найден")
+		return "", "", errors.New("Элемент не найден")
 	}
 	//Обработчик ошибок
 	errorHandler := func(ctx *fiber.Ctx, code int, err string) error {
@@ -56,12 +56,11 @@ func main() {
 	}
 	//Permission
 	checkPermission := func(key, route string) bool {
-
 		user, _ := storage.GetStorage(key)
-		if user == "user" && route == "/section1/1_1" {
-			return false
+		if user == "user" && strings.Contains(route, "/section1/1_1") {
+			return true
 		}
-		return true
+		return false
 	}
 	//WEB
 	cfg := ewa.Config{
@@ -77,12 +76,10 @@ func main() {
 		Static:    "views",
 		BasicAuth: ewa.NewBasicAuth(authorizer, nil),
 		Session: &ewa.Session{
-			RedirectPath: "/login",
-			Check:        checkSession,
-		},
-		Permission: &ewa.Permission{
-			Check: checkPermission,
-			Error: errorHandler,
+			RedirectPath:      "/login",
+			SessionHandler:    checkSession,
+			PermissionHandler: checkPermission,
+			ErrorHandler:      errorHandler,
 		},
 	}
 	//Инициализируем сервер

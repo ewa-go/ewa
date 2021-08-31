@@ -162,17 +162,20 @@ func (s *Server) add(method string, path string, route *Route) *Option {
 
 	for _, param := range route.Params {
 		h := route.Handler
-		//Подключаем basic auth
+		// Подключаем basic auth для api маршрутов
 		if s.Config.BasicAuth != nil && route.IsBasicAuth {
 			h = s.Config.BasicAuth.check(h)
 		}
-		//Подключаем сессии
-		if route.IsSession && route.WebHandler != nil {
-			h = s.Config.Session.check(route.WebHandler)
+		// Условно определяем что сессии и права на маршруты будут только для web страниц
+		if route.WebHandler != nil {
+			// Подключаем сессии
+			if route.IsSession {
+				h = s.Config.Session.check(route.WebHandler, route.IsPermission)
+			}
 		}
-		//Проверка разрешений
-		if route.IsPermission {
-			h = s.Config.Permission.check(h)
+		//
+		if route.WsHandler != nil {
+			s.Use()
 		}
 
 		s.Add(method, p.Join(path, param), h)

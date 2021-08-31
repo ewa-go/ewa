@@ -12,7 +12,7 @@ type Document struct {
 }
 
 func (h *Document) Get(route *ewa.Route) {
-	route.SetDescription("Страница Home.html").Session().Permission()
+	route.SetDescription("Страница Home.html").Session(true)
 	route.WebHandler = func(ctx *fiber.Ctx, identity *ewa.Identity) error {
 		h.Navbar = utils.NewNavbar("section1/1_1/document", identity.User)
 		h.Title = "Привет раздел 1.1"

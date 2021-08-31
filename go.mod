@@ -14,4 +14,5 @@ require (
 	github.com/gofiber/template v1.6.13
 	github.com/valyala/fasthttp v1.28.0
 	github.com/yosssi/ace v0.0.5 // indirect
+	golang.org/x/net v0.0.0-20210510120150-4163338589ed // indirect
 )
