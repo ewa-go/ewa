@@ -171,6 +171,10 @@ func (s *Server) add(method string, path string, route *Route) *Option {
 			// Подключаем сессии
 			if route.IsSession {
 				h = s.Config.Session.check(route.WebHandler, route.IsPermission)
+			} else {
+				h = func(ctx *fiber.Ctx) error {
+					return route.WebHandler(ctx, nil)
+				}
 			}
 		}
 		//
