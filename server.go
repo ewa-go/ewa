@@ -33,6 +33,7 @@ type IServer interface {
 	RegisterWeb(i IWeb, path string) *Server
 	RegisterRest(i IRest, path string, name string, suffix ...Suffix) *Server
 	SetCors(config *Cors) *Server
+	GetApp() *fiber.App
 	//SetStore(config *Store) * Server
 }
 
@@ -88,6 +89,10 @@ func New(name string, config Config) (IServer, error) {
 		Config: config,
 		App:    server,
 	}, nil
+}
+
+func (s *Server) GetApp() *fiber.App {
+	return s.App
 }
 
 func (s *Server) StartAsync() {

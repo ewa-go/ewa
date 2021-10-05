@@ -102,6 +102,9 @@ func main() {
 	//ws.SetBasicAuth(ba)
 	//Cors = nil - DefaultConfig
 	ws.SetCors(nil)
+
+	// Получаем объект fiber.App
+	ws.GetApp().Use()
 	//ws.SetStore(nil)
 	ws.Start()
 
