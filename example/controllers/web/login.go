@@ -5,7 +5,6 @@ import (
 	ewa "github.com/egovorukhin/egowebapi"
 	"github.com/egovorukhin/egowebapi/example/src/storage"
 	"github.com/gofiber/fiber/v2"
-	"time"
 )
 
 type Login struct {
@@ -21,21 +20,21 @@ func (l *Login) Get(route *ewa.Route) {
 }
 
 func (l *Login) Post(route *ewa.Route) {
-	route.SetDescription("Страница Login.html").Login(l.handler, time.Now().Add(24*time.Hour))
-}
+	route.SetDescription("Страница Login.html")
+	route.LoginHandler = func(ctx *fiber.Ctx, key string) error {
 
-func (l *Login) handler(ctx *fiber.Ctx, key string) error {
+		err := ctx.BodyParser(l)
+		if err != nil {
+			_, err = ctx.WriteString(err.Error())
+			return err
+		}
 
-	err := ctx.BodyParser(l)
-	if err != nil {
-		_, err = ctx.WriteString(err.Error())
-		return err
+		if l.Username == "user" && l.Password == "Qq123456" {
+			storage.SetStorage(key, l.Username)
+			return nil
+		}
+
+		return errors.New("Не верное имя пользователя или пароль!")
+
 	}
-
-	if l.Username == "user" && l.Password == "Qq123456" {
-		storage.SetStorage(key, l.Username)
-		return nil
-	}
-
-	return errors.New("Не верное имя пользователя или пароль!")
 }

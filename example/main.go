@@ -12,29 +12,10 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"os"
 	"strings"
+	"time"
 )
 
 func main() {
-
-	/*	app := fiber.New()
-		app.Get("/", func(c *fiber.Ctx) error {
-			// Create cookie
-			cookie := new(fiber.Cookie)
-			cookie.Name = "john"
-			cookie.Value = "doe"
-			cookie.Expires = time.Now().Add(24 * time.Hour)
-
-			// Set cookie
-			c.Cookie(cookie)
-
-			return nil
-		})
-
-		err := app.Listen(":3005")
-		if err != nil {
-			fmt.Println(err)
-		}
-		fmt.Scanln()*/
 
 	//BasicAuth
 	authorizer := func(user string, pass string) bool {
@@ -62,6 +43,7 @@ func main() {
 		}
 		return false
 	}
+
 	//WEB
 	cfg := ewa.Config{
 		Port:    3005,
@@ -77,6 +59,7 @@ func main() {
 		BasicAuth: ewa.NewBasicAuth(authorizer, nil),
 		Session: &ewa.Session{
 			RedirectPath:      "/login",
+			Expires:           1 * time.Minute,
 			SessionHandler:    checkSession,
 			PermissionHandler: checkPermission,
 			ErrorHandler:      errorHandler,
@@ -104,7 +87,7 @@ func main() {
 	ws.SetCors(nil)
 
 	// Получаем объект fiber.App
-	ws.GetApp().Use()
+	//ws.GetApp().Use()
 	//ws.SetStore(nil)
 	ws.Start()
 

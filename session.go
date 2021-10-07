@@ -2,11 +2,14 @@ package egowebapi
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/utils"
+	"time"
 )
 
 // Session Структура которая описывает сессию
 type Session struct {
 	RedirectPath      string
+	Expires           time.Duration
 	SessionHandler    SessionHandler
 	PermissionHandler PermissionHandler
 	ErrorHandler      ErrorHandler
@@ -25,6 +28,7 @@ type Permission struct {
 }
 
 const StatusForbidden = "Доступ запрещен (Permission denied)"
+const sessionId = "session_id"
 
 // Проверяем куки и извлекаем по ключу id по которому в бд находим запись
 func (s *Session) check(handler WebHandler, IsPermission bool) Handler {
@@ -70,4 +74,41 @@ func (s *Session) check(handler WebHandler, IsPermission bool) Handler {
 			},
 		})
 	}
+}
+
+// Формируем session_id и добавляем в куки
+func (s *Session) login(handler AuthHandler) Handler {
+	return func(ctx *fiber.Ctx) error {
+
+		key := utils.UUID()
+		err := handler(ctx, key)
+		if err != nil {
+			return ctx.Status(401).SendString(err.Error())
+		}
+
+		cookie := new(fiber.Cookie)
+		cookie.Name = sessionId
+		cookie.Value = key
+		cookie.Expires = time.Now().Add(s.Expires)
+		ctx.Cookie(cookie)
+
+		return ctx.SendStatus(200)
+	}
+}
+
+// Очищаем куки, чтобы при маршрутизации сессия не была доступна
+func (s *Session) logout(handler AuthHandler) Handler {
+	return func(ctx *fiber.Ctx) error {
+
+		key := ctx.Cookies(sessionId)
+		err := handler(ctx, key)
+		if err != nil {
+			return ctx.Status(401).SendString(err.Error())
+		}
+
+		ctx.ClearCookie(sessionId)
+
+		return ctx.Redirect(s.RedirectPath)
+	}
+
 }

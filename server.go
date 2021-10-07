@@ -157,7 +157,12 @@ func (s *Server) web(i IWeb, method string, path string) *Option {
 }
 
 func (s *Server) add(method string, path string, route *Route) *Option {
-	if route.Handler == nil && route.WebHandler == nil {
+
+	// Если нет ни одного handler, то выходим
+	if route.Handler == nil &&
+		route.WebHandler == nil &&
+		route.LoginHandler == nil &&
+		route.LogoutHandler == nil {
 		return nil
 	}
 
@@ -165,17 +170,33 @@ func (s *Server) add(method string, path string, route *Route) *Option {
 		route.Params = []string{""}
 	}
 
+	// Подключаем сессии
+	session := s.Config.Session
+
 	for _, param := range route.Params {
 		h := route.Handler
 		// Подключаем basic auth для api маршрутов
 		if s.Config.BasicAuth != nil && route.IsBasicAuth {
 			h = s.Config.BasicAuth.check(h)
 		}
+		if route.Description == "Страница Login.html" {
+			fmt.Println("fdg")
+		}
+		// Авторизация - вход
+		if session != nil && route.LoginHandler != nil {
+			h = session.login(route.LoginHandler)
+		}
+		// Авторизация - выход
+		if session != nil && route.LogoutHandler != nil {
+			h = session.logout(route.LogoutHandler)
+		}
 		// Условно определяем что сессии и права на маршруты будут только для web страниц
 		if route.WebHandler != nil {
-			// Подключаем сессии
-			if route.IsSession {
-				h = s.Config.Session.check(route.WebHandler, route.IsPermission)
+			if session != nil {
+				// Проверяем маршрут на актуальность сессии
+				if route.IsSession {
+					h = session.check(route.WebHandler, route.IsPermission)
+				}
 			} else {
 				h = func(ctx *fiber.Ctx) error {
 					return route.WebHandler(ctx, nil)

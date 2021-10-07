@@ -9,14 +9,13 @@ import (
 type Logout struct{}
 
 func (l *Logout) Get(route *ewa.Route) {
-	route.SetDescription("Маршрут /logout").Logout(l.handler, "/login")
+	route.SetDescription("Маршрут /logout")
 }
 
 func (l *Logout) Post(route *ewa.Route) {
-	route.SetDescription("Маршрут /logout").Logout(l.handler, "/login")
-}
-
-func (l *Logout) handler(ctx *fiber.Ctx, key string) error {
-	storage.DeleteStorage(key)
-	return nil
+	route.SetDescription("Маршрут /logout")
+	route.LogoutHandler = func(ctx *fiber.Ctx, key string) error {
+		storage.DeleteStorage(key)
+		return nil
+	}
 }
