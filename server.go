@@ -192,11 +192,9 @@ func (s *Server) add(method string, path string, route *Route) *Option {
 		}
 		// Условно определяем что сессии и права на маршруты будут только для web страниц
 		if route.WebHandler != nil {
-			if session != nil {
-				// Проверяем маршрут на актуальность сессии
-				if route.IsSession {
-					h = session.check(route.WebHandler, route.IsPermission)
-				}
+			// Проверяем маршрут на актуальность сессии
+			if (route.IsSession && session != nil) || route.IsSession {
+				h = session.check(route.WebHandler, route.IsPermission)
 			} else {
 				h = func(ctx *fiber.Ctx) error {
 					return route.WebHandler(ctx, nil)
