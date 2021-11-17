@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	ewa "github.com/egovorukhin/egowebapi"
+	"github.com/egovorukhin/egowebapi/example/controllers"
 	"github.com/egovorukhin/egowebapi/example/controllers/api"
 	"github.com/egovorukhin/egowebapi/example/controllers/web"
 	"github.com/egovorukhin/egowebapi/example/controllers/web/section1"
@@ -65,23 +66,22 @@ func main() {
 			ErrorHandler:      errorHandler,
 		},
 	}
+	// Указываем суффиксы
+	suffix := map[int]string{
+		2: ":system",
+		3: ":version",
+	}
 	//Инициализируем сервер
-	system := ewa.Suffix{
-		Index: 2,
-		Value: ":system",
-	}
-	version := ewa.Suffix{
-		Index: 3,
-		Value: ":version",
-	}
 	ws, _ := ewa.New("Example", cfg)
-	ws.RegisterWeb(new(web.Home), "/")
-	ws.RegisterWeb(new(web.Login), "/login")
-	ws.RegisterWeb(new(web.Logout), "/logout")
-	ws.RegisterWeb(new(__1.Document), "/section1/1_1/document")
-	ws.RegisterWeb(new(__1.List), "/section1/1_1/list")
-	ws.RegisterWeb(new(section1.Section_1_2), "/section1/1_2")
-	ws.RegisterRest(new(api.User), "", "person", system, version)
+	ws.Register(new(web.Home), "/")
+	ws.Register(new(web.Login), "/login")
+	ws.Register(new(web.Logout), "/logout")
+	ws.Register(new(__1.Document), "/section1/1_1/document")
+	ws.Register(new(__1.List), "/section1/1_1/list")
+	ws.Register(new(section1.Section_1_2), "/section1/1_2")
+	ws.RegisterExt(new(api.User), "", "person", suffix)
+	//webSocket
+	ws.Register(new(controllers.WS), "")
 	//ws.SetBasicAuth(ba)
 	//Cors = nil - DefaultConfig
 	ws.SetCors(nil)

@@ -1,5 +1,7 @@
 package egowebapi
 
+import "github.com/gofiber/fiber/v2"
+
 type Route struct {
 	Params        []string
 	Description   string
@@ -11,7 +13,12 @@ type Route struct {
 	WebHandler    WebHandler
 	LoginHandler  AuthHandler
 	LogoutHandler AuthHandler
-	WsHandler
+	ws            *WebSocket
+}
+
+type WebSocket struct {
+	UpgradeHandler fiber.Handler
+	Handler        WsHandler
 }
 
 func (r *Route) SetHandler(handler Handler) *Route {
@@ -46,4 +53,16 @@ func (r *Route) Session(IsPermission bool) *Route {
 	r.IsSession = true
 	r.IsPermission = IsPermission
 	return r
+}
+
+// WebSocket Устанавливаем web socket соединение
+func (r *Route) WebSocket(upgrade Handler) *WebSocket {
+	r.ws = &WebSocket{
+		UpgradeHandler: upgrade,
+	}
+	return r.ws
+}
+
+func (r *Route) Empty() {
+	r.Handler = nil
 }

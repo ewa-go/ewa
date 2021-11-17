@@ -37,6 +37,7 @@ func (b *BasicAuth) parseBasicAuth(auth string) (username, password string, ok b
 }
 
 func (b *BasicAuth) check(handler Handler) Handler {
+
 	return func(ctx *fiber.Ctx) error {
 
 		auth := ctx.Get("Authorization")

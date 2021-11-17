@@ -20,7 +20,11 @@ type IRest interface {
 	Options(swagger *Swagger) Handler
 }
 
-//Swagger
+type IWebSocket interface {
+	Get(route *Route)
+}
+
+// Swagger
 
 type Options []*Option
 
