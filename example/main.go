@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	ewa "github.com/egovorukhin/egowebapi"
+	"github.com/egovorukhin/egowebapi/auth"
 	"github.com/egovorukhin/egowebapi/example/controllers"
 	"github.com/egovorukhin/egowebapi/example/controllers/api"
 	"github.com/egovorukhin/egowebapi/example/controllers/web"
@@ -19,7 +20,7 @@ import (
 func main() {
 
 	//BasicAuth
-	authorizer := func(user string, pass string) bool {
+	basicAuthHandler := func(user string, pass string) bool {
 		if user == "user" && pass == "Qq123456" {
 			return true
 		}
@@ -56,8 +57,12 @@ func main() {
 				Reload: false,
 			},
 		},
-		Static:    "views",
-		BasicAuth: ewa.NewBasicAuth(authorizer, nil),
+		Static: "views",
+		Authorization: auth.Authorization{
+			Basic: &auth.Basic{
+				Handler: basicAuthHandler,
+			},
+		},
 		Session: &ewa.Session{
 			RedirectPath:      "/login",
 			Expires:           1 * time.Minute,
@@ -76,6 +81,7 @@ func main() {
 	ws.Register(new(web.Home), "/")
 	ws.Register(new(web.Login), "/login")
 	ws.Register(new(web.Logout), "/logout")
+	ws.Register(new(web.Swagger), "/info")
 	ws.Register(new(__1.Document), "/section1/1_1/document")
 	ws.Register(new(__1.List), "/section1/1_1/list")
 	ws.Register(new(section1.Section_1_2), "/section1/1_2")

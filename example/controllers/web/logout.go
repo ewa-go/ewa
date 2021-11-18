@@ -13,8 +13,8 @@ func (l *Logout) Get(route *ewa.Route) {
 }
 
 func (l *Logout) Post(route *ewa.Route) {
-	route.SetDescription("Маршрут /logout")
-	route.LogoutHandler = func(ctx *fiber.Ctx, key string) error {
+	route.SetDescription("Маршрут /logout").
+		WebAuth(false).Handler = func(ctx *fiber.Ctx, key string) error {
 		storage.DeleteStorage(key)
 		return nil
 	}

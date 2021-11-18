@@ -2,6 +2,7 @@ package egowebapi
 
 import (
 	"fmt"
+	"github.com/egovorukhin/egowebapi/swagger"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/session"
@@ -21,6 +22,7 @@ type Server struct {
 	Name      string
 	IsStarted bool
 	Config    Config
+	Swagger   *swagger.Swagger
 }
 
 type Cors cors.Config
@@ -125,13 +127,13 @@ func (s *Server) Start() {
 	}
 }
 
-func (s *Server) webSocket(i IWebSocket, path string) *Option {
+func (s *Server) webSocket(i IWebSocket, path string) *swagger.Option {
 	route := new(Route)
 	i.Get(route)
 	return s.add(fiber.MethodGet, path, route)
 }
 
-func (s *Server) rest(i IRest, method string, path string) *Option {
+func (s *Server) rest(i IRest, method string, path string) *swagger.Option {
 	route := new(Route)
 	method = strings.ToUpper(method)
 	switch method {
@@ -148,7 +150,7 @@ func (s *Server) rest(i IRest, method string, path string) *Option {
 	return s.add(method, path, route)
 }
 
-func (s *Server) web(i IWeb, method string, path string) *Option {
+func (s *Server) web(i IWeb, method string, path string) *swagger.Option {
 	method = strings.ToUpper(method)
 	route := new(Route)
 	switch method {
@@ -162,15 +164,24 @@ func (s *Server) web(i IWeb, method string, path string) *Option {
 	return s.add(method, path, route)
 }
 
-func (s *Server) add(method string, path string, route *Route) *Option {
+func (s *Server) add(method string, path string, route *Route) *swagger.Option {
 
 	// Если нет ни одного handler, то выходим
-	if route.Handler == nil &&
-		route.WebHandler == nil &&
+	if route.Handler == nil {
+		return nil
+	}
+	/*if route.Handler == nil &&
+		//route.WebHandler == nil &&
 		route.LoginHandler == nil &&
 		route.LogoutHandler == nil &&
+		route.SwaggerHandler == nil &&
 		(route.ws != nil && route.ws.Handler == nil) {
 		return nil
+	}*/
+
+	// Инициализируем Swagger
+	if s.Swagger == nil {
+		s.Swagger = new(swagger.Swagger)
 	}
 
 	if route.Params == nil {
@@ -180,31 +191,34 @@ func (s *Server) add(method string, path string, route *Route) *Option {
 	// Подключаем сессии
 	_session := s.Config.Session
 
+	// Получаем handler маршрута
+	h := route.GetHandler(s.Config)
+
 	for _, param := range route.Params {
-		h := route.Handler
+
+		// Условно определяем что сессии и права на маршруты будут только для web страниц
+		if route.Handler != nil {
+			// Проверяем маршрут на актуальность сессии
+			if (route.IsSession && _session != nil) || route.IsSession {
+				h = _session.check(route.Handler, route.IsPermission)
+			} else {
+				h = route.Handler(ctx, nil)
+			}
+		}
+
 		// Подключаем basic auth для api маршрутов
+		/*if s.Config.Authorization.Basic != nil && route.Authorization
 		if s.Config.BasicAuth != nil && route.IsBasicAuth {
 			h = s.Config.BasicAuth.check(h)
-		}
+		}*/
 		// Авторизация - вход
-		if _session != nil && route.LoginHandler != nil {
+		/*if _session != nil && route.LoginHandler != nil {
 			h = _session.login(route.LoginHandler)
 		}
 		// Авторизация - выход
 		if _session != nil && route.LogoutHandler != nil {
 			h = _session.logout(route.LogoutHandler)
-		}
-		// Условно определяем что сессии и права на маршруты будут только для web страниц
-		if route.WebHandler != nil {
-			// Проверяем маршрут на актуальность сессии
-			if (route.IsSession && _session != nil) || route.IsSession {
-				h = _session.check(route.WebHandler, route.IsPermission)
-			} else {
-				h = func(ctx *fiber.Ctx) error {
-					return route.WebHandler(ctx, nil)
-				}
-			}
-		}
+		}*/
 		// WebSocket
 		if route.ws != nil {
 			if route.ws.UpgradeHandler != nil {
@@ -215,14 +229,23 @@ func (s *Server) add(method string, path string, route *Route) *Option {
 			}
 		}
 
+		// Заполняем Swagger
+		if route.SwaggerHandler != nil {
+			h = s.Swagger.check(route.SwaggerHandler)
+		}
+
 		s.Add(method, p.Join(path, param), h)
 	}
 
-	return &Option{
+	option := &swagger.Option{
 		Params:      route.Params,
 		Description: route.Description,
 		Method:      method,
 	}
+
+	s.Swagger.AddOption(option)
+
+	return option
 }
 
 // RegisterExt Регистрация интерфейсов
@@ -267,7 +290,7 @@ func (s *Server) registerRest(i IRest, path string, name string, suffix map[int]
 	//Устанавливаем имя и путь
 	name, path = s.getPkgNameAndPath(path, name, i, suffix)
 	//Устанавливаем Swagger
-	swagger := newSwagger(name, path)
+	swagger := swagger.newSwagger(name, path)
 	swagger.AddOption(s.web(i, fiber.MethodGet, path))
 	swagger.AddOption(s.web(i, fiber.MethodPost, path))
 	swagger.AddOption(s.rest(i, fiber.MethodPut, path))
@@ -336,8 +359,4 @@ func (s *Server) insert(a []string, index int, value string) []string {
 	a = append(a[:index+1], a[index:]...) // index < len(a)
 	a[index] = value
 	return a
-}
-
-func (s *Server) Swagger(path string) *Server {
-	return s
 }

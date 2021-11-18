@@ -30,8 +30,8 @@ type Permission struct {
 const StatusForbidden = "Доступ запрещен (Permission denied)"
 const sessionId = "session_id"
 
-// Проверяем куки и извлекаем по ключу id по которому в бд находим запись
-func (s *Session) check(handler WebHandler, IsPermission bool) Handler {
+// Проверяем куки и извлекаем по ключу id по которому в бд/файле/памяти находим запись
+func (s *Session) check(handler Handler, IsPermission bool) fiber.Handler {
 	return func(ctx *fiber.Ctx) (err error) {
 
 		user := "Unknown"
@@ -60,7 +60,7 @@ func (s *Session) check(handler WebHandler, IsPermission bool) Handler {
 				if s.ErrorHandler != nil {
 					return s.ErrorHandler(ctx, 403, StatusForbidden)
 				}
-				return ctx.Status(403).SendString(StatusForbidden)
+				return ctx.SendStatus(fiber.StatusForbidden)
 			}
 		}
 
@@ -77,7 +77,7 @@ func (s *Session) check(handler WebHandler, IsPermission bool) Handler {
 }
 
 // Формируем session_id и добавляем в куки
-func (s *Session) login(handler AuthHandler) Handler {
+func (s *Session) login(handler WebAuthHandler) EmptyHandler {
 	return func(ctx *fiber.Ctx) error {
 
 		key := utils.UUID()
@@ -97,7 +97,7 @@ func (s *Session) login(handler AuthHandler) Handler {
 }
 
 // Очищаем куки, чтобы при маршрутизации сессия не была доступна
-func (s *Session) logout(handler AuthHandler) Handler {
+func (s *Session) logout(handler WebAuthHandler) EmptyHandler {
 	return func(ctx *fiber.Ctx) error {
 
 		key := ctx.Cookies(sessionId)

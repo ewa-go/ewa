@@ -1,24 +1,18 @@
-package egowebapi
+package auth
 
 import (
 	"encoding/base64"
+	ewa "github.com/egovorukhin/egowebapi"
 	"github.com/gofiber/fiber/v2"
 	"strings"
 )
 
-type BasicAuth struct {
-	Authorizer   Authorizer
-	Unauthorized Handler
+type Basic struct {
+	Handler      BasicAuthHandler
+	Unauthorized ewa.EmptyHandler
 }
 
-func NewBasicAuth(authorizer Authorizer, unauthorized Handler) *BasicAuth {
-	return &BasicAuth{
-		Authorizer:   authorizer,
-		Unauthorized: unauthorized,
-	}
-}
-
-func (b *BasicAuth) parseBasicAuth(auth string) (username, password string, ok bool) {
+func (b *Basic) parseBasicAuth(auth string) (username, password string, ok bool) {
 	const prefix = "Basic "
 	// Case insensitive prefix match. See Issue 22736.
 	if len(auth) < len(prefix) || !strings.EqualFold(auth[:len(prefix)], prefix) {
@@ -36,10 +30,8 @@ func (b *BasicAuth) parseBasicAuth(auth string) (username, password string, ok b
 	return cs[:i], cs[i+1:], true
 }
 
-func (b *BasicAuth) check(handler Handler) Handler {
-
+func (b *Basic) Do(handler ewa.Handler) fiber.Handler {
 	return func(ctx *fiber.Ctx) error {
-
 		auth := ctx.Get("Authorization")
 		if auth == "" {
 			if b.Unauthorized == nil {
@@ -50,7 +42,7 @@ func (b *BasicAuth) check(handler Handler) Handler {
 		}
 
 		username, password, ok := b.parseBasicAuth(auth)
-		if !ok || !b.Authorizer(username, password) {
+		if !ok || !b.Handler(username, password) {
 			if b.Unauthorized == nil {
 				ctx.Set("WWW-Authenticate", `Basic realm="Необходимо указать имя пользователя и пароль"`)
 				return ctx.SendStatus(fiber.StatusUnauthorized)
@@ -58,6 +50,14 @@ func (b *BasicAuth) check(handler Handler) Handler {
 			return b.Unauthorized(ctx)
 		}
 
-		return handler(ctx)
+		// Возвращаем данные по пользователю и маршруту
+		return handler(ctx, &ewa.Identity{
+			User:   username,
+			Domain: "",
+			Permission: ewa.Permission{
+				Route: ctx.Route(),
+				//IsPermit: IsPermission,
+			},
+		})
 	}
 }
