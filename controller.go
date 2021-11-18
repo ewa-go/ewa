@@ -1,15 +1,17 @@
 package egowebapi
 
-import "github.com/egovorukhin/egowebapi/swagger"
-
 /*
 type IController interface {
 	IHttp
 	IRest
 }*/
 
-type IWeb interface {
+type IGet interface {
 	Get(route *Route)
+}
+
+type IWeb interface {
+	IGet
 	Post(route *Route)
 }
 
@@ -17,9 +19,5 @@ type IRest interface {
 	IWeb
 	Put(route *Route)
 	Delete(route *Route)
-	Options(swagger *swagger.Swagger) Handler
-}
-
-type IWebSocket interface {
-	Get(route *Route)
+	Options(swagger *Swagger) EmptyHandler
 }

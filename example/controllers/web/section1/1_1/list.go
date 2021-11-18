@@ -12,8 +12,8 @@ type List struct {
 }
 
 func (h *List) Get(route *ewa.Route) {
-	route.SetDescription("Страница Home.html").Session(true)
-	route.WebHandler = func(ctx *fiber.Ctx, identity *ewa.Identity) error {
+	route.SetDescription("Страница Home.html").Session().Permission()
+	route.Handler = func(ctx *fiber.Ctx, identity *ewa.Identity) error {
 		h.Navbar = utils.NewNavbar("section1/1_1/list", identity.User)
 		h.Title = "Привет раздел 1.1"
 		return ctx.Render("section1/1_1/list", h, "layouts/base")

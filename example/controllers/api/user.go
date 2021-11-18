@@ -2,7 +2,6 @@ package api
 
 import (
 	ewa "github.com/egovorukhin/egowebapi"
-	"github.com/egovorukhin/egowebapi/swagger"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -19,8 +18,8 @@ type Users []User
 func (u *User) Get(route *ewa.Route) {
 	route.SetParams("", "/:id").
 		SetDescription("Возвращаем всех пользователей либо по id").
-		BasicAuth().
-		SetHandler(func(c *fiber.Ctx) error {
+		Auth(ewa.BasicAuth).Handler =
+		func(c *fiber.Ctx) error {
 
 			c.Set("System", c.Params("system"))
 			c.Set("Version", c.Params("version"))
@@ -32,21 +31,20 @@ func (u *User) Get(route *ewa.Route) {
 			}
 
 			return c.JSON(GetUsers())
-		})
+		}
 }
 
 func (u *User) Post(route *ewa.Route) {
-	route.BasicAuth().
-		SetDescription("Добавляем пользователя").
-		SetHandler(
-			func(c *fiber.Ctx) error {
-				user := &User{}
-				user.Id = c.Query("id")
-				user.Lastname = c.Query("lastname")
-				user.Firstname = c.Query("firstname")
-				SetUser(*user)
-				return nil
-			})
+	route.Auth(ewa.BasicAuth).
+		SetDescription("Добавляем пользователя").Handler =
+		func(c *fiber.Ctx) error {
+			user := &User{}
+			user.Id = c.Query("id")
+			user.Lastname = c.Query("lastname")
+			user.Firstname = c.Query("firstname")
+			SetUser(*user)
+			return nil
+		}
 }
 
 func (u *User) Put(route *ewa.Route) {
@@ -64,15 +62,15 @@ func (u *User) Put(route *ewa.Route) {
 func (u *User) Delete(route *ewa.Route) {
 	route.SetParams("/:id").
 		SetDescription("Удаляем пользователя по id").
-		SetHandler(
-			func(c *fiber.Ctx) error {
-				u.Id = c.Params("id")
-				u.Remove()
-				return nil
-			})
+		Handler =
+		func(c *fiber.Ctx) error {
+			u.Id = c.Params("id")
+			u.Remove()
+			return nil
+		}
 }
 
-func (u *User) Options(swagger *swagger.Swagger) ewa.Handler {
+func (u *User) Options(swagger *ewa.Swagger) ewa.EmptyHandler {
 	return func(ctx *fiber.Ctx) error {
 		//ctx.Append("Allow", "GET, POST, PUT, DELETE, OPTIONS")
 		swagger.Allow(ctx)

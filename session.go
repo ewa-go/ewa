@@ -6,32 +6,30 @@ import (
 	"time"
 )
 
-// Session Структура которая описывает сессию
+// Session структура, которая описывает сессию
 type Session struct {
-	RedirectPath      string
-	Expires           time.Duration
-	SessionHandler    SessionHandler
-	PermissionHandler PermissionHandler
-	ErrorHandler      ErrorHandler
+	RedirectPath string
+	Expires      time.Duration
+	Handler      SessionHandler
+	ErrorHandler ErrorHandler
 }
 
 // Identity Структура описывает идентификацию пользователя
 type Identity struct {
-	User       string
-	Domain     string
-	Permission Permission
+	User   string
+	Domain string
+	//Permission Permission
 }
 
-type Permission struct {
+/*type Permission struct {
 	Route    *fiber.Route
 	IsPermit bool
-}
+}*/
 
-const StatusForbidden = "Доступ запрещен (Permission denied)"
 const sessionId = "session_id"
 
 // Проверяем куки и извлекаем по ключу id по которому в бд/файле/памяти находим запись
-func (s *Session) check(handler Handler, IsPermission bool) fiber.Handler {
+func (s *Session) check(handler Handler, isPermission bool, permission *Permission) EmptyHandler {
 	return func(ctx *fiber.Ctx) (err error) {
 
 		user := "Unknown"
@@ -43,22 +41,21 @@ func (s *Session) check(handler Handler, IsPermission bool) fiber.Handler {
 			return ctx.Redirect(s.RedirectPath)
 		}
 
-		// Получаем путь, чтобы передать в WebHandler
-		route := ctx.Route()
-
-		// Проверяем на существование SessionHandler
-		if s.SessionHandler != nil {
-			user, domain, err = s.SessionHandler(ctx.Cookies(sessionId))
+		// Проверяем на существование Handler
+		if s.Handler != nil {
+			user, domain, err = s.Handler(ctx.Cookies(sessionId))
 			if err != nil {
 				return ctx.Redirect(s.RedirectPath)
 			}
 		}
 
+		// Получаем путь, чтобы передать в WebHandler
+		route := ctx.Route()
 		// Проверяем на существование PermissionHandler
-		if IsPermission && s.PermissionHandler != nil {
-			if !s.PermissionHandler(key, route.Path) {
+		if isPermission && permission != nil && route != nil {
+			if !permission.Handler(key, route.Path) {
 				if s.ErrorHandler != nil {
-					return s.ErrorHandler(ctx, 403, StatusForbidden)
+					return s.ErrorHandler(ctx, fiber.StatusForbidden)
 				}
 				return ctx.SendStatus(fiber.StatusForbidden)
 			}
@@ -68,10 +65,10 @@ func (s *Session) check(handler Handler, IsPermission bool) fiber.Handler {
 		return handler(ctx, &Identity{
 			User:   user,
 			Domain: domain,
-			Permission: Permission{
+			/*Permission: Permission{
 				Route:    route,
 				IsPermit: IsPermission,
-			},
+			},*/
 		})
 	}
 }

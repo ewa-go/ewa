@@ -2,11 +2,9 @@ package egowebapi
 
 import (
 	"fmt"
-	"github.com/egovorukhin/egowebapi/swagger"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/session"
-	"github.com/gofiber/websocket/v2"
 	"github.com/valyala/fasthttp"
 	"os"
 	p "path"
@@ -22,7 +20,7 @@ type Server struct {
 	Name      string
 	IsStarted bool
 	Config    Config
-	Swagger   *swagger.Swagger
+	Swagger   *Swagger
 }
 
 type Cors cors.Config
@@ -127,13 +125,13 @@ func (s *Server) Start() {
 	}
 }
 
-func (s *Server) webSocket(i IWebSocket, path string) *swagger.Option {
+func (s *Server) get(i IGet, path string) *Option {
 	route := new(Route)
 	i.Get(route)
 	return s.add(fiber.MethodGet, path, route)
 }
 
-func (s *Server) rest(i IRest, method string, path string) *swagger.Option {
+func (s *Server) rest(i IRest, method string, path string) *Option {
 	route := new(Route)
 	method = strings.ToUpper(method)
 	switch method {
@@ -150,7 +148,7 @@ func (s *Server) rest(i IRest, method string, path string) *swagger.Option {
 	return s.add(method, path, route)
 }
 
-func (s *Server) web(i IWeb, method string, path string) *swagger.Option {
+func (s *Server) web(i IWeb, method string, path string) *Option {
 	method = strings.ToUpper(method)
 	route := new(Route)
 	switch method {
@@ -164,47 +162,60 @@ func (s *Server) web(i IWeb, method string, path string) *swagger.Option {
 	return s.add(method, path, route)
 }
 
-func (s *Server) add(method string, path string, route *Route) *swagger.Option {
+func (s *Server) add(method string, path string, route *Route) *Option {
 
 	// Если нет ни одного handler, то выходим
 	if route.Handler == nil {
 		return nil
 	}
-	/*if route.Handler == nil &&
-		//route.WebHandler == nil &&
-		route.LoginHandler == nil &&
-		route.LogoutHandler == nil &&
-		route.SwaggerHandler == nil &&
-		(route.ws != nil && route.ws.Handler == nil) {
-		return nil
-	}*/
-
-	// Инициализируем Swagger
-	if s.Swagger == nil {
-		s.Swagger = new(swagger.Swagger)
-	}
 
 	if route.Params == nil {
 		route.Params = []string{""}
 	}
+	route.Option.Method = method
 
-	// Подключаем сессии
-	_session := s.Config.Session
+	// Инициализируем Swagger
+	if s.Swagger == nil {
+		http := "http"
+		if s.Config.Secure != nil {
+			http = "https"
+		}
+		addr := "127.0.0.1"
+		/*addrs, _ := net.InterfaceAddrs()
+		for _, a := range addrs {
+			t := a.String()
+			is, _ := regexp.Match(
+				`(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)`,
+				[]byte(t),
+			)
+			if t == addr || !is {
+				continue
+			}
+			addr = t
+		}*/
+
+		s.Swagger = &Swagger{
+			Uri: fmt.Sprintf("%s://%s:%d", http, addr, s.Config.Port),
+		}
+	}
 
 	// Получаем handler маршрута
 	h := route.GetHandler(s.Config)
 
+	// Перебираем параметры адресной строки
 	for _, param := range route.Params {
 
+		path = p.Join(path, param)
+
 		// Условно определяем что сессии и права на маршруты будут только для web страниц
-		if route.Handler != nil {
+		/*if route.Handler != nil {
 			// Проверяем маршрут на актуальность сессии
 			if (route.IsSession && _session != nil) || route.IsSession {
 				h = _session.check(route.Handler, route.IsPermission)
 			} else {
 				h = route.Handler(ctx, nil)
 			}
-		}
+		}*/
 
 		// Подключаем basic auth для api маршрутов
 		/*if s.Config.Authorization.Basic != nil && route.Authorization
@@ -220,40 +231,35 @@ func (s *Server) add(method string, path string, route *Route) *swagger.Option {
 			h = _session.logout(route.LogoutHandler)
 		}*/
 		// WebSocket
-		if route.ws != nil {
-			if route.ws.UpgradeHandler != nil {
-				s.Use(path, route.ws.UpgradeHandler)
+		/*if route.webSocket != nil {
+			if route.webSocket.UpgradeHandler != nil {
+				s.Use(path, route.webSocket.UpgradeHandler)
 			}
-			if route.ws.Handler != nil {
-				h = websocket.New(route.ws.Handler)
+			if route.webSocket.Handler != nil {
+				h = websocket.New(route.webSocket.Handler)
 			}
-		}
+		}*/
 
 		// Заполняем Swagger
-		if route.SwaggerHandler != nil {
+		/*if route.Handler.(type) == SwaggerHandler {
 			h = s.Swagger.check(route.SwaggerHandler)
-		}
+		}*/
 
-		s.Add(method, p.Join(path, param), h)
+		// Добавляем метод, путь и обработчик
+		s.Add(method, path, h)
+		// Добавляем запись в swagger
+		s.Swagger.Add(path, route)
 	}
 
-	option := &swagger.Option{
-		Params:      route.Params,
-		Description: route.Description,
-		Method:      method,
-	}
-
-	s.Swagger.AddOption(option)
-
-	return option
+	return nil
 }
 
 // RegisterExt Регистрация интерфейсов
 func (s *Server) RegisterExt(i interface{}, path string, name string, suffix map[int]string) *Server {
 	// Проверка интерфейса на соответствие
 	switch i.(type) {
-	case IWebSocket:
-		return s.registerWebSocket(i.(IWebSocket), path)
+	case IGet:
+		return s.registerGet(i.(IGet), path)
 	case IWeb:
 		return s.registerWeb(i.(IWeb), path)
 	case IRest:
@@ -267,10 +273,10 @@ func (s *Server) Register(i interface{}, path string) *Server {
 }
 
 // Регистрируем интерфейс IWebSocket
-func (s *Server) registerWebSocket(i IWebSocket, path string) *Server {
+func (s *Server) registerGet(i IGet, path string) *Server {
 	//Устанавливаем имя и путь
 	_, path = s.getPkgNameAndPath(path, "", i, nil)
-	s.webSocket(i, path)
+	s.get(i, path)
 	return s
 }
 
@@ -290,13 +296,13 @@ func (s *Server) registerRest(i IRest, path string, name string, suffix map[int]
 	//Устанавливаем имя и путь
 	name, path = s.getPkgNameAndPath(path, name, i, suffix)
 	//Устанавливаем Swagger
-	swagger := swagger.newSwagger(name, path)
-	swagger.AddOption(s.web(i, fiber.MethodGet, path))
-	swagger.AddOption(s.web(i, fiber.MethodPost, path))
-	swagger.AddOption(s.rest(i, fiber.MethodPut, path))
-	swagger.AddOption(s.rest(i, fiber.MethodDelete, path))
+	//swagger := swagger.newSwagger(name, path)
+	s.get(i, path)
+	s.web(i, fiber.MethodPost, path)
+	s.rest(i, fiber.MethodPut, path)
+	s.rest(i, fiber.MethodDelete, path)
 	// Создаем исполнителя для метода Options
-	s.Add(fiber.MethodOptions, path, i.Options(swagger))
+	//s.Add(fiber.MethodOptions, path, i.Options(swagger))
 
 	return s
 }

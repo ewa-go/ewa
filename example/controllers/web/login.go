@@ -20,8 +20,8 @@ func (l *Login) Get(route *ewa.Route) {
 }
 
 func (l *Login) Post(route *ewa.Route) {
-	route.SetDescription("Страница Login.html").
-		WebAuth(true).Handler = func(ctx *fiber.Ctx, key string) error {
+	route.SetDescription("Страница Login.html").SetWebAuth(true)
+	route.Handler = func(ctx *fiber.Ctx, key string) error {
 
 		err := ctx.BodyParser(l)
 		if err != nil {
@@ -35,6 +35,7 @@ func (l *Login) Post(route *ewa.Route) {
 		}
 
 		return errors.New("Не верное имя пользователя или пароль!")
-
 	}
+	route.SetDescription("")
+	route.SetBody("")
 }

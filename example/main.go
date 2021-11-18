@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	ewa "github.com/egovorukhin/egowebapi"
-	"github.com/egovorukhin/egowebapi/auth"
 	"github.com/egovorukhin/egowebapi/example/controllers"
 	"github.com/egovorukhin/egowebapi/example/controllers/api"
 	"github.com/egovorukhin/egowebapi/example/controllers/web"
@@ -34,13 +33,17 @@ func main() {
 		return "", "", errors.New("Элемент не найден")
 	}
 	//Обработчик ошибок
-	errorHandler := func(ctx *fiber.Ctx, code int, err string) error {
-		return ctx.Render("error", fiber.Map{"Code": code, "Text": err})
+	errorHandler := func(ctx *fiber.Ctx, code int) error {
+		text := "Unknown"
+		if code == fiber.StatusForbidden {
+			text = "Forbidden"
+		}
+		return ctx.Render("error", fiber.Map{"Code": code, "Text": text})
 	}
 	//Permission
-	checkPermission := func(key, route string) bool {
-		user, _ := storage.GetStorage(key)
-		if user == "user" && strings.Contains(route, "/section1/1_1") {
+	checkPermission := func(id interface{}, path string) bool {
+		user, _ := storage.GetStorage(id.(string))
+		if user == "user" && strings.Contains(path, "/section1/1_1") {
 			return true
 		}
 		return false
@@ -58,17 +61,19 @@ func main() {
 			},
 		},
 		Static: "views",
-		Authorization: auth.Authorization{
-			Basic: &auth.Basic{
+		Authorization: ewa.Authorization{
+			Basic: &ewa.Basic{
 				Handler: basicAuthHandler,
 			},
 		},
 		Session: &ewa.Session{
-			RedirectPath:      "/login",
-			Expires:           1 * time.Minute,
-			SessionHandler:    checkSession,
-			PermissionHandler: checkPermission,
-			ErrorHandler:      errorHandler,
+			RedirectPath: "/login",
+			Expires:      1 * time.Minute,
+			Handler:      checkSession,
+			ErrorHandler: errorHandler,
+		},
+		Permission: &ewa.Permission{
+			Handler: checkPermission,
 		},
 	}
 	// Указываем суффиксы

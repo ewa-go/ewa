@@ -1,7 +1,6 @@
 package egowebapi
 
 import (
-	"github.com/egovorukhin/egowebapi/auth"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/template/ace"
 	"github.com/gofiber/template/amber"
@@ -20,9 +19,9 @@ type Config struct {
 	Secure        *Secure
 	Timeout       Timeout
 	Static        string
-	Authorization auth.Authorization
+	Authorization Authorization
 	Session       *Session
-	//Permission    *Permission
+	Permission    *Permission
 }
 
 type Secure struct {

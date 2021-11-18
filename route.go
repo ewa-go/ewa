@@ -1,41 +1,42 @@
 package egowebapi
 
 import (
+	"fmt"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/websocket/v2"
 )
 
 type Route struct {
-	Params        []string
-	Authorization int
-	Handler       interface{}
-	IsSession     bool
-	IsPermission  bool
-	webAuth       *WebAuth
+	Params        []string    `json:"-"`
+	Authorization string      `json:"authorization"`
+	Handler       interface{} `json:"-"`
+	IsSession     bool        `json:"is_session"`
+	IsPermission  bool        `json:"is_permission"`
+	WebAuth       *WebAuth    `json:"web_auth,omitempty"`
+	Option        Option      `json:"option"`
 	webSocket     *WebSocket
-	Option        Option
 }
 
 type WebSocket struct {
 	UpgradeHandler fiber.Handler
-	Handler        WsHandler
-}
-
-type Option struct {
-	Name        string
-	Description string
-	Body        string
 }
 
 type WebAuth struct {
-	IsLogin bool
-	Handler WebAuthHandler
+	IsLogin bool `json:"is_login"`
+}
+
+type Option struct {
+	Headers     []string `json:"headers"`
+	Method      string   `json:"method"`
+	Body        string   `json:"body"`
+	Description string   `json:"description"`
 }
 
 const (
-	NoAuth = iota
-	BasicAuth
-	DigestAuth
-	ApiKeyAuth
+	NoAuth     = "NoAuth"
+	BasicAuth  = "BasicAuth"
+	DigestAuth = "DigestAuth"
+	ApiKeyAuth = "ApiKeyAuth"
 )
 
 // SetParams указываем параметры маршрута
@@ -57,7 +58,7 @@ func (r *Route) SetBody(s string) *Route {
 }
 
 // Auth указываем метод авторизации
-func (r *Route) Auth(auth int) *Route {
+func (r *Route) Auth(auth string) *Route {
 	r.Authorization = auth
 	return r
 }
@@ -75,19 +76,19 @@ func (r *Route) Permission() *Route {
 }
 
 // WebSocket Устанавливаем web socket соединение
-func (r *Route) WebSocket(upgrade fiber.Handler) *WebSocket {
+func (r *Route) WebSocket(upgrade fiber.Handler) *Route {
 	r.webSocket = &WebSocket{
 		UpgradeHandler: upgrade,
 	}
-	return r.webSocket
+	return r
 }
 
-// WebAuth Устанавливаем web socket соединение
-func (r *Route) WebAuth(isLogin bool) *WebAuth {
-	r.webAuth = &WebAuth{
+// SetWebAuth Устанавливаем web socket соединение
+func (r *Route) SetWebAuth(isLogin bool) *Route {
+	r.WebAuth = &WebAuth{
 		IsLogin: isLogin,
 	}
-	return r.webAuth
+	return r
 }
 
 func (r *Route) Empty() {
@@ -97,7 +98,7 @@ func (r *Route) Empty() {
 // SetOption устанавливаем опции для свагера
 func (r *Route) SetOption(name, description, body string) *Route {
 	r.Option = Option{
-		Name:        name,
+		//Name:        name,
 		Description: description,
 		Body:        body,
 	}
@@ -105,6 +106,7 @@ func (r *Route) SetOption(name, description, body string) *Route {
 }
 
 func (r *Route) GetHandler(config Config) fiber.Handler {
+
 	switch r.Handler.(type) {
 	// handler для маршрутов с identity
 	case Handler:
@@ -116,33 +118,57 @@ func (r *Route) GetHandler(config Config) fiber.Handler {
 			}
 		case BasicAuth:
 			if config.Authorization.Basic != nil {
-				return config.Authorization.Basic.Do(r.Handler.(Handler))
+				return config.Authorization.Basic.Do(r.Handler.(Handler), r.IsPermission, config.Permission)
 			}
 			break
 		case DigestAuth:
 			if config.Authorization.Digest != nil {
-				return config.Authorization.Digest.Do(r.Handler.(Handler))
+				return config.Authorization.Digest.Do(r.Handler.(Handler), r.IsPermission, config.Permission)
 			}
 			break
 		case ApiKeyAuth:
 			if config.Authorization.ApiKey != nil {
-				return config.Authorization.ApiKey.Do(r.Handler.(Handler))
+				return config.Authorization.ApiKey.Do(r.Handler.(Handler), r.IsPermission, config.Permission)
 			}
 			break
 		}
-		break
 
-	// handler для маршрутов web авторизации Login и Logout
+		// Проверяем маршрут на актуальность сессии
+		if (r.IsSession && config.Session != nil) || r.IsSession {
+			return config.Session.check(r.Handler.(Handler), r.IsPermission, config.Permission)
+		}
+		return func(ctx *fiber.Ctx) error {
+			return r.Handler.(Handler)(ctx, nil)
+		}
+
+		// Swagger handler для добавления описания маршрутов
+		/*case SwaggerHandler:
+
+		h = s.Swagger.check(r.Handler.(SwaggerHandler))
+
+		break*/
+		// handler для маршрутов web авторизации Login и Logout
 	case WebAuthHandler:
-		if config.Session != nil && r.webAuth != nil {
-			if r.webAuth.IsLogin {
+		if config.Session != nil && r.WebAuth != nil {
+			if r.WebAuth.IsLogin {
 				// Авторизация - вход
 				return config.Session.login(r.Handler.(WebAuthHandler))
 			}
 			// Авторизация - выход
 			return config.Session.logout(r.Handler.(WebAuthHandler))
 		}
+
+	// Handler для маршрут WebSocket соединения
+	case WsHandler:
+		if r.webSocket != nil {
+			if r.webSocket.UpgradeHandler != nil {
+				return r.webSocket.UpgradeHandler
+			}
+			return websocket.New(r.Handler.(WsHandler))
+		}
 	}
 
-	return nil
+	return func(ctx *fiber.Ctx) error {
+		return ctx.Status(fiber.StatusNotFound).SendString(fmt.Sprintf("%s %s", ctx.Route().Method, ctx.Route().Path))
+	}
 }

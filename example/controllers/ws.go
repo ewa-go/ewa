@@ -12,7 +12,8 @@ import (
 type WS struct{}
 
 func (ws *WS) Get(route *ewa.Route) {
-	route.SetParams("/:id").WebSocket(ws.Upgrade).Handler = func(c *websocket.Conn) {
+	route.SetParams("/:id").WebSocket(ws.Upgrade)
+	route.Handler = func(c *websocket.Conn) {
 
 		id := c.Params("id")
 		wsserver.SetConnection(id, c)
