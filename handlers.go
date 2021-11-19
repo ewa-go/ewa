@@ -13,7 +13,6 @@ type WebAuthHandler func(ctx *fiber.Ctx, key string) error
 type Handler func(ctx *fiber.Ctx, identity *Identity) error
 type WsHandler func(c *websocket.Conn)
 type SwaggerHandler func(ctx *fiber.Ctx, swagger *Swagger) error
-
 type BasicAuthHandler func(user string, pass string) bool
 type DigestAuthHandler func(user string, pass string, advanced Advanced) bool
 type ApiKeyHandler func(key string, value string) bool
