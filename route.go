@@ -96,7 +96,7 @@ func (r *Route) Empty() {
 }
 
 // GetHandler возвращаем обработчик основанный на параметрах конфигурации маршрута
-func (r *Route) GetHandler(config Config, swagger *Swagger) fiber.Handler {
+func (r *Route) GetHandler(s *Server) fiber.Handler {
 
 	switch h := r.Handler.(type) {
 	// handler для маршрутов с identity
@@ -108,25 +108,25 @@ func (r *Route) GetHandler(config Config, swagger *Swagger) fiber.Handler {
 				return h(ctx, nil)
 			}
 		case BasicAuth:
-			if config.Authorization.Basic != nil {
-				return config.Authorization.Basic.Do(h, r.IsPermission, config.Permission)
+			if s.Config.Authorization.Basic != nil {
+				return s.Config.Authorization.Basic.Do(h, r.IsPermission, s.Config.Permission)
 			}
 			break
 		case DigestAuth:
-			if config.Authorization.Digest != nil {
-				return config.Authorization.Digest.Do(h, r.IsPermission, config.Permission)
+			if s.Config.Authorization.Digest != nil {
+				return s.Config.Authorization.Digest.Do(h, r.IsPermission, s.Config.Permission)
 			}
 			break
 		case ApiKeyAuth:
-			if config.Authorization.ApiKey != nil {
-				return config.Authorization.ApiKey.Do(h, r.IsPermission, config.Permission)
+			if s.Config.Authorization.ApiKey != nil {
+				return s.Config.Authorization.ApiKey.Do(h, r.IsPermission, s.Config.Permission)
 			}
 			break
 		}
 
 		// Проверяем маршрут на актуальность сессии
-		if (r.IsSession && config.Session != nil) || r.IsSession {
-			return config.Session.check(h, r.IsPermission, config.Permission)
+		if (r.IsSession && s.Config.Session != nil) || r.IsSession {
+			return s.Config.Session.check(h, r.IsPermission, s.Config.Permission)
 		}
 		return func(ctx *fiber.Ctx) error {
 			return h(ctx, nil)
@@ -135,30 +135,24 @@ func (r *Route) GetHandler(config Config, swagger *Swagger) fiber.Handler {
 	// Swagger handler для добавления описания маршрутов
 	case func(*fiber.Ctx, *Swagger) error:
 		return func(ctx *fiber.Ctx) error {
-			return h(ctx, swagger)
+			return h(ctx, s.Swagger)
 		}
 
 	// Handler для маршрутов web авторизации Login и Logout
 	case func(*fiber.Ctx, string) error:
-		if config.Session != nil && r.WebAuth != nil {
+		if s.Config.Session != nil && r.WebAuth != nil {
 			if r.WebAuth.IsLogin {
 				// Авторизация - вход
-				return config.Session.login(h)
+				return s.Config.Session.login(h)
 			}
 			// Авторизация - выход
-			return config.Session.logout(h)
+			return s.Config.Session.logout(h)
 		}
 		break
 
 	// Handler для маршрут WebSocket соединения
 	case func(*websocket.Conn):
-		if r.webSocket != nil {
-			if r.webSocket.UpgradeHandler != nil {
-				return r.webSocket.UpgradeHandler
-			}
-			return websocket.New(h)
-		}
-		break
+		return websocket.New(h)
 
 	// Обычный обработчик без ништяков
 	case func(*fiber.Ctx) error:

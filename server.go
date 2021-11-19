@@ -245,8 +245,13 @@ func (s *Server) add(method string, name, path string, route *Route) {
 		}
 	}
 
+	// WebSocket
+	if route.webSocket != nil && route.webSocket.UpgradeHandler != nil {
+		s.Use(path, route.webSocket.UpgradeHandler)
+	}
+
 	// Получаем handler маршрута
-	h := route.GetHandler(s.Config, s.Swagger)
+	h := route.GetHandler(s)
 
 	// Перебираем параметры адресной строки
 	for _, param := range route.Params {
