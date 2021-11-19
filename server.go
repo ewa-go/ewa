@@ -23,6 +23,18 @@ type Server struct {
 	Swagger   *Swagger
 }
 
+type Suffix struct {
+	Index int
+	Value string
+}
+
+func NewSuffix(suffix ...Suffix) (s []Suffix) {
+	for _, item := range suffix {
+		s = append(s, item)
+	}
+	return
+}
+
 type Cors cors.Config
 type Store session.Config
 
@@ -31,7 +43,7 @@ type IServer interface {
 	StartAsync()
 	Stop() error
 	Register(i interface{}, path string) *Server
-	RegisterExt(i interface{}, path string, name string, suffix map[int]string) *Server
+	RegisterExt(i interface{}, path string, name string, suffix ...Suffix) *Server
 	SetCors(config *Cors) *Server
 	GetApp() *fiber.App
 	//SetStore(config *Store) * Server
@@ -125,48 +137,82 @@ func (s *Server) Start() {
 	}
 }
 
-func (s *Server) get(i IGet, path string) *Option {
+// Устанавливаем глобальные настройки для маршрутов
+func (s *Server) newRoute() *Route {
 	route := new(Route)
+	if s.Config.Session != nil {
+		route.IsSession = s.Config.Session.AllRoutes
+	}
+	if s.Config.Permission != nil {
+		route.IsPermission = s.Config.Permission.AllRoutes
+	}
+	if s.Config.Authorization.AllRoutes != "" {
+		route.Authorization = s.Config.Authorization.AllRoutes
+	} else {
+		route.Authorization = NoAuth
+	}
+	return route
+}
+
+// Обрабатываем метод GET
+func (s *Server) get(i IGet, name, path string) {
+	route := s.newRoute()
 	i.Get(route)
-	return s.add(fiber.MethodGet, path, route)
+	s.add(fiber.MethodGet, name, path, route)
 }
 
-func (s *Server) rest(i IRest, method string, path string) *Option {
-	route := new(Route)
-	method = strings.ToUpper(method)
-	switch method {
-	case fiber.MethodPut:
-		i.Put(route)
-		break
-	case fiber.MethodDelete:
-		i.Delete(route)
-		break
-	default:
-		s.web(i, method, path)
-		return nil
-	}
-	return s.add(method, path, route)
+// Обрабатываем метод POST
+func (s *Server) post(i IPost, name, path string) {
+	route := s.newRoute()
+	i.Post(route)
+	s.add(fiber.MethodPost, name, path, route)
 }
 
-func (s *Server) web(i IWeb, method string, path string) *Option {
-	method = strings.ToUpper(method)
-	route := new(Route)
-	switch method {
-	case fiber.MethodGet:
-		i.Get(route)
-		break
-	case fiber.MethodPost:
-		i.Post(route)
-		break
-	}
-	return s.add(method, path, route)
+// Обрабатываем метод PUT
+func (s *Server) put(i IPut, name, path string) {
+	route := s.newRoute()
+	i.Put(route)
+	s.add(fiber.MethodPut, name, path, route)
 }
 
-func (s *Server) add(method string, path string, route *Route) *Option {
+// Обрабатываем метод DELETE
+func (s *Server) delete(i IDelete, name, path string) {
+	route := s.newRoute()
+	i.Delete(route)
+	s.add(fiber.MethodDelete, name, path, route)
+}
+
+// Обрабатываем метод OPTIONS
+func (s *Server) options(i IRestOptions, name, path string) {
+	route := s.newRoute()
+	i.Options(route)
+	s.add(fiber.MethodOptions, name, path, route)
+}
+
+// Обрабатываем интерфейс IWeb
+func (s *Server) web(i IWeb, name, path string) {
+	s.get(i, name, path)
+	s.post(i, name, path)
+}
+
+// Обрабатываем интерфейс IRest
+func (s *Server) rest(i IRest, name, path string) {
+	s.web(i, name, path)
+	s.put(i, name, path)
+	s.delete(i, name, path)
+}
+
+// Обрабатываем интерфейс IRestOptions
+func (s *Server) restOptions(i IRestOptions, name, path string) {
+	s.rest(i, name, path)
+	s.options(i, name, path)
+}
+
+func (s *Server) add(method string, name, path string, route *Route) {
 
 	// Если нет ни одного handler, то выходим
-	if route.Handler == nil {
-		return nil
+	if route == nil || route.Handler == nil || method == "" {
+		return
 	}
 
 	if route.Params == nil {
@@ -200,111 +246,52 @@ func (s *Server) add(method string, path string, route *Route) *Option {
 	}
 
 	// Получаем handler маршрута
-	h := route.GetHandler(s.Config)
+	h := route.GetHandler(s.Config, s.Swagger)
 
 	// Перебираем параметры адресной строки
 	for _, param := range route.Params {
-
+		// Объединяем путь и параметры
 		path = p.Join(path, param)
-
-		// Условно определяем что сессии и права на маршруты будут только для web страниц
-		/*if route.Handler != nil {
-			// Проверяем маршрут на актуальность сессии
-			if (route.IsSession && _session != nil) || route.IsSession {
-				h = _session.check(route.Handler, route.IsPermission)
-			} else {
-				h = route.Handler(ctx, nil)
-			}
-		}*/
-
-		// Подключаем basic auth для api маршрутов
-		/*if s.Config.Authorization.Basic != nil && route.Authorization
-		if s.Config.BasicAuth != nil && route.IsBasicAuth {
-			h = s.Config.BasicAuth.check(h)
-		}*/
-		// Авторизация - вход
-		/*if _session != nil && route.LoginHandler != nil {
-			h = _session.login(route.LoginHandler)
-		}
-		// Авторизация - выход
-		if _session != nil && route.LogoutHandler != nil {
-			h = _session.logout(route.LogoutHandler)
-		}*/
-		// WebSocket
-		/*if route.webSocket != nil {
-			if route.webSocket.UpgradeHandler != nil {
-				s.Use(path, route.webSocket.UpgradeHandler)
-			}
-			if route.webSocket.Handler != nil {
-				h = websocket.New(route.webSocket.Handler)
-			}
-		}*/
-
-		// Заполняем Swagger
-		/*if route.Handler.(type) == SwaggerHandler {
-			h = s.Swagger.check(route.SwaggerHandler)
-		}*/
-
 		// Добавляем метод, путь и обработчик
 		s.Add(method, path, h)
 		// Добавляем запись в swagger
-		s.Swagger.Add(path, route)
+		s.Swagger.Add(name, path, route)
 	}
-
-	return nil
 }
 
 // RegisterExt Регистрация интерфейсов
-func (s *Server) RegisterExt(i interface{}, path string, name string, suffix map[int]string) *Server {
+func (s *Server) RegisterExt(v interface{}, path string, name string, suffix ...Suffix) *Server {
+	//Устанавливаем имя и путь
+	name, path = s.getPkgNameAndPath(path, name, v, suffix...)
 	// Проверка интерфейса на соответствие
-	switch i.(type) {
-	case IGet:
-		return s.registerGet(i.(IGet), path)
-	case IWeb:
-		return s.registerWeb(i.(IWeb), path)
+	switch i := v.(type) {
+	case IRestOptions:
+		s.restOptions(i, name, path)
+		break
 	case IRest:
-		return s.registerRest(i.(IRest), path, name, suffix)
+		s.rest(i, name, path)
+		break
+	case IWeb:
+		s.web(i, name, path)
+		break
+	case IGet:
+		s.get(i, name, path)
+		break
+	case IPost:
+		s.post(i, name, path)
+		break
+	case IPut:
+		s.put(i, name, path)
+		break
+	case IDelete:
+		s.delete(i, name, path)
+		break
 	}
 	return s
 }
 
 func (s *Server) Register(i interface{}, path string) *Server {
-	return s.RegisterExt(i, path, "", nil)
-}
-
-// Регистрируем интерфейс IWebSocket
-func (s *Server) registerGet(i IGet, path string) *Server {
-	//Устанавливаем имя и путь
-	_, path = s.getPkgNameAndPath(path, "", i, nil)
-	s.get(i, path)
-	return s
-}
-
-// Регистрируем интерфейс IWeb
-func (s *Server) registerWeb(i IWeb, path string) *Server {
-	//Устанавливаем имя и путь
-	_, path = s.getPkgNameAndPath(path, "", i, nil)
-
-	s.web(i, fiber.MethodGet, path)
-	s.web(i, fiber.MethodPost, path)
-
-	return s
-}
-
-// Регистрируем интерфейс IRest
-func (s *Server) registerRest(i IRest, path string, name string, suffix map[int]string) *Server {
-	//Устанавливаем имя и путь
-	name, path = s.getPkgNameAndPath(path, name, i, suffix)
-	//Устанавливаем Swagger
-	//swagger := swagger.newSwagger(name, path)
-	s.get(i, path)
-	s.web(i, fiber.MethodPost, path)
-	s.rest(i, fiber.MethodPut, path)
-	s.rest(i, fiber.MethodDelete, path)
-	// Создаем исполнителя для метода Options
-	//s.Add(fiber.MethodOptions, path, i.Options(swagger))
-
-	return s
+	return s.RegisterExt(i, path, "")
 }
 
 // SetCors Установка CORS
@@ -324,7 +311,7 @@ func (s *Server) Stop() error {
 }
 
 //Ищем все после пакета controllers
-func (s *Server) getPkgNameAndPath(path, name string, v interface{}, suffix map[int]string) (string, string) {
+func (s *Server) getPkgNameAndPath(path, name string, v interface{}, suffix ...Suffix) (string, string) {
 	//Если имя и путь установлены вручную, то выходим
 	if path != "" && name != "" {
 		return name, path
@@ -349,8 +336,8 @@ func (s *Server) getPkgNameAndPath(path, name string, v interface{}, suffix map[
 
 	if path == "" {
 		array := strings.Split(pkg, "/")
-		for index, val := range suffix {
-			array = s.insert(array, index, val)
+		for _, item := range suffix {
+			array = s.insert(array, item.Index, item.Value)
 		}
 		path = strings.Join(array, "/") + "/" + strings.ToLower(name)
 	}
@@ -361,6 +348,8 @@ func (s *Server) getPkgNameAndPath(path, name string, v interface{}, suffix map[
 func (s *Server) insert(a []string, index int, value string) []string {
 	if len(a) == index { // nil or empty slice or after last element
 		return append(a, value)
+	} else if len(a) < index {
+		return a
 	}
 	a = append(a[:index+1], a[index:]...) // index < len(a)
 	a[index] = value

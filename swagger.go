@@ -10,14 +10,17 @@ type Swagger struct {
 }
 
 type RouteExt struct {
-	Name string `json:"name"`
+	Name string `json:"name,omitempty"`
+	Url  string `json:"url"`
 	Path string `json:"path"`
 	*Route
 }
 
-func (s *Swagger) Add(path string, route *Route) {
+func (s *Swagger) Add(name, path string, route *Route) {
 	s.Routes = append(s.Routes, RouteExt{
-		Path:  s.Uri + path,
+		Name:  name,
+		Url:   s.Uri + path,
+		Path:  path,
 		Route: route,
 	})
 }
@@ -29,9 +32,3 @@ func (s *Swagger) Allow(ctx *fiber.Ctx) {
 	}
 	ctx.Append("Allow", methods...)*/
 }
-
-/*func (s *Swagger) check(handler SwaggerHandler) Handler {
-	return func(ctx *fiber.Ctx) error {
-		return handler(ctx, s)
-	}
-}*/

@@ -9,6 +9,7 @@ import (
 // Session структура, которая описывает сессию
 type Session struct {
 	RedirectPath string
+	AllRoutes    bool
 	Expires      time.Duration
 	Handler      SessionHandler
 	ErrorHandler ErrorHandler

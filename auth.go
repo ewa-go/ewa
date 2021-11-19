@@ -18,9 +18,10 @@ const (
 //const StatusForbidden = "Доступ запрещен (Permission denied)"
 
 type Authorization struct {
-	Basic  *Basic
-	Digest *Digest
-	ApiKey *ApiKey
+	AllRoutes string
+	Basic     *Basic
+	Digest    *Digest
+	ApiKey    *ApiKey
 }
 
 type Basic struct {

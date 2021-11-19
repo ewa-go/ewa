@@ -2,7 +2,8 @@ package egowebapi
 
 // Permission структура описывает разрешения на запрос
 type Permission struct {
-	Handler PermissionHandler
+	AllRoutes bool
+	Handler   PermissionHandler
 }
 
 // Check Проверяем запрос на разрешения

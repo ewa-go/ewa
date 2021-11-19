@@ -1,23 +1,32 @@
 package egowebapi
 
-/*
-type IController interface {
-	IHttp
-	IRest
-}*/
-
 type IGet interface {
 	Get(route *Route)
 }
 
+type IPost interface {
+	Post(route *Route)
+}
+type IPut interface {
+	Put(route *Route)
+}
+
+type IDelete interface {
+	Delete(route *Route)
+}
+
 type IWeb interface {
 	IGet
-	Post(route *Route)
+	IPost
 }
 
 type IRest interface {
 	IWeb
-	Put(route *Route)
-	Delete(route *Route)
-	Options(swagger *Swagger) EmptyHandler
+	IPut
+	IDelete
+}
+
+type IRestOptions interface {
+	IRest
+	Options(route *Route)
 }

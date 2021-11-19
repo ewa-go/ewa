@@ -7,14 +7,14 @@ import (
 )
 
 type Route struct {
-	Params        []string    `json:"-"`
+	Params        []string    `json:"params,omitempty"`
 	Authorization string      `json:"authorization"`
 	Handler       interface{} `json:"-"`
 	IsSession     bool        `json:"is_session"`
 	IsPermission  bool        `json:"is_permission"`
 	WebAuth       *WebAuth    `json:"web_auth,omitempty"`
-	Option        Option      `json:"option"`
 	webSocket     *WebSocket
+	Option        Option `json:"option"`
 }
 
 type WebSocket struct {
@@ -26,10 +26,10 @@ type WebAuth struct {
 }
 
 type Option struct {
-	Headers     []string `json:"headers"`
-	Method      string   `json:"method"`
-	Body        string   `json:"body"`
-	Description string   `json:"description"`
+	Headers     []string `json:"headers,omitempty"`
+	Method      string   `json:"method,omitempty"`
+	Body        string   `json:"body,omitempty"`
+	Description string   `json:"description,omitempty"`
 }
 
 const (
@@ -95,17 +95,8 @@ func (r *Route) Empty() {
 	r.Handler = nil
 }
 
-// SetOption устанавливаем опции для свагера
-func (r *Route) SetOption(name, description, body string) *Route {
-	r.Option = Option{
-		//Name:        name,
-		Description: description,
-		Body:        body,
-	}
-	return r
-}
-
-func (r *Route) GetHandler(config Config) fiber.Handler {
+// GetHandler возвращаем обработчик основанный на параметрах конфигурации маршрута
+func (r *Route) GetHandler(config Config, swagger *Swagger) fiber.Handler {
 
 	switch h := r.Handler.(type) {
 	// handler для маршрутов с identity
@@ -142,12 +133,12 @@ func (r *Route) GetHandler(config Config) fiber.Handler {
 		}
 
 	// Swagger handler для добавления описания маршрутов
-	case SwaggerHandler:
+	case func(*fiber.Ctx, *Swagger) error:
+		return func(ctx *fiber.Ctx) error {
+			return h(ctx, swagger)
+		}
 
-		h = s.Swagger.check(r.Handler.(SwaggerHandler))
-
-		break
-		// handler для маршрутов web авторизации Login и Logout
+	// Handler для маршрутов web авторизации Login и Logout
 	case func(*fiber.Ctx, string) error:
 		if config.Session != nil && r.WebAuth != nil {
 			if r.WebAuth.IsLogin {
@@ -168,8 +159,13 @@ func (r *Route) GetHandler(config Config) fiber.Handler {
 			return websocket.New(h)
 		}
 		break
+
+	// Обычный обработчик без ништяков
+	case func(*fiber.Ctx) error:
+		return h
 	}
 
+	// Ну если ни один из обработчиков не удовлетворяет требованиям, то вернем ответ с кодом 404
 	return func(ctx *fiber.Ctx) error {
 		return ctx.Status(fiber.StatusNotFound).SendString(fmt.Sprintf("%s %s", ctx.Route().Method, ctx.Route().Path))
 	}

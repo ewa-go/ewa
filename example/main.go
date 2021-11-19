@@ -77,10 +77,10 @@ func main() {
 		},
 	}
 	// Указываем суффиксы
-	suffix := map[int]string{
-		2: ":system",
-		3: ":version",
-	}
+	suffix := ewa.NewSuffix(
+		ewa.Suffix{Index: 2, Value: ":system"},
+		ewa.Suffix{Index: 3, Value: ":version"},
+	)
 	//Инициализируем сервер
 	ws, _ := ewa.New("Example", cfg)
 	ws.Register(new(web.Home), "/")
@@ -90,7 +90,7 @@ func main() {
 	ws.Register(new(__1.Document), "/section1/1_1/document")
 	ws.Register(new(__1.List), "/section1/1_1/list")
 	ws.Register(new(section1.Section_1_2), "/section1/1_2")
-	ws.RegisterExt(new(api.User), "", "person", suffix)
+	ws.RegisterExt(new(api.User), "", "person", suffix...)
 	//webSocket
 	ws.Register(new(controllers.WS), "")
 	//ws.SetBasicAuth(ba)
