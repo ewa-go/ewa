@@ -3,10 +3,11 @@ package controllers
 import (
 	"fmt"
 	ewa "github.com/egovorukhin/egowebapi"
-	"github.com/egovorukhin/egowebapi/wsserver"
+	"github.com/egovorukhin/egowebapi/example/src/wsserver"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/websocket/v2"
 	"log"
+	"time"
 )
 
 type WS struct{}
@@ -16,14 +17,18 @@ func (ws *WS) Get(route *ewa.Route) {
 	route.Handler = func(c *websocket.Conn) {
 
 		id := c.Params("id")
-		wsserver.SetConnection(id, c)
+		wsserver.AddClient(&wsserver.Client{
+			Id:      id,
+			Conn:    c,
+			Created: time.Now(),
+		})
 
 		defer func() {
 			err := c.Close()
 			if err != nil {
 				fmt.Println(err)
 			}
-			wsserver.DeleteConnection(id)
+			wsserver.DeleteClient(id)
 		}()
 
 		for {

@@ -91,15 +91,16 @@ func main() {
 	ws.Register(new(__1.List), "/section1/1_1/list")
 	ws.Register(new(section1.Section_1_2), "/section1/1_2")
 	ws.RegisterExt(new(api.User), "", "person", suffix...)
+	ws.Register(new(api.WS), "")
 	//webSocket
 	ws.Register(new(controllers.WS), "")
-	//ws.SetBasicAuth(ba)
+	//wsserver.SetBasicAuth(ba)
 	//Cors = nil - DefaultConfig
 	ws.SetCors(nil)
 
 	// Получаем объект fiber.App
-	//ws.GetApp().Use()
-	//ws.SetStore(nil)
+	//wsserver.GetApp().Use()
+	//wsserver.SetStore(nil)
 	ws.Start()
 
 	for {

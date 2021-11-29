@@ -9918,7 +9918,7 @@ function done(stream, er, data) {
 
   // if there's nothing in the write buffer, then that means
   // that nothing more will ever be provided
-  if (stream._writableState.length) throw new Error('Calling transform done when ws.length != 0');
+  if (stream._writableState.length) throw new Error('Calling transform done when wsserver.length != 0');
 
   if (stream._transformState.transforming) throw new Error('Calling transform done when still transforming');
 

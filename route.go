@@ -8,7 +8,7 @@ import (
 
 type Route struct {
 	Params        []string    `json:"params,omitempty"`
-	Authorization string      `json:"authorization"`
+	Authorization Auth        `json:"authorization"`
 	Handler       interface{} `json:"-"`
 	IsSession     bool        `json:"is_session"`
 	IsPermission  bool        `json:"is_permission"`
@@ -32,11 +32,13 @@ type Option struct {
 	Description string   `json:"description,omitempty"`
 }
 
+type Auth string
+
 const (
-	NoAuth     = "NoAuth"
-	BasicAuth  = "BasicAuth"
-	DigestAuth = "DigestAuth"
-	ApiKeyAuth = "ApiKeyAuth"
+	NoAuth     Auth = "NoAuth"
+	BasicAuth  Auth = "BasicAuth"
+	DigestAuth Auth = "DigestAuth"
+	ApiKeyAuth Auth = "ApiKeyAuth"
 )
 
 // SetParams указываем параметры маршрута
@@ -58,7 +60,7 @@ func (r *Route) SetBody(s string) *Route {
 }
 
 // Auth указываем метод авторизации
-func (r *Route) Auth(auth string) *Route {
+func (r *Route) Auth(auth Auth) *Route {
 	r.Authorization = auth
 	return r
 }
