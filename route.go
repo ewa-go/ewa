@@ -12,17 +12,12 @@ type Route struct {
 	Handler       interface{} `json:"-"`
 	IsSession     bool        `json:"is_session"`
 	IsPermission  bool        `json:"is_permission"`
-	WebAuth       *WebAuth    `json:"web_auth,omitempty"`
 	webSocket     *WebSocket
 	Option        Option `json:"option"`
 }
 
 type WebSocket struct {
 	UpgradeHandler fiber.Handler
-}
-
-type WebAuth struct {
-	IsLogin bool `json:"is_login"`
 }
 
 type Option struct {
@@ -85,14 +80,6 @@ func (r *Route) WebSocket(upgrade fiber.Handler) *Route {
 	return r
 }
 
-// SetWebAuth Устанавливаем web socket соединение
-func (r *Route) SetWebAuth(isLogin bool) *Route {
-	r.WebAuth = &WebAuth{
-		IsLogin: isLogin,
-	}
-	return r
-}
-
 func (r *Route) Empty() {
 	r.Handler = nil
 }
@@ -140,14 +127,15 @@ func (r *Route) GetHandler(s *Server) fiber.Handler {
 			return h(ctx, s.Swagger)
 		}
 
-	// Handler для маршрутов web авторизации Login и Logout
+	// LoginHandler для маршрута web авторизации Login
 	case func(*fiber.Ctx, string) error:
-		if s.Config.Session != nil && r.WebAuth != nil {
-			if r.WebAuth.IsLogin {
-				// Авторизация - вход
-				return s.Config.Session.login(h)
-			}
-			// Авторизация - выход
+		if s.Config.Session != nil {
+			return s.Config.Session.login(h)
+		}
+		break
+	// LogoutHandler для маршрута web авторизации Logout
+	case func(*fiber.Ctx, *Identity, string) error:
+		if s.Config.Session != nil {
 			return s.Config.Session.logout(h)
 		}
 		break

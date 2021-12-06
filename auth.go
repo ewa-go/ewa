@@ -78,11 +78,17 @@ func (b *Basic) Do(handler Handler, isPermission bool, permission *Permission) f
 				return ctx.SendStatus(fiber.StatusForbidden)
 			}
 		}
+		domain := ""
+		a := strings.Split(username, "\\")
+		if len(a) > 1 {
+			domain = a[0]
+			username = a[1]
+		}
 
 		// Возвращаем данные по пользователю и маршруту
 		return handler(ctx, &Identity{
 			User:   username,
-			Domain: "",
+			Domain: domain,
 			/*Permission: Permission{
 				Route: ctx.Route(),
 				//IsPermit: IsPermission,

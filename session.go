@@ -1,6 +1,7 @@
 package egowebapi
 
 import (
+	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/utils"
 	"time"
@@ -20,6 +21,10 @@ type Identity struct {
 	User   string
 	Domain string
 	//Permission Permission
+}
+
+func (i Identity) String() string {
+	return fmt.Sprintf("user: %s, domain: %s", i.User, i.Domain)
 }
 
 /*type Permission struct {
@@ -75,7 +80,7 @@ func (s *Session) check(handler Handler, isPermission bool, permission *Permissi
 }
 
 // Формируем session_id и добавляем в куки
-func (s *Session) login(handler WebAuthHandler) EmptyHandler {
+func (s *Session) login(handler LoginHandler) EmptyHandler {
 	return func(ctx *fiber.Ctx) error {
 
 		key := utils.UUID()
@@ -95,11 +100,21 @@ func (s *Session) login(handler WebAuthHandler) EmptyHandler {
 }
 
 // Очищаем куки, чтобы при маршрутизации сессия не была доступна
-func (s *Session) logout(handler WebAuthHandler) EmptyHandler {
+func (s *Session) logout(handler LogoutHandler) EmptyHandler {
 	return func(ctx *fiber.Ctx) error {
 
 		key := ctx.Cookies(sessionId)
-		err := handler(ctx, key)
+
+		identity := new(Identity)
+		user, domain, err := s.Handler(ctx.Cookies(sessionId))
+		if err != nil {
+			identity = nil
+		} else {
+			identity.User = user
+			identity.Domain = domain
+		}
+
+		err = handler(ctx, identity, key)
 		if err != nil {
 			return ctx.Status(401).SendString(err.Error())
 		}

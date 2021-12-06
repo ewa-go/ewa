@@ -1,6 +1,7 @@
 package web
 
 import (
+	"fmt"
 	ewa "github.com/egovorukhin/egowebapi"
 	"github.com/egovorukhin/egowebapi/example/src/storage"
 	"github.com/gofiber/fiber/v2"
@@ -13,8 +14,11 @@ func (l *Logout) Get(route *ewa.Route) {
 }
 
 func (l *Logout) Post(route *ewa.Route) {
-	route.SetDescription("Маршрут /logout").SetWebAuth(false)
-	route.Handler = func(ctx *fiber.Ctx, key string) error {
+	route.SetDescription("Маршрут /logout")
+	route.Handler = func(ctx *fiber.Ctx, identity *ewa.Identity, key string) error {
+		if identity != nil {
+			fmt.Println(identity.String())
+		}
 		storage.DeleteStorage(key)
 		return nil
 	}
