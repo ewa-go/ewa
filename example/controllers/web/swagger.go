@@ -15,7 +15,3 @@ func (s *Swagger) Get(route *ewa.Route) {
 		return ctx.JSON(swagger)
 	}
 }
-
-func (s *Swagger) Post(route *ewa.Route) {
-	route.Empty()
-}

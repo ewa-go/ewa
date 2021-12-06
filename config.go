@@ -22,6 +22,7 @@ type Config struct {
 	Authorization Authorization
 	Session       *Session
 	Permission    *Permission
+	NotFoundPage  string
 }
 
 type Secure struct {

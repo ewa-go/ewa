@@ -292,6 +292,11 @@ func (s *Server) RegisterExt(v interface{}, path string, name string, suffix ...
 		s.delete(i, name, path)
 		break
 	}
+	if s.Config.NotFoundPage != "" {
+		s.Use(func(ctx *fiber.Ctx) error {
+			return ctx.Render(s.Config.NotFoundPage, nil)
+		})
+	}
 	return s
 }
 
