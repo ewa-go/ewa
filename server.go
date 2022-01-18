@@ -216,7 +216,26 @@ func (s *Server) add(method string, name, path string, route *Route) {
 	}
 
 	if route.Params == nil {
-		route.Params = []string{""}
+		route.Params = []string{"", "/"}
+	} else {
+		// Проверка пути на пустоту и слэш
+		emptyPath := false
+		slash := false
+		for _, param := range route.Params {
+			switch param {
+			case "":
+				emptyPath = true
+				break
+			case "/":
+				slash = true
+				break
+			}
+		}
+		if emptyPath && !slash {
+			route.Params = append(route.Params, "/")
+		} else if !emptyPath && slash {
+			route.Params = append(route.Params, "")
+		}
 	}
 	route.Option.Method = method
 
@@ -227,19 +246,6 @@ func (s *Server) add(method string, name, path string, route *Route) {
 			http = "https"
 		}
 		addr := "127.0.0.1"
-		/*addrs, _ := net.InterfaceAddrs()
-		for _, a := range addrs {
-			t := a.String()
-			is, _ := regexp.Match(
-				`(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)`,
-				[]byte(t),
-			)
-			if t == addr || !is {
-				continue
-			}
-			addr = t
-		}*/
-
 		s.Swagger = &Swagger{
 			Uri: fmt.Sprintf("%s://%s:%d", http, addr, s.Config.Port),
 		}
