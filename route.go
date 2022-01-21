@@ -92,10 +92,10 @@ func (r *Route) GetHandler(s *Server) fiber.Handler {
 	case func(*fiber.Ctx, *Identity) error:
 		// Авторизация
 		switch r.Authorization {
-		case NoAuth:
-			return func(ctx *fiber.Ctx) error {
-				return h(ctx, nil)
-			}
+		/*case NoAuth:
+		return func(ctx *fiber.Ctx) error {
+			return h(ctx, nil)
+		}*/
 		case BasicAuth:
 			if s.Config.Authorization.Basic != nil {
 				return s.Config.Authorization.Basic.Do(h, r.IsPermission, s.Config.Permission)
