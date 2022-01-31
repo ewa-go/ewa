@@ -52,7 +52,9 @@ type IServer interface {
 func New(name string, config Config) (IServer, error) {
 
 	//Таймауты
-	read, write, idle := config.Timeout.Get()
+	readTimeout, writeTimeout, idleTimeout := config.Timeout.Get()
+	// Буферы
+	readBufferSize, writeBufferSize := config.BufferSize.Get()
 	//Получаем расположение исполняемого файла
 	exePath, err := os.Executable()
 	if err != nil {
@@ -60,9 +62,11 @@ func New(name string, config Config) (IServer, error) {
 	}
 	//Настройки
 	settings := fiber.Config{
-		ReadTimeout:  time.Duration(read) * time.Second,
-		WriteTimeout: time.Duration(write) * time.Second,
-		IdleTimeout:  time.Duration(idle) * time.Second,
+		ReadTimeout:     time.Duration(readTimeout) * time.Second,
+		WriteTimeout:    time.Duration(writeTimeout) * time.Second,
+		IdleTimeout:     time.Duration(idleTimeout) * time.Second,
+		ReadBufferSize:  readBufferSize,
+		WriteBufferSize: writeBufferSize,
 		/*ErrorHandler: func(ctx *fiber.Ctx, err error) error {
 			code := fiber.StatusInternalServerError
 

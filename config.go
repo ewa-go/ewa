@@ -18,6 +18,7 @@ type Config struct {
 	Views         *Views
 	Secure        *Secure
 	Timeout       Timeout
+	BufferSize    BufferSize
 	Static        string
 	Authorization Authorization
 	Session       *Session
@@ -62,6 +63,10 @@ const (
 	Jet                  = ".jet"
 	Mustache             = ".mustache"
 	Pug                  = ".pug"
+)
+
+const (
+	defaultBufferSize = 1024 * 4
 )
 
 // html template
@@ -236,4 +241,20 @@ func NewTimeout(read, write, idle int) Timeout {
 
 func (t Timeout) Get() (read int, write int, idle int) {
 	return t.Read, t.Write, t.Idle
+}
+
+type BufferSize struct {
+	Read  int
+	Write int
+}
+
+func (b BufferSize) Get() (read int, write int) {
+	return b.Read, b.Write
+}
+
+func NewBufferSize(read, write int) BufferSize {
+	return BufferSize{
+		Read:  read,
+		Write: write,
+	}
 }
