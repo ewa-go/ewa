@@ -60,7 +60,10 @@ func main() {
 				Reload: false,
 			},
 		},
-		Static: "views",
+		Static: &ewa.Static{
+			Prefix: "/",
+			Root:   "views",
+		},
 		Authorization: ewa.Authorization{
 			Basic: &ewa.Basic{
 				Handler: basicAuthHandler,

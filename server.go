@@ -67,22 +67,7 @@ func New(name string, config Config) (IServer, error) {
 		IdleTimeout:     time.Duration(idleTimeout) * time.Second,
 		ReadBufferSize:  readBufferSize,
 		WriteBufferSize: writeBufferSize,
-		/*ErrorHandler: func(ctx *fiber.Ctx, err error) error {
-			code := fiber.StatusInternalServerError
-
-			if e, ok := err.(*fiber.Error); ok {
-				code = e.Code
-			}
-			if config.Views != nil {
-				err = ctx.Status(code).SendFile(fmt.Sprintf("/%d%s", code, config.Views.Extension))
-				if err != nil {
-					return ctx.Status(500).SendString("Internal Server Error")
-				}
-			} else {
-				ctx.Status(code)
-			}
-			return nil
-		},*/
+		BodyLimit:       config.BodyLimit,
 	}
 	//Указываем нужны ли страницы
 	if config.Views != nil {
@@ -96,8 +81,12 @@ func New(name string, config Config) (IServer, error) {
 	//Инициализируем сервер
 	server := fiber.New(settings)
 	//Устанавливаем статические файлы
-	if config.Static != "" {
-		server.Static("/", filepath.Join(filepath.Dir(exePath), config.Static))
+	if config.Static != nil {
+		prefix := "/"
+		if config.Static.Prefix != "" {
+			prefix = config.Static.Prefix
+		}
+		server.Static(prefix, filepath.Join(filepath.Dir(exePath), config.Static.Root))
 	}
 
 	return &Server{

@@ -19,11 +19,18 @@ type Config struct {
 	Secure        *Secure
 	Timeout       Timeout
 	BufferSize    BufferSize
-	Static        string
+	BodyLimit     int
+	Static        *Static
 	Authorization Authorization
 	Session       *Session
 	Permission    *Permission
 	NotFoundPage  string
+}
+
+type Static struct {
+	Prefix      string
+	Root        string
+	FiberStatic *fiber.Static
 }
 
 type Secure struct {
