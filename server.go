@@ -2,6 +2,7 @@ package egowebapi
 
 import (
 	"fmt"
+	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/session"
 	"github.com/valyala/fasthttp"
@@ -85,7 +86,7 @@ func New(name string, config Config) (IServer, error) {
 		if config.Static.Prefix != "" {
 			prefix = config.Static.Prefix
 		}
-		server.Static(prefix, filepath.Join(filepath.Dir(exePath), config.Static.Root), *config.Static.FiberStatic)
+		server.Static(prefix, filepath.Join(filepath.Dir(exePath), config.Static.Root))
 	}
 
 	return &Server{
