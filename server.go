@@ -2,7 +2,6 @@ package egowebapi
 
 import (
 	"fmt"
-	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/session"
 	"github.com/valyala/fasthttp"
@@ -62,12 +61,12 @@ func New(name string, config Config) (IServer, error) {
 	}
 	//Настройки
 	settings := fiber.Config{
+		BodyLimit:       config.BodyLimit,
 		ReadTimeout:     time.Duration(readTimeout) * time.Second,
 		WriteTimeout:    time.Duration(writeTimeout) * time.Second,
 		IdleTimeout:     time.Duration(idleTimeout) * time.Second,
 		ReadBufferSize:  readBufferSize,
 		WriteBufferSize: writeBufferSize,
-		BodyLimit:       config.BodyLimit,
 	}
 	//Указываем нужны ли страницы
 	if config.Views != nil {
@@ -86,7 +85,7 @@ func New(name string, config Config) (IServer, error) {
 		if config.Static.Prefix != "" {
 			prefix = config.Static.Prefix
 		}
-		server.Static(prefix, filepath.Join(filepath.Dir(exePath), config.Static.Root))
+		server.Static(prefix, filepath.Join(filepath.Dir(exePath), config.Static.Root), *config.Static.FiberStatic)
 	}
 
 	return &Server{
