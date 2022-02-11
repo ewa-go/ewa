@@ -12,7 +12,9 @@ import (
 	"github.com/egovorukhin/egowebapi/example/src/storage"
 	"github.com/gofiber/fiber/v2"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -97,25 +99,25 @@ func main() {
 	ws.Register(new(api.WS), "")
 	//webSocket
 	ws.Register(new(controllers.WS), "")
-	//wsserver.SetBasicAuth(ba)
 	//Cors = nil - DefaultConfig
 	ws.SetCors(nil)
 
-	// Получаем объект fiber.App
-	//wsserver.GetApp().Use()
-	//wsserver.SetStore(nil)
-	ws.Start()
+	// Канал для получения ошибки, если таковая будет
+	errChan := make(chan error, 2)
+	go func() {
+		errChan <- ws.Start()
+	}()
 
-	for {
-		var input string
-		_, err := fmt.Fscan(os.Stdin, &input)
-		if err != nil {
-			os.Exit(1)
-		}
-		switch strings.ToLower(input) {
-		case "exit":
-			fmt.Println(ws.Stop())
-			os.Exit(0)
-		}
-	}
+	// Ждем сигнал от ОС
+	go getSignal(errChan)
+
+	fmt.Println("Старт приложения")
+	fmt.Printf("Остановка приложения. %s", <-errChan)
+
+}
+
+func getSignal(errChan chan error) {
+	c := make(chan os.Signal)
+	signal.Notify(c, syscall.SIGINT)
+	errChan <- fmt.Errorf("%s", <-c)
 }

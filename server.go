@@ -39,8 +39,7 @@ type Cors cors.Config
 type Store session.Config
 
 type IServer interface {
-	Start()
-	StartAsync()
+	Start() error
 	Stop() error
 	Register(i interface{}, path string) *Server
 	RegisterExt(i interface{}, path string, name string, suffix ...Suffix) *Server
@@ -100,34 +99,29 @@ func (s *Server) GetApp() *fiber.App {
 	return s.App
 }
 
-func (s *Server) StartAsync() {
-	go s.Start()
-}
-
-func (s *Server) Start() {
+func (s *Server) Start() error {
 
 	//Флаг старта
 	s.IsStarted = true
 
+	addr := fmt.Sprintf(":%d", s.Config.Port)
+
 	//Если Secure == nil, то запускаем без сертификата
 	if s.Config.Secure != nil {
-		//Формируем сертификат
+		// Возвращаем данные по сертификату
 		cert, key := s.Config.Secure.Get()
-		//Запускаем слушатель с TLS настройкой
-		if err := s.ListenTLS(
-			fmt.Sprintf(":%d", s.Config.Port),
-			cert,
-			key,
-		); err != fasthttp.ErrConnectionClosed {
-			//s.Logger.Printf("%s", err)
+		// Запускаем слушатель с TLS настройкой
+		if err := s.ListenTLS(addr, cert, key); err != fasthttp.ErrConnectionClosed {
+			return err
 		}
-		return
+	} else {
+		//Запускаем слушатель
+		if err := s.Listen(addr); err != fasthttp.ErrConnectionClosed {
+			return err
+		}
 	}
 
-	//Запускаем слушатель
-	if err := s.Listen(fmt.Sprintf(":%d", s.Config.Port)); err != fasthttp.ErrConnectionClosed {
-		//s.server.Logger.Printf("%s", err)
-	}
+	return nil
 }
 
 // Устанавливаем глобальные настройки для маршрутов
