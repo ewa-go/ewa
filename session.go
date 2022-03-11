@@ -1,18 +1,26 @@
 package egowebapi
 
 import (
+	"errors"
 	"fmt"
-	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/utils"
+	"net/http"
 	"time"
 )
 
 // Session структура, которая описывает сессию
 type Session struct {
+	// Путь для перехода на страницу авторизации
 	RedirectPath string
-	AllRoutes    bool
-	Expires      time.Duration
-	Handler      SessionHandler
+	// Применение сессии на все маршруты
+	AllRoutes bool
+	// Время просрочки сессии
+	Expires time.Duration
+	// Обработчик сессии
+	SessionHandler SessionHandler
+	// Обработчик генерации SessionId
+	GenSessionIdHandler GenSessionIdHandler
+	// Обработчик на случай ошибки
 	ErrorHandler ErrorHandler
 }
 
@@ -20,26 +28,42 @@ type Session struct {
 type Identity struct {
 	User   string
 	Domain string
-	//Permission Permission
+	// Используется для идентификации сессии в cookie
+	SessionId string
 }
 
 func (i Identity) String() string {
 	return fmt.Sprintf("user: %s, domain: %s", i.User, i.Domain)
 }
 
-/*type Permission struct {
-	Route    *fiber.Route
-	IsPermit bool
-}*/
-
 const sessionId = "session_id"
 
 // Проверяем куки и извлекаем по ключу id по которому в бд/файле/памяти находим запись
-func (s *Session) check(handler Handler, isPermission bool, permission *Permission) EmptyHandler {
-	return func(ctx *fiber.Ctx) (err error) {
+func (s *Session) check(c *Context) error {
 
-		user := "Unknown"
-		domain := "Unknown"
+	key := c.Cookies(sessionId)
+	if len(key) == 0 {
+		return errors.New(fmt.Sprintf("Cookies [%s] not found", sessionId))
+	}
+
+	if s.SessionHandler != nil {
+		user, domain, err := s.SessionHandler(key)
+		if err != nil {
+			return err
+		}
+		c.Identity = &Identity{
+			User:      user,
+			Domain:    domain,
+			SessionId: key,
+		}
+	}
+
+	return nil
+
+	/*return func(ctx *fiber.Ctx) (err error) {
+
+		user := unknown
+		domain := unknown
 
 		// Если cookie не существует, то перенаправляем запрос на условно "/login"
 		key := ctx.Cookies(sessionId)
@@ -71,57 +95,43 @@ func (s *Session) check(handler Handler, isPermission bool, permission *Permissi
 		return handler(ctx, &Identity{
 			User:   user,
 			Domain: domain,
-			/*Permission: Permission{
-				Route:    route,
-				IsPermit: IsPermission,
-			},*/
 		})
-	}
+	}*/
 }
 
 // Формируем session_id и добавляем в куки
-func (s *Session) login(handler LoginHandler) EmptyHandler {
-	return func(ctx *fiber.Ctx) error {
+func (s *Session) login(c *Context) {
 
-		key := utils.UUID()
-		err := handler(ctx, key)
-		if err != nil {
-			return ctx.Status(401).SendString(err.Error())
-		}
-
-		cookie := new(fiber.Cookie)
-		cookie.Name = sessionId
-		cookie.Value = key
-		cookie.Expires = time.Now().Add(s.Expires)
-		ctx.Cookie(cookie)
-
-		return ctx.SendStatus(200)
+	key := utils.UUID()
+	if s.GenSessionIdHandler != nil {
+		key = s.GenSessionIdHandler()
 	}
+	cookie := &http.Cookie{
+		Name:    sessionId,
+		Value:   key,
+		Expires: time.Now().Add(s.Expires),
+	}
+	cookie.Name = sessionId
+	cookie.Value = key
+	cookie.Expires = time.Now().Add(s.Expires)
+	c.SetCookie(cookie)
+	c.Identity = &Identity{SessionId: key}
 }
 
 // Очищаем куки, чтобы при маршрутизации сессия не была доступна
-func (s *Session) logout(handler LogoutHandler) EmptyHandler {
-	return func(ctx *fiber.Ctx) error {
+func (s *Session) logout(c *Context) {
 
-		key := ctx.Cookies(sessionId)
-
-		identity := new(Identity)
-		user, domain, err := s.Handler(ctx.Cookies(sessionId))
-		if err != nil {
-			identity = nil
-		} else {
-			identity.User = user
-			identity.Domain = domain
-		}
-
-		err = handler(ctx, identity, key)
-		if err != nil {
-			return ctx.Status(401).SendString(err.Error())
-		}
-
-		ctx.ClearCookie(sessionId)
-
-		return ctx.Redirect(s.RedirectPath)
+	key := c.Cookies(sessionId)
+	identity := &Identity{
+		SessionId: key,
 	}
-
+	user, domain, err := s.SessionHandler(key)
+	if err != nil {
+		identity = nil
+	} else {
+		identity.User = user
+		identity.Domain = domain
+	}
+	c.Identity = identity
+	c.ClearCookie(sessionId)
 }

@@ -2,12 +2,13 @@ package egowebapi
 
 // Permission структура описывает разрешения на запрос
 type Permission struct {
-	AllRoutes bool
-	Handler   PermissionHandler
+	AllRoutes            bool
+	Handler              PermissionHandler
+	NotPermissionHandler ErrorHandler
 }
 
-// Check Проверяем запрос на разрешения
-func (p *Permission) Check(id interface{}, path string) bool {
+// check Проверяем запрос на разрешения
+func (p *Permission) check(id interface{}, path string) bool {
 	if p.Handler == nil {
 		return true
 	}

@@ -3,24 +3,41 @@ package egowebapi
 import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/gofiber/fiber/v2/middleware/session"
-	"github.com/valyala/fasthttp"
-	"os"
 	p "path"
-	"path/filepath"
 	"reflect"
 	"regexp"
 	"strings"
-	"time"
 )
 
+const (
+	Name    = "EgoWebApi"
+	Version = "v0.2.1"
+)
+
+//type Framework string
+
+/*const (
+	FrameworkFiber = "fiber"
+	FrameworkEcho  = "echo"
+)*/
+
 type Server struct {
-	*fiber.App
-	Name      string
-	IsStarted bool
 	Config    Config
-	Swagger   *Swagger
+	IsStarted bool
+	webServer IServer
+}
+
+var swagger *Swagger
+
+type IServer interface {
+	Start(addr string, secure *Secure) error
+	Stop() error
+	Static(prefix, root string)
+	Any(path string, handler interface{})
+	Use(params ...interface{})
+	Add(method, path string, handler Handler)
+	GetApp() interface{}
+	NotFoundPage(path, page string)
 }
 
 type Suffix struct {
@@ -35,108 +52,101 @@ func NewSuffix(suffix ...Suffix) (s []Suffix) {
 	return
 }
 
-type Cors cors.Config
-type Store session.Config
+//type Cors cors.Config
 
-type IServer interface {
+//type Store session.Config
+
+/*type IServer interface {
 	Start() error
 	Stop() error
 	Register(i interface{}, path string) *Server
 	RegisterExt(i interface{}, path string, name string, suffix ...Suffix) *Server
 	SetCors(config *Cors) *Server
-	GetApp() *fiber.App
+	GetWebServer() IWebServer
 	//SetStore(config *Store) * Server
-}
+}*/
 
-func New(name string, config Config) (IServer, error) {
+func New(server IServer, config Config) *Server {
 
+	//var server IServer
 	//Таймауты
-	readTimeout, writeTimeout, idleTimeout := config.Timeout.Get()
+	//readTimeout, writeTimeout, idleTimeout := config.Timeout.Get()
 	// Буферы
-	readBufferSize, writeBufferSize := config.BufferSize.Get()
+	//readBufferSize, writeBufferSize := config.BufferSize.Get()
 	//Получаем расположение исполняемого файла
-	exePath, err := os.Executable()
+	/*exePath, err := os.Executable()
 	if err != nil {
 		return nil, err
-	}
+	}*/
 	//Настройки
-	settings := fiber.Config{
+	/*settings := fiber.Config{
 		BodyLimit:       config.BodyLimit,
 		ReadTimeout:     time.Duration(readTimeout) * time.Second,
 		WriteTimeout:    time.Duration(writeTimeout) * time.Second,
 		IdleTimeout:     time.Duration(idleTimeout) * time.Second,
 		ReadBufferSize:  readBufferSize,
 		WriteBufferSize: writeBufferSize,
-	}
-	//Указываем нужны ли страницы
-	if config.Views != nil {
-		if config.Views.Extension != None {
-			settings.Views = config.Views.Extension.Engine(filepath.Join(filepath.Dir(exePath), config.Views.Directory), config.Views.Engine)
+	}*/
+	/*switch fw {
+	case FrameworkFiber:
+		// Указываем нужны ли страницы
+		if config.Views != nil {
+			if config.Views.Extension != None {
+				settings.Views = config.Views.Extension.Engine( config.Views.Directory, config.Views.Engine)
+			}
+			if config.Views.Layout != "" {
+				settings.ViewsLayout = config.Views.Layout
+			}
 		}
-		if config.Views.Layout != "" {
-			settings.ViewsLayout = config.Views.Layout
+		//Инициализируем сервер
+		server = &framework.Fiber{
+			App: fiber.New(settings),
 		}
-	}
-	//Инициализируем сервер
-	server := fiber.New(settings)
-	//Устанавливаем статические файлы
+	case FrameworkEcho:
+		server = &framework.Echo{
+			App: echo.New(),
+		}
+	}*/
+
+	// Устанавливаем статические файлы
 	if config.Static != nil {
-		prefix := "/"
-		if config.Static.Prefix != "" {
-			prefix = config.Static.Prefix
-		}
-		server.Static(prefix, filepath.Join(filepath.Dir(exePath), config.Static.Root))
+		server.Static(config.Static.Prefix, config.Static.Root)
 	}
 
 	return &Server{
-		Name:   name,
-		Config: config,
-		App:    server,
-	}, nil
+		Config:    config,
+		webServer: server,
+	}
 }
 
-func (s *Server) GetApp() *fiber.App {
-	return s.App
+// GetWebServer вернуть интерфейс веб сервера
+func (s *Server) GetWebServer() interface{} {
+	return s.webServer.GetApp()
 }
 
+// Start запуск сервера
 func (s *Server) Start() error {
-
 	//Флаг старта
 	s.IsStarted = true
-
+	// Получение адреса
 	addr := fmt.Sprintf(":%d", s.Config.Port)
-
-	//Если Secure == nil, то запускаем без сертификата
-	if s.Config.Secure != nil {
-		// Возвращаем данные по сертификату
-		cert, key := s.Config.Secure.Get()
-		// Запускаем слушатель с TLS настройкой
-		if err := s.ListenTLS(addr, cert, key); err != fasthttp.ErrConnectionClosed {
-			return err
-		}
-	} else {
-		//Запускаем слушатель
-		if err := s.Listen(addr); err != fasthttp.ErrConnectionClosed {
-			return err
-		}
-	}
-
-	return nil
+	// Запуск слушателя веб сервера
+	return s.webServer.Start(addr, s.Config.Secure)
 }
 
 // Устанавливаем глобальные настройки для маршрутов
 func (s *Server) newRoute() *Route {
 	route := new(Route)
 	if s.Config.Session != nil {
-		route.IsSession = s.Config.Session.AllRoutes
+		route.isSession = s.Config.Session.AllRoutes
 	}
 	if s.Config.Permission != nil {
-		route.IsPermission = s.Config.Permission.AllRoutes
+		route.isPermission = s.Config.Permission.AllRoutes
 	}
 	if s.Config.Authorization.AllRoutes != "" {
-		route.Authorization = s.Config.Authorization.AllRoutes
+		route.auth = s.Config.Authorization.AllRoutes
 	} else {
-		route.Authorization = NoAuth
+		route.auth = NoAuth
 	}
 	return route
 }
@@ -170,7 +180,42 @@ func (s *Server) delete(i IDelete, name, path string) {
 }
 
 // Обрабатываем метод OPTIONS
-func (s *Server) options(i IRestOptions, name, path string) {
+func (s *Server) options(i IOptions, name, path string) {
+	route := s.newRoute()
+	i.Options(route)
+	s.add(fiber.MethodOptions, name, path, route)
+}
+
+// Обрабатываем метод PATCH
+func (s *Server) patch(i IPatch, name, path string) {
+	route := s.newRoute()
+	i.Patch(route)
+	s.add(fiber.MethodPatch, name, path, route)
+}
+
+// Обрабатываем метод HEAD
+func (s *Server) head(i IHead, name, path string) {
+	route := s.newRoute()
+	i.Head(route)
+	s.add(fiber.MethodHead, name, path, route)
+}
+
+// Обрабатываем метод CONNECT
+func (s *Server) connect(i IConnect, name, path string) {
+	route := s.newRoute()
+	i.Connect(route)
+	s.add(fiber.MethodConnect, name, path, route)
+}
+
+// Обрабатываем метод TRACE
+func (s *Server) trace(i ITrace, name, path string) {
+	route := s.newRoute()
+	i.Trace(route)
+	s.add(fiber.MethodTrace, name, path, route)
+}
+
+// Обрабатываем метод OPTIONS
+/*func (s *Server) options(i IRestOptions, name, path string) {
 	route := s.newRoute()
 	i.Options(route)
 	s.add(fiber.MethodOptions, name, path, route)
@@ -193,7 +238,7 @@ func (s *Server) rest(i IRest, name, path string) {
 func (s *Server) restOptions(i IRestOptions, name, path string) {
 	s.rest(i, name, path)
 	s.options(i, name, path)
-}
+}*/
 
 func (s *Server) add(method string, name, path string, route *Route) {
 
@@ -202,13 +247,13 @@ func (s *Server) add(method string, name, path string, route *Route) {
 		return
 	}
 
-	if route.Params == nil {
-		route.Params = []string{"", "/"}
+	if route.params == nil {
+		route.params = []string{"", "/"}
 	} else {
 		// Проверка пути на пустоту и слэш
 		emptyPath := false
 		slash := false
-		for _, param := range route.Params {
+		for _, param := range route.params {
 			switch param {
 			case "":
 				emptyPath = true
@@ -219,98 +264,105 @@ func (s *Server) add(method string, name, path string, route *Route) {
 			}
 		}
 		if emptyPath && !slash {
-			route.Params = append(route.Params, "/")
+			route.params = append(route.params, "/")
 		} else if !emptyPath && slash {
-			route.Params = append(route.Params, "")
+			route.params = append(route.params, "")
 		}
 	}
-	route.Option.Method = method
+	//route.option.Method = method
 
 	// Инициализируем Swagger
-	if s.Swagger == nil {
+	if swagger == nil {
 		http := "http"
 		if s.Config.Secure != nil {
-			http = "https"
+			http += "s"
 		}
 		addr := "127.0.0.1"
-		s.Swagger = &Swagger{
+		swagger = &Swagger{
 			Uri: fmt.Sprintf("%s://%s:%d", http, addr, s.Config.Port),
 		}
 	}
-
 	// WebSocket
-	if route.webSocket != nil && route.webSocket.UpgradeHandler != nil {
-		s.Use(path, route.webSocket.UpgradeHandler)
-	}
+	/*if route.webSocket != nil && route.webSocket.UpgradeHandler != nil {
+		s.webServer.Any(path, route.webSocket.UpgradeHandler)
+	}*/
 
 	// Получаем handler маршрута
-	h := route.GetHandler(s)
+	h := route.getHandler(s.Config, swagger)
 
 	// Перебираем параметры адресной строки
-	for _, param := range route.Params {
+	for _, param := range route.params {
 		// Объединяем путь и параметры
 		path = p.Join(path, param)
 		// Добавляем метод, путь и обработчик
-		s.Add(method, path, h)
+		s.webServer.Add(method, path, h)
 		// Добавляем запись в swagger
-		s.Swagger.Add(name, path, route)
+		swagger.Add(name, path, route)
 	}
 }
 
-// RegisterExt Регистрация интерфейсов
-func (s *Server) RegisterExt(v interface{}, path string, name string, suffix ...Suffix) *Server {
-	//Устанавливаем имя и путь
+// RegisterEx Регистрация интерфейсов
+func (s *Server) RegisterEx(v interface{}, path string, name string, suffix ...Suffix) *Server {
+
+	// Устанавливаем имя и путь
 	name, path = s.getPkgNameAndPath(path, name, v, suffix...)
 	// Проверка интерфейса на соответствие
-	switch i := v.(type) {
-	case IRestOptions:
-		s.restOptions(i, name, path)
-		break
-	case IRest:
-		s.rest(i, name, path)
-		break
-	case IWeb:
-		s.web(i, name, path)
-		break
-	case IGet:
+	if i, ok := v.(IGet); ok {
 		s.get(i, name, path)
-		break
-	case IPost:
+	}
+	if i, ok := v.(IPost); ok {
 		s.post(i, name, path)
-		break
-	case IPut:
+	}
+	if i, ok := v.(IPut); ok {
 		s.put(i, name, path)
-		break
-	case IDelete:
+	}
+	if i, ok := v.(IDelete); ok {
 		s.delete(i, name, path)
-		break
 	}
+	if i, ok := v.(IOptions); ok {
+		s.options(i, name, path)
+	}
+	if i, ok := v.(IPatch); ok {
+		s.patch(i, name, path)
+	}
+	if i, ok := v.(IHead); ok {
+		s.head(i, name, path)
+	}
+	if i, ok := v.(IConnect); ok {
+		s.connect(i, name, path)
+	}
+	if i, ok := v.(ITrace); ok {
+		s.trace(i, name, path)
+	}
+
+	// Страница 404
+	// TODO NotFound
 	if s.Config.NotFoundPage != "" {
-		s.Use(func(ctx *fiber.Ctx) error {
-			return ctx.Render(s.Config.NotFoundPage, nil)
-		})
+		s.webServer.NotFoundPage(path, s.Config.NotFoundPage)
 	}
+
 	return s
 }
 
 func (s *Server) Register(i interface{}, path string) *Server {
-	return s.RegisterExt(i, path, "")
+	return s.RegisterEx(i, path, "")
 }
 
 // SetCors Установка CORS
-func (s *Server) SetCors(config *Cors) *Server {
+//TODO for fiber and Echo
+/*func (s *Server) SetCors(config *Cors) *Server {
 	cfg := cors.ConfigDefault
 	if config != nil {
 		cfg = cors.Config(*config)
 	}
-	s.Use(cors.New(cfg))
+	s.webServer.Use(cors.New(cfg))
 	return s
-}
+}*/
 
 // Stop Остановка сервера
 func (s *Server) Stop() error {
 	s.IsStarted = false
-	return s.Shutdown()
+	return s.webServer.Stop()
 }
 
 //Ищем все после пакета controllers

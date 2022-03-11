@@ -15,7 +15,27 @@ type IDelete interface {
 	Delete(route *Route)
 }
 
-type IWeb interface {
+type IOptions interface {
+	Options(route *Route)
+}
+
+type IPatch interface {
+	Patch(route *Route)
+}
+
+type IHead interface {
+	Head(route *Route)
+}
+
+type ITrace interface {
+	Trace(route *Route)
+}
+
+type IConnect interface {
+	Connect(route *Route)
+}
+
+/*type IWeb interface {
 	IGet
 	IPost
 }
@@ -29,4 +49,4 @@ type IRest interface {
 type IRestOptions interface {
 	IRest
 	Options(route *Route)
-}
+}*/
