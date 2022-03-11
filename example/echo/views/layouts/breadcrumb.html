@@ -1,0 +1,26 @@
+{{define "breadcrumb"}}
+<div class="row">
+  <div class="col">
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item">Billing Portal</li>
+        {{range .Navbar.Navs}}
+        {{if .SubMenus}}
+        {{$name := .Item.Name}}
+        {{range .SubMenus}}
+        {{if .Active}}
+        <li class="breadcrumb-item">{{ $name }}</li>
+        <li class="breadcrumb-item active" aria-current="page">{{ .Name}}</li>
+        {{end}}
+        {{end}}
+        {{else}}
+        {{if .Item.Active}}
+        <li class="breadcrumb-item active" aria-current="page">{{ .Item.Name}}</li>
+        {{end}}
+        {{end}}
+        {{end}}
+      </ol>
+    </nav>
+  </div>
+</div>
+{{end}}

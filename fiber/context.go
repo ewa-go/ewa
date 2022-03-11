@@ -2,6 +2,8 @@ package fiber
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"io"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -71,6 +73,15 @@ func (c *Context) Send(code int, contentType string, b []byte) error {
 	return c.Ctx.Status(code).Send(b)
 }
 
+func (c *Context) SendFile(file string) error {
+	return c.Ctx.SendFile(file)
+}
+
+func (c *Context) SendStream(code int, contentType string, stream io.Reader) error {
+	c.Ctx.Set(fiber.HeaderContentType, contentType)
+	return c.Ctx.Status(code).SendStream(stream)
+}
+
 func (c *Context) JSON(code int, data interface{}) error {
 	return c.Ctx.Status(code).JSON(data)
 }
@@ -93,4 +104,25 @@ func (c *Context) QueryParams() url.Values {
 		values.Set(string(key), string(value))
 	})
 	return values
+}
+
+func (c *Context) Hostname() string {
+	return c.Ctx.Hostname()
+}
+
+func (c *Context) FormValue(name string) string {
+	return c.Ctx.FormValue(name)
+}
+
+func (c *Context) FormFile(name string) (*multipart.FileHeader, error) {
+	c.Ctx.Port()
+	return c.Ctx.FormFile(name)
+}
+
+func (c *Context) Scheme() string {
+	return c.Ctx.Protocol()
+}
+
+func (c *Context) MultipartForm() (*multipart.Form, error) {
+	return c.Ctx.MultipartForm()
 }

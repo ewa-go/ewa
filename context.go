@@ -1,6 +1,8 @@
 package egowebapi
 
 import (
+	"io"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 )
@@ -18,6 +20,8 @@ type IContext interface {
 	SendStatus(code int) error
 	Send(code int, contentType string, b []byte) error
 	SendString(code int, s string) error
+	SendFile(file string) error
+	SendStream(code int, contentType string, stream io.Reader) error
 	Cookies(key string) string
 	SetCookie(cookie *http.Cookie)
 	ClearCookie(key string)
@@ -28,6 +32,11 @@ type IContext interface {
 	BodyParser(out interface{}) error
 	QueryParam(name string) string
 	QueryParams() url.Values
+	Hostname() string
+	FormValue(name string) string
+	FormFile(name string) (*multipart.FileHeader, error)
+	Scheme() string
+	MultipartForm() (*multipart.Form, error)
 }
 
 func NewContext(c IContext) *Context {

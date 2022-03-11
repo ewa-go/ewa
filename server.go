@@ -410,3 +410,7 @@ func (s *Server) insert(a []string, index int, value string) []string {
 	a[index] = value
 	return a
 }
+
+func (s *Server) String() string {
+	return fmt.Sprintf("%s %s", Name, Version)
+}

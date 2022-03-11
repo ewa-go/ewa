@@ -2,7 +2,9 @@ package echo
 
 import (
 	"github.com/labstack/echo/v4"
+	"io"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 )
@@ -69,6 +71,14 @@ func (c *Context) Send(code int, contentType string, b []byte) error {
 	return c.Ctx.Blob(code, contentType, b)
 }
 
+func (c *Context) SendFile(file string) error {
+	return c.Ctx.File(file)
+}
+
+func (c *Context) SendStream(code int, contentType string, stream io.Reader) error {
+	return c.Ctx.Stream(code, contentType, stream)
+}
+
 func (c *Context) JSON(code int, data interface{}) error {
 	return c.Ctx.JSON(code, data)
 }
@@ -90,4 +100,25 @@ func (c *Context) QueryParam(name string) string {
 
 func (c *Context) QueryParams() url.Values {
 	return c.Ctx.QueryParams()
+}
+
+func (c *Context) Hostname() string {
+	c.Ctx.Request()
+	return c.Ctx.Request().Host
+}
+
+func (c *Context) FormValue(name string) string {
+	return c.Ctx.FormValue(name)
+}
+
+func (c *Context) FormFile(name string) (*multipart.FileHeader, error) {
+	return c.Ctx.FormFile(name)
+}
+
+func (c *Context) Scheme() string {
+	return c.Ctx.Scheme()
+}
+
+func (c *Context) MultipartForm() (*multipart.Form, error) {
+	return c.Ctx.MultipartForm()
 }
