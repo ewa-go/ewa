@@ -1,6 +1,9 @@
 package egowebapi
 
+import "github.com/egovorukhin/egowebapi/websocket"
+
 type Handler func(c *Context) error
+type WebSocketHandler func(c *websocket.Conn)
 type PermissionHandler func(id interface{}, path string) bool
 type SessionHandler func(key string) (user string, domain string, err error)
 type GenSessionIdHandler func() string

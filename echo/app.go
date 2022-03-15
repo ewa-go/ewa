@@ -41,7 +41,7 @@ func (s *Server) Use(params ...interface{}) {
 	}
 }
 
-func (s *Server) Add(method, path string, handler ewa.Handler) {
+func (s *Server) Add(method, path string, isWebSocket bool, handler ewa.Handler) {
 	s.App.Add(method, path, func(c echo.Context) error {
 		ctx := ewa.NewContext(&Context{Ctx: c})
 		return handler(ctx)

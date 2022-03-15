@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	ewa "github.com/egovorukhin/egowebapi"
+	"github.com/egovorukhin/egowebapi/example/fiber/controllers"
 	"github.com/egovorukhin/egowebapi/example/fiber/controllers/web"
 	"github.com/egovorukhin/egowebapi/example/fiber/src/storage"
 	f "github.com/egovorukhin/egowebapi/fiber"
@@ -94,7 +95,7 @@ func main() {
 	//ws.RegisterEx(new(api2.User), "", "person", suffix...)
 	//ws.Register(new(api2.WS), "")
 	//webSocket
-	//ws.Register(new(controllers.WS), "")
+	ws.Register(new(controllers.WS), "")
 
 	// Канал для получения ошибки, если таковая будет
 	errChan := make(chan error, 2)

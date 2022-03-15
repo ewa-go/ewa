@@ -6,6 +6,7 @@ require (
 	github.com/gofiber/fiber/v2 v2.25.0
 	github.com/gofiber/template v1.6.21
 	github.com/gofiber/websocket/v2 v2.0.15
+	github.com/gorilla/websocket v1.5.0
 	github.com/labstack/echo/v4 v4.7.0
 	github.com/valyala/fasthttp v1.33.0
 )

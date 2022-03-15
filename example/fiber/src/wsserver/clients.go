@@ -1,7 +1,7 @@
 package wsserver
 
 import (
-	"github.com/gofiber/websocket/v2"
+	"github.com/egovorukhin/egowebapi/websocket"
 	"sync"
 	"time"
 )

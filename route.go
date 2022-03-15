@@ -1,19 +1,21 @@
 package egowebapi
 
+import "github.com/egovorukhin/egowebapi/websocket"
+
 type Route struct {
-	params       []string
-	auth         Auth
-	Handler      Handler
-	isSession    bool
-	isPermission bool
-	sign         Sign
-	webSocket    *WebSocket
+	params           []string
+	auth             Auth
+	Handler          Handler
+	WebSocketHandler WebSocketHandler
+	isSession        bool
+	isPermission     bool
+	sign             Sign
 	//option       Option
 }
 
-type WebSocket struct {
+/*type WebSocket struct {
 	UpgradeHandler Handler
-}
+}*/
 
 type Option struct {
 	Headers     []string `json:"headers,omitempty"`
@@ -81,16 +83,27 @@ func (r *Route) Permission() *Route {
 	return r
 }
 
-// WebSocket Устанавливаем web socket соединение
-func (r *Route) WebSocket(upgrade Handler) *Route {
-	r.webSocket = &WebSocket{
-		UpgradeHandler: upgrade,
-	}
+// WebSocket устанавливаем флаг для websocket соединения
+/*func (r *Route) WebSocket() *Route {
+	r.isWebSocket = true
+	return r
+}*/
+
+// EmptyHandler пустой обработчик
+func (r *Route) EmptyHandler() {
+	r.Handler = nil
+}
+
+// SetHandler устанавливаем обработчик
+func (r *Route) SetHandler(handler Handler) *Route {
+	r.Handler = handler
 	return r
 }
 
-func (r *Route) EmptyHandler() {
-	r.Handler = nil
+func (r *Route) getWebSocketHandler() WebSocketHandler {
+	return func(c *websocket.Conn) {
+		r.WebSocketHandler(c)
+	}
 }
 
 // getHandler возвращаем обработчик основанный на параметрах конфигурации маршрута
@@ -159,11 +172,6 @@ func (r *Route) getHandler(config Config, view *View) Handler {
 					return c.SendStatus(StatusForbidden)
 				}
 			}
-		}
-
-		// WebSocket
-		if r.webSocket != nil {
-
 		}
 
 		// Обычный маршрут
