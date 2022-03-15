@@ -13,7 +13,8 @@ type Login struct {
 
 func (Login) Get(route *ewa.Route) {
 	route.Handler = func(c *ewa.Context) error {
-		return c.Render("login", nil)
+		//return c.ViewRender(nil)
+		return c.Render(c.View.Filename, nil)
 	}
 }
 

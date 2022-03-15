@@ -50,7 +50,7 @@ func main() {
 
 	// Echo
 	app := echo.New()
-	app.Renderer = e.NewRender()
+	app.Renderer = e.NewRender("./views", e.Html, "layouts/base")
 	server := &e.Server{App: app}
 	// Конфиг
 	cfg := ewa.Config{

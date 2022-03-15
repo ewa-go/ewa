@@ -6,14 +6,14 @@ type Route struct {
 	Handler      Handler
 	isSession    bool
 	isPermission bool
-	Sign         Sign
-	//webSocket    *WebSocket
+	sign         Sign
+	webSocket    *WebSocket
 	//option       Option
 }
 
-/*type WebSocket struct {
-	UpgradeHandler fiber.Handler
-}*/
+type WebSocket struct {
+	UpgradeHandler Handler
+}
 
 type Option struct {
 	Headers     []string `json:"headers,omitempty"`
@@ -47,7 +47,7 @@ func (r *Route) SetParams(params ...string) *Route {
 }
 
 func (r *Route) SetSign(sign Sign) *Route {
-	r.Sign = sign
+	r.sign = sign
 	return r
 }
 
@@ -82,21 +82,23 @@ func (r *Route) Permission() *Route {
 }
 
 // WebSocket Устанавливаем web socket соединение
-/*func (r *Route) WebSocket(upgrade fiber.Handler) *Route {
+func (r *Route) WebSocket(upgrade Handler) *Route {
 	r.webSocket = &WebSocket{
 		UpgradeHandler: upgrade,
 	}
 	return r
-}*/
+}
 
 func (r *Route) EmptyHandler() {
 	r.Handler = nil
 }
 
-// GetHandler возвращаем обработчик основанный на параметрах конфигурации маршрута
-func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
+// getHandler возвращаем обработчик основанный на параметрах конфигурации маршрута
+func (r *Route) getHandler(config Config, view *View) Handler {
 
 	return func(c *Context) error {
+
+		c.View = view
 
 		var err error
 		switch r.auth {
@@ -129,7 +131,7 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 		// Проверяем маршрут на актуальность сессии
 		if /*r.isSession &&*/ config.Session != nil /*|| r.isSession*/ {
 			// Маршрут для входа/выхода
-			switch r.Sign {
+			switch r.sign {
 			case SignIn:
 				config.Session.login(c)
 				break
@@ -157,6 +159,11 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 					return c.SendStatus(StatusForbidden)
 				}
 			}
+		}
+
+		// WebSocket
+		if r.webSocket != nil {
+
 		}
 
 		// Обычный маршрут

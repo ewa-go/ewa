@@ -3,7 +3,7 @@ package web
 import (
 	"fmt"
 	ewa "github.com/egovorukhin/egowebapi"
-	"github.com/egovorukhin/egowebapi/example/fiber/src/storage"
+	"github.com/egovorukhin/egowebapi/example/echo/src/storage"
 )
 
 type Logout struct{}

@@ -3,7 +3,7 @@ package web
 import (
 	"errors"
 	ewa "github.com/egovorukhin/egowebapi"
-	"github.com/egovorukhin/egowebapi/example/fiber/src/storage"
+	"github.com/egovorukhin/egowebapi/example/echo/src/storage"
 )
 
 type Login struct {
@@ -29,7 +29,7 @@ func (l Login) Post(route *ewa.Route) {
 
 		if l.Username == "user" && l.Password == "Qq123456" {
 			storage.SetStorage(c.Identity.SessionId, l.Username)
-			return c.SendStatus(200)
+			return c.SendString(200, "OK")
 		}
 
 		return errors.New("Не верное имя пользователя или пароль!")

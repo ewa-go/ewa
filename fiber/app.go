@@ -3,29 +3,19 @@ package fiber
 import (
 	ewa "github.com/egovorukhin/egowebapi"
 	"github.com/gofiber/fiber/v2"
-	"github.com/valyala/fasthttp"
 )
 
 type Server struct {
 	App *fiber.App
 }
 
-func (s *Server) Start(addr string, secure *ewa.Secure) (err error) {
+func (s *Server) Start(addr string) (err error) {
+	return s.App.Listen(addr)
+}
 
-	// Если флаг для безопасности true, то запускаем механизм с TLS
-	if secure != nil {
-		// Возвращаем данные по сертификату
-		cert, key := secure.Get()
-		// Запускаем слушатель с TLS настройкой
-		err = s.App.ListenTLS(addr, cert, key)
-	} else {
-		err = s.App.Listen(addr)
-	}
-	if err != nil && err != fasthttp.ErrConnectionClosed {
-		return err
-	}
-
-	return nil
+func (s *Server) StartTLS(addr, cert, key string) (err error) {
+	// Запускаем слушатель с TLS настройкой
+	return s.App.ListenTLS(addr, cert, key)
 }
 
 func (s *Server) Stop() error {
@@ -48,8 +38,7 @@ func (s *Server) Use(params ...interface{}) {
 
 func (s *Server) Add(method, path string, handler ewa.Handler) {
 	s.App.Add(method, path, func(ctx *fiber.Ctx) error {
-		c := ewa.NewContext(&Context{Ctx: ctx})
-		return handler(c)
+		return handler(ewa.NewContext(&Context{Ctx: ctx}))
 	})
 }
 

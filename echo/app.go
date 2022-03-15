@@ -11,19 +11,12 @@ type Server struct {
 	Ctx Context
 }
 
-func (s *Server) Start(addr string, secure *ewa.Secure) (err error) {
+func (s *Server) Start(addr string) error {
+	return s.App.Start(addr)
+}
 
-	// Если флаг для безопасности true, то запускаем механизм с TLS
-	if secure != nil {
-		// Возвращаем данные по сертификату
-		cert, key := secure.Get()
-		// Запускаем слушатель с TLS настройкой
-		err = s.App.StartTLS(addr, cert, key)
-	} else {
-		err = s.App.Start(addr)
-	}
-
-	return err
+func (s *Server) StartTLS(addr, cert, key string) error {
+	return s.App.StartTLS(addr, cert, key)
 }
 
 func (s *Server) Stop() error {

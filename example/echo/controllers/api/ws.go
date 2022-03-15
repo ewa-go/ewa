@@ -2,7 +2,7 @@ package api
 
 import (
 	ewa "github.com/egovorukhin/egowebapi"
-	"github.com/egovorukhin/egowebapi/example/fiber/src/wsserver"
+	"github.com/egovorukhin/egowebapi/example/echo/src/wsserver"
 	"github.com/gofiber/fiber/v2"
 )
 

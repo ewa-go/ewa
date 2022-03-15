@@ -63,6 +63,11 @@ func main() {
 			Prefix: "/",
 			Root:   "./views",
 		},
+		Views: &ewa.Views{
+			Root:   "./views",
+			Layout: "layouts/base",
+			Engine: f.Html,
+		},
 		Authorization: ewa.Authorization{
 			Basic: basicAuthHandler,
 		},

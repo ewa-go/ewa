@@ -12,9 +12,16 @@ type Config struct {
 	Permission    *Permission
 	Static        *Static
 	NotFoundPage  string
+	Views         *Views
 	//Timeout       Timeout
 	//BufferSize    BufferSize
 	//BodyLimit     int
+}
+
+type Views struct {
+	Root   string
+	Layout string
+	Engine string
 }
 
 type Static struct {

@@ -3,7 +3,9 @@ package egowebapi
 import (
 	"fmt"
 	"github.com/gofiber/fiber/v2"
+	"github.com/valyala/fasthttp"
 	p "path"
+	"path/filepath"
 	"reflect"
 	"regexp"
 	"strings"
@@ -30,7 +32,8 @@ type Server struct {
 var swagger *Swagger
 
 type IServer interface {
-	Start(addr string, secure *Secure) error
+	Start(addr string) error
+	StartTLS(addr, cert, key string) error
 	Stop() error
 	Static(prefix, root string)
 	Any(path string, handler interface{})
@@ -51,20 +54,6 @@ func NewSuffix(suffix ...Suffix) (s []Suffix) {
 	}
 	return
 }
-
-//type Cors cors.Config
-
-//type Store session.Config
-
-/*type IServer interface {
-	Start() error
-	Stop() error
-	Register(i interface{}, path string) *Server
-	RegisterExt(i interface{}, path string, name string, suffix ...Suffix) *Server
-	SetCors(config *Cors) *Server
-	GetWebServer() IWebServer
-	//SetStore(config *Store) * Server
-}*/
 
 func New(server IServer, config Config) *Server {
 
@@ -125,13 +114,25 @@ func (s *Server) GetWebServer() interface{} {
 }
 
 // Start запуск сервера
-func (s *Server) Start() error {
+func (s *Server) Start() (err error) {
 	//Флаг старта
 	s.IsStarted = true
 	// Получение адреса
 	addr := fmt.Sprintf(":%d", s.Config.Port)
-	// Запуск слушателя веб сервера
-	return s.webServer.Start(addr, s.Config.Secure)
+	// Если флаг для безопасности true, то запускаем механизм с TLS
+	if s.Config.Secure != nil {
+		// Возвращаем данные по сертификату
+		cert, key := s.Config.Secure.Get()
+		// Запускаем слушатель с TLS настройкой
+		err = s.webServer.StartTLS(addr, cert, key)
+	} else {
+		// Запуск слушателя веб сервера
+		err = s.webServer.Start(addr)
+	}
+	if err != nil && err != fasthttp.ErrConnectionClosed {
+		return err
+	}
+	return nil
 }
 
 // Устанавливаем глобальные настройки для маршрутов
@@ -214,32 +215,6 @@ func (s *Server) trace(i ITrace, name, path string) {
 	s.add(fiber.MethodTrace, name, path, route)
 }
 
-// Обрабатываем метод OPTIONS
-/*func (s *Server) options(i IRestOptions, name, path string) {
-	route := s.newRoute()
-	i.Options(route)
-	s.add(fiber.MethodOptions, name, path, route)
-}
-
-// Обрабатываем интерфейс IWeb
-func (s *Server) web(i IWeb, name, path string) {
-	s.get(i, name, path)
-	s.post(i, name, path)
-}
-
-// Обрабатываем интерфейс IRest
-func (s *Server) rest(i IRest, name, path string) {
-	s.web(i, name, path)
-	s.put(i, name, path)
-	s.delete(i, name, path)
-}
-
-// Обрабатываем интерфейс IRestOptions
-func (s *Server) restOptions(i IRestOptions, name, path string) {
-	s.rest(i, name, path)
-	s.options(i, name, path)
-}*/
-
 func (s *Server) add(method string, name, path string, route *Route) {
 
 	// Если нет ни одного handler, то выходим
@@ -272,7 +247,7 @@ func (s *Server) add(method string, name, path string, route *Route) {
 	//route.option.Method = method
 
 	// Инициализируем Swagger
-	if swagger == nil {
+	/*if swagger == nil {
 		http := "http"
 		if s.Config.Secure != nil {
 			http += "s"
@@ -281,14 +256,28 @@ func (s *Server) add(method string, name, path string, route *Route) {
 		swagger = &Swagger{
 			Uri: fmt.Sprintf("%s://%s:%d", http, addr, s.Config.Port),
 		}
-	}
-	// WebSocket
-	/*if route.webSocket != nil && route.webSocket.UpgradeHandler != nil {
-		s.webServer.Any(path, route.webSocket.UpgradeHandler)
 	}*/
 
+	// WebSocket
+	if route.webSocket != nil && route.webSocket.UpgradeHandler != nil {
+		s.webServer.Any(path, route.webSocket.UpgradeHandler)
+	}
+
+	var view *View
+	// Проверка на view
+	if s.Config.Views != nil {
+		files, _ := filepath.Glob(filepath.Join(s.Config.Views.Root, strings.ToLower(name)+s.Config.Views.Engine))
+		for _, file := range files {
+			view = &View{
+				Filename: strings.Replace(filepath.Base(file), s.Config.Views.Engine, "", -1),
+				Filepath: file,
+				Layout:   s.Config.Views.Layout,
+			}
+		}
+	}
+
 	// Получаем handler маршрута
-	h := route.getHandler(s.Config, swagger)
+	h := route.getHandler(s.Config, view)
 
 	// Перебираем параметры адресной строки
 	for _, param := range route.params {
@@ -297,7 +286,7 @@ func (s *Server) add(method string, name, path string, route *Route) {
 		// Добавляем метод, путь и обработчик
 		s.webServer.Add(method, path, h)
 		// Добавляем запись в swagger
-		swagger.Add(name, path, route)
+		//swagger.Add(name, path, route)
 	}
 }
 

@@ -9,7 +9,14 @@ import (
 
 type Context struct {
 	Identity *Identity
+	View     *View
 	IContext
+}
+
+type View struct {
+	Filename string
+	Filepath string
+	Layout   string
 }
 
 type IContext interface {
@@ -41,4 +48,8 @@ type IContext interface {
 
 func NewContext(c IContext) *Context {
 	return &Context{IContext: c}
+}
+
+func (c *Context) ViewRender(data interface{}) error {
+	return c.Render(c.View.Filename, data, c.View.Layout)
 }
