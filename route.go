@@ -1,15 +1,12 @@
 package egowebapi
 
-import "github.com/egovorukhin/egowebapi/websocket"
-
 type Route struct {
-	params           []string
-	auth             Auth
-	Handler          Handler
-	WebSocketHandler WebSocketHandler
-	isSession        bool
-	isPermission     bool
-	sign             Sign
+	params       []string
+	auth         Auth
+	Handler      Handler
+	isSession    bool
+	isPermission bool
+	sign         Sign
 	//option       Option
 }
 
@@ -98,12 +95,6 @@ func (r *Route) EmptyHandler() {
 func (r *Route) SetHandler(handler Handler) *Route {
 	r.Handler = handler
 	return r
-}
-
-func (r *Route) getWebSocketHandler() WebSocketHandler {
-	return func(c *websocket.Conn) {
-		r.WebSocketHandler(c)
-	}
 }
 
 // getHandler возвращаем обработчик основанный на параметрах конфигурации маршрута

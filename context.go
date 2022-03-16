@@ -1,7 +1,6 @@
 package egowebapi
 
 import (
-	"github.com/egovorukhin/egowebapi/websocket"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -9,9 +8,8 @@ import (
 )
 
 type Context struct {
-	Identity  *Identity
-	View      *View
-	WebSocket *websocket.Conn
+	Identity *Identity
+	View     *View
 	IContext
 }
 

@@ -38,7 +38,7 @@ type IServer interface {
 	Static(prefix, root string)
 	Any(path string, handler interface{})
 	Use(params ...interface{})
-	Add(method, path string, isWebSocket bool, handler Handler)
+	Add(method, path string, handler Handler)
 	GetApp() interface{}
 	NotFoundPage(path, page string)
 }
@@ -278,7 +278,6 @@ func (s *Server) add(method string, name, path string, route *Route) {
 
 	// Получаем handler маршрута
 	h := route.getHandler(s.Config, view)
-	wsHandler := route.getWebSocketHandler()
 
 	// Перебираем параметры адресной строки
 	for _, param := range route.params {
