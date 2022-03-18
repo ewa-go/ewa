@@ -94,8 +94,12 @@ func (c *Context) BodyParser(out interface{}) error {
 	return c.Ctx.Bind(out)
 }
 
-func (c *Context) QueryParam(name string) string {
-	return c.Ctx.QueryParam(name)
+func (c *Context) QueryParam(name string, defaultValue ...string) string {
+	value := c.Ctx.QueryParam(name)
+	if value == "" && defaultValue != nil {
+		return defaultValue[0]
+	}
+	return value
 }
 
 func (c *Context) QueryValues() url.Values {

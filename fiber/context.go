@@ -94,8 +94,8 @@ func (c *Context) BodyParser(out interface{}) error {
 	return c.Ctx.BodyParser(out)
 }
 
-func (c *Context) QueryParam(name string) string {
-	return c.Ctx.Query(name)
+func (c *Context) QueryParam(name string, defaultValue ...string) string {
+	return c.Ctx.Query(name, defaultValue...)
 }
 
 func (c *Context) QueryValues() url.Values {

@@ -37,7 +37,7 @@ type IContext interface {
 	JSON(code int, data interface{}) error
 	Body() []byte
 	BodyParser(out interface{}) error
-	QueryParam(name string) string
+	QueryParam(name string, defaultValue ...string) string
 	QueryValues() url.Values
 	QueryParams(func(key, value string))
 	Hostname() string
