@@ -98,12 +98,18 @@ func (c *Context) QueryParam(name string) string {
 	return c.Ctx.Query(name)
 }
 
-func (c *Context) QueryParams() url.Values {
+func (c *Context) QueryValues() url.Values {
 	values := url.Values{}
 	c.Ctx.Request().URI().QueryArgs().VisitAll(func(key, value []byte) {
 		values.Set(string(key), string(value))
 	})
 	return values
+}
+
+func (c *Context) QueryParams(h func(key, value string)) {
+	c.Ctx.Request().URI().QueryArgs().VisitAll(func(key, value []byte) {
+		h(string(key), string(value))
+	})
 }
 
 func (c *Context) Hostname() string {

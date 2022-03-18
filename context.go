@@ -38,7 +38,8 @@ type IContext interface {
 	Body() []byte
 	BodyParser(out interface{}) error
 	QueryParam(name string) string
-	QueryParams() url.Values
+	QueryValues() url.Values
+	QueryParams(func(key, value string))
 	Hostname() string
 	FormValue(name string) string
 	FormFile(name string) (*multipart.FileHeader, error)

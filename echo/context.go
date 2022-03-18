@@ -98,8 +98,18 @@ func (c *Context) QueryParam(name string) string {
 	return c.Ctx.QueryParam(name)
 }
 
-func (c *Context) QueryParams() url.Values {
+func (c *Context) QueryValues() url.Values {
 	return c.Ctx.QueryParams()
+}
+
+func (c *Context) QueryParams(h func(key, value string)) {
+	for k, v := range c.Ctx.QueryParams() {
+		s := ""
+		if len(v) > 0 {
+			s = v[0]
+		}
+		h(k, s)
+	}
 }
 
 func (c *Context) Hostname() string {
