@@ -41,6 +41,10 @@ const sessionId = "session_id"
 // Проверяем куки и извлекаем по ключу id по которому в бд/файле/памяти находим запись
 func (s *Session) check(c *Context) error {
 
+	if s.RedirectStatus == 0 {
+		s.RedirectStatus = StatusFound
+	}
+
 	key := c.Cookies(sessionId)
 	if len(key) == 0 {
 		return errors.New(fmt.Sprintf("Cookies [%s] not found", sessionId))
@@ -108,9 +112,6 @@ func (s *Session) signIn(c *Context) {
 		key = s.GenSessionIdHandler()
 	}
 	c.SessionId = key
-	if s.RedirectStatus == 0 {
-		s.RedirectStatus = StatusFound
-	}
 	cookie := &http.Cookie{
 		Name:    sessionId,
 		Value:   key,

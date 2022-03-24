@@ -11,9 +11,10 @@ type Logout struct{}
 func (Logout) Get(route *ewa.Route) {
 	route.SetSign(ewa.SignOut)
 	route.Handler = func(c *ewa.Context) error {
-		if c.Identity != nil {
-			fmt.Println(c.Identity.String())
-			storage.DeleteStorage(c.Identity.SessionId)
+		if c.SessionId != nil {
+			sessionId := c.SessionId.(string)
+			fmt.Println(sessionId)
+			storage.DeleteStorage(sessionId)
 		}
 		return c.SendStatus(200)
 	}
