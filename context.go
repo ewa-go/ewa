@@ -8,8 +8,9 @@ import (
 )
 
 type Context struct {
-	Identity *Identity
-	View     *View
+	Identity  *Identity
+	View      *View
+	SessionId interface{}
 	IContext
 }
 
@@ -21,8 +22,8 @@ type View struct {
 
 type IContext interface {
 	Render(name string, data interface{}, layouts ...string) error
-	Params(key string) string
-	Get(key string) string
+	Params(key string, defaultValue ...string) string
+	Get(key string, defaultValue ...string) string
 	Set(key string, value string)
 	SendStatus(code int) error
 	Send(code int, contentType string, b []byte) error

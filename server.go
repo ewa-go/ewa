@@ -138,9 +138,6 @@ func (s *Server) Start() (err error) {
 // Устанавливаем глобальные настройки для маршрутов
 func (s *Server) newRoute() *Route {
 	route := new(Route)
-	if s.Config.Session != nil {
-		route.isSession = s.Config.Session.AllRoutes
-	}
 	if s.Config.Permission != nil {
 		route.isPermission = s.Config.Permission.AllRoutes
 	}

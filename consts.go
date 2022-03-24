@@ -169,7 +169,7 @@ const (
 	HeaderHost                            = "Host"
 	HeaderReferer                         = "Referer"
 	HeaderReferrerPolicy                  = "Referrer-Policy"
-	HeaderUserAgent                       = "User-Agent"
+	HeaderUserAgent                       = "Username-Agent"
 	HeaderAllow                           = "Allow"
 	HeaderServer                          = "Server"
 	HeaderAcceptRanges                    = "Accept-Ranges"

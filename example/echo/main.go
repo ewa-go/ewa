@@ -82,7 +82,7 @@ func main() {
 	ws.Register(new(web.Home), "/")
 	ws.Register(new(web.Login), "/login")
 	ws.Register(new(web.Logout), "/logout")
-	//ws.RegisterEx(new(api2.User), "", "person", suffix...)
+	//ws.RegisterEx(new(api2.Username), "", "person", suffix...)
 	//ws.Register(new(api2.WS), "")
 	//webSocket
 	//ws.Register(new(controllers.WS), "")

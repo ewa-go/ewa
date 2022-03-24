@@ -20,7 +20,7 @@ type Authorization struct {
 	Unauthorized ErrorHandler
 	Basic        BasicAuthHandler
 	Digest       DigestAuthHandler
-	ApiKey       ApiKeyAuthHandler
+	ApiKey       *ApiKey
 }
 
 type Basic struct {
@@ -30,7 +30,6 @@ type Basic struct {
 
 func (b BasicAuthHandler) parseBasicAuth(auth string) (username, password string, ok bool) {
 	const prefix = "Basic "
-	// Case insensitive prefix match. See Issue 22736.
 	if len(auth) < len(prefix) || !strings.EqualFold(auth[:len(prefix)], prefix) {
 		return
 	}
@@ -46,15 +45,7 @@ func (b BasicAuthHandler) parseBasicAuth(auth string) (username, password string
 	return cs[:i], cs[i+1:], true
 }
 
-/*func (b *BasicAuthHandler) realm(c *Context) error {
-	if b.Unauthorized == nil {
-		ctx.Set(HeaderWWWAuthenticate, `Basic realm="Необходимо указать имя пользователя и пароль"`)
-		return ctx.SendStatus(StatusUnauthorized)
-	}
-	return b.Unauthorized(ctx, StatusUnauthorized)
-}*/
-
-func (b BasicAuthHandler) Do(c IContext) (i *Identity, err error) {
+func (b BasicAuthHandler) Do(c *Context) (err error) {
 
 	err = errors.New(`Basic realm="Необходимо указать имя пользователя и пароль"`)
 	auth := c.Get(HeaderAuthorization)
@@ -67,16 +58,9 @@ func (b BasicAuthHandler) Do(c IContext) (i *Identity, err error) {
 		return
 	}
 
-	domain := ""
-	a := strings.Split(username, `\`)
-	if len(a) > 1 {
-		domain = a[0]
-		username = a[1]
-	}
-
-	i = &Identity{
-		User:   username,
-		Domain: domain,
+	c.Identity = &Identity{
+		Username: username,
+		AuthName: BasicAuth,
 	}
 
 	return
@@ -114,7 +98,7 @@ func (b BasicAuthHandler) Do(c IContext) (i *Identity, err error) {
 
 		c := &Context{
 			Identity: &Identity{
-				User:   username,
+				Username:   username,
 				Domain: domain,
 			},
 		}
@@ -139,29 +123,40 @@ type Advanced struct {
 	Opaque      string
 }
 
-func (d *DigestAuthHandler) Do(c IContext) (i *Identity, err error) {
+func (d DigestAuthHandler) Do(c *Context) (err error) {
 
 	username := ""
 
-	i = &Identity{
-		User:   username,
-		Domain: "",
+	c.Identity = &Identity{
+		Username: username,
 	}
 
 	return
 }
 
-/*type ApiKey struct {
-	Handler      ApiKeyHandler
-	Unauthorized ErrorHandler
-}*/
+type ApiKey struct {
+	KeyName string
+	Handler ApiKeyAuthHandler
+}
 
-func (a *ApiKeyAuthHandler) Do(c IContext) (i *Identity, err error) {
+func (a ApiKey) Do(c *Context) (err error) {
+
+	// Пытаемся получить из заголовка токен
+	value := c.Get(a.KeyName)
+
+	// Если не нашли в заголовке, то ищем в переменных запроса адресной строки
+	if value == "" {
+		value = c.QueryParam(a.KeyName)
+	}
+
 	username := ""
+	if a.Handler != nil {
+		username, err = a.Handler(value)
+	}
 
-	i = &Identity{
-		User:   username,
-		Domain: "",
+	c.Identity = &Identity{
+		Username: username,
+		AuthName: ApiKeyAuth,
 	}
 
 	return

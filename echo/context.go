@@ -17,12 +17,20 @@ func (c *Context) Render(name string, data interface{}, layouts ...string) error
 	return c.Ctx.Render(200, name, data)
 }
 
-func (c *Context) Params(key string) string {
-	return c.Ctx.Param(key)
+func (c *Context) Params(key string, defaultValue ...string) string {
+	value := c.Ctx.Param(key)
+	if value == "" && defaultValue != nil {
+		return defaultValue[0]
+	}
+	return value
 }
 
-func (c *Context) Get(key string) string {
-	return c.Ctx.Request().Header.Get(key)
+func (c *Context) Get(key string, defaultValue ...string) string {
+	value := c.Ctx.Request().Header.Get(key)
+	if value == "" && defaultValue != nil {
+		return defaultValue[0]
+	}
+	return value
 }
 
 func (c *Context) Set(key, value string) {

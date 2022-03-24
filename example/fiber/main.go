@@ -24,20 +24,19 @@ func main() {
 		return false
 	}
 	//Session
-	checkSession := func(key string) (string, string, error) {
+	checkSession := func(key string) (string, error) {
 		if value, ok := storage.GetStorage(key); ok {
-			return value, "", nil
+			return value, nil
 		}
-		return "", "", errors.New("Элемент не найден")
+		return "", errors.New("Элемент не найден")
 	}
 	//Обработчик ошибок
 	errorHandler := func(c *ewa.Context, code int, err interface{}) error {
 		return c.Render("error", map[string]interface{}{"Code": code, "Text": err})
 	}
 	//Permission
-	checkPermission := func(id interface{}, path string) bool {
-		user, _ := storage.GetStorage(id.(string))
-		if user == "user" {
+	checkPermission := func(username, path string) bool {
+		if username == "user" {
 			switch path {
 			case "/":
 				return true
@@ -45,8 +44,6 @@ func main() {
 		}
 		return false
 	}
-
-	//exe, _ := os.Executable()
 
 	// Fiber
 	app := fiber.New(fiber.Config{
@@ -91,7 +88,7 @@ func main() {
 	ws.Register(new(web.Home), "/")
 	ws.Register(new(web.Login), "/login")
 	ws.Register(new(web.Logout), "/logout")
-	//ws.RegisterEx(new(api2.User), "", "person", suffix...)
+	//ws.RegisterEx(new(api2.Username), "", "person", suffix...)
 	//ws.Register(new(api2.WS), "")
 	//webSocket
 	//ws.Register(new(controllers.WS), "")

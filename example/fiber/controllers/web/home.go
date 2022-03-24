@@ -7,7 +7,7 @@ import (
 type Home struct{}
 
 func (Home) Get(route *ewa.Route) {
-	route.Session().Permission()
+	route.Auth(ewa.SessionAuth).Permission()
 	route.Handler = func(c *ewa.Context) error {
 		return c.ViewRender(nil)
 	}

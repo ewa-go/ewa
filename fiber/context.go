@@ -17,12 +17,12 @@ func (c *Context) Render(name string, bind interface{}, layouts ...string) error
 	return c.Ctx.Render(name, bind, layouts...)
 }
 
-func (c *Context) Params(key string) string {
-	return c.Ctx.Params(key)
+func (c *Context) Params(key string, defaultValue ...string) string {
+	return c.Ctx.Params(key, defaultValue...)
 }
 
-func (c *Context) Get(key string) string {
-	return c.Ctx.Get(key)
+func (c *Context) Get(key string, defaultValue ...string) string {
+	return c.Ctx.Get(key, defaultValue...)
 }
 
 func (c *Context) Set(key, value string) {

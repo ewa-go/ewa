@@ -1,10 +1,10 @@
 package egowebapi
 
 type Route struct {
-	params       []string
-	auth         Auth
-	Handler      Handler
-	isSession    bool
+	params  []string
+	auth    Auth
+	Handler Handler
+	//isSession    bool
 	isPermission bool
 	sign         Sign
 	//option       Option
@@ -24,10 +24,11 @@ type Option struct {
 type Auth string
 
 const (
-	NoAuth     Auth = "NoAuth"
-	BasicAuth  Auth = "BasicAuth"
-	DigestAuth Auth = "DigestAuth"
-	ApiKeyAuth Auth = "ApiKeyAuth"
+	NoAuth      = "NoAuth"
+	SessionAuth = "SessionAuth"
+	BasicAuth   = "BasicAuth"
+	DigestAuth  = "DigestAuth"
+	ApiKeyAuth  = "ApiKeyAuth"
 )
 
 type Sign int
@@ -36,7 +37,6 @@ const (
 	SignNone Sign = iota
 	SignIn
 	SignOut
-	SignUp
 )
 
 // SetParams указываем параметры маршрута
@@ -63,16 +63,16 @@ func (r *Route) SetBody(s string) *Route {
 }*/
 
 // Auth указываем метод авторизации
-func (r *Route) Auth(auth Auth) *Route {
-	r.auth = auth
+func (r *Route) Auth(auth string) *Route {
+	r.auth = Auth(auth)
 	return r
 }
 
 // Session вешаем получение аутентификации сессии,
-func (r *Route) Session() *Route {
+/*func (r *Route) Session() *Route {
 	r.isSession = true
 	return r
-}
+}*/
 
 // Permission ставим флаг для проверки маршрута на право доступа
 func (r *Route) Permission() *Route {
@@ -104,59 +104,61 @@ func (r *Route) getHandler(config Config, view *View) Handler {
 
 		c.View = view
 
+		// Вход/Выход из сессии
+		if config.Session != nil {
+			switch r.sign {
+			case SignNone:
+				break
+			case SignIn:
+				config.Session.signIn(c)
+				break
+			case SignOut:
+				config.Session.signOut(c)
+				return c.Redirect(config.Session.RedirectPath, config.Session.RedirectStatus)
+			}
+		}
+
 		var err error
 		switch r.auth {
+		case SessionAuth:
+			err = config.Session.check(c)
+			if err != nil {
+				// Если cookie не существует, то перенаправляем запрос условно на "/signIn"
+				return c.Redirect(config.Session.RedirectPath, config.Session.RedirectStatus)
+			}
+			break
 		case BasicAuth:
 			if config.Authorization.Basic != nil {
-				c.Identity, err = config.Authorization.Basic.Do(c)
+				err = config.Authorization.Basic.Do(c)
+				if err != nil {
+					c.Set(HeaderWWWAuthenticate, err.Error())
+				}
 			}
 			break
 		case DigestAuth:
 			if config.Authorization.Digest != nil {
-				c.Identity, err = config.Authorization.Digest.Do(c)
+				err = config.Authorization.Digest.Do(c)
 			}
 			break
 		case ApiKeyAuth:
 			if config.Authorization.ApiKey != nil {
-				c.Identity, err = config.Authorization.ApiKey.Do(c)
+				err = config.Authorization.ApiKey.Do(c)
 			}
 			break
 		}
 
-		// Проверка на авторизацию
+		// Проверка на ошибку авторизации и отправку кода 401
 		if err != nil {
 			if config.Authorization.Unauthorized != nil {
 				return config.Authorization.Unauthorized(c, StatusUnauthorized, err)
 			}
-			c.Set(HeaderWWWAuthenticate, err.Error())
 			return c.SendStatus(StatusUnauthorized)
-		}
-
-		// Проверяем маршрут на актуальность сессии
-		if /*r.isSession &&*/ config.Session != nil /*|| r.isSession*/ {
-			// Маршрут для входа/выхода
-			switch r.sign {
-			case SignIn:
-				config.Session.login(c)
-				break
-			case SignOut:
-				config.Session.logout(c)
-				return c.Redirect(config.Session.RedirectPath, StatusFound)
-			}
-			if r.isSession {
-				// Проверка сессии
-				err = config.Session.check(c)
-				if err != nil {
-					// Если cookie не существует, то перенаправляем запрос на условно "/login"
-					return c.Redirect(config.Session.RedirectPath, StatusFound)
-				}
-			}
 		}
 
 		// Доступ к маршрутам
 		if r.isPermission && config.Permission != nil {
 			if c.Identity != nil {
-				if !config.Permission.check(c.Identity.SessionId, c.Path()) {
+				if !config.Permission.check(c.Identity.Username, c.Path()) {
 					if config.Permission.NotPermissionHandler != nil {
 						return config.Permission.NotPermissionHandler(c, StatusForbidden, "Forbidden")
 					}
@@ -207,13 +209,13 @@ func (r *Route) getHandler(config Config, view *View) Handler {
 	// LoginHandler для маршрута web авторизации Login
 	case func(*fiber.Ctx, string) error:
 		if config.Session != nil {
-			return config.Session.login(h)
+			return config.Session.signIn(h)
 		}
 		break
 	// LogoutHandler для маршрута web авторизации Logout
 	case func(*fiber.Ctx, *Identity, string) error:
 		if config.Session != nil {
-			return config.Session.logout(h)
+			return config.Session.signOut(h)
 		}
 		break
 

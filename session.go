@@ -12,6 +12,8 @@ import (
 type Session struct {
 	// Путь для перехода на страницу авторизации
 	RedirectPath string
+	// Статус при переходе, по умолчанию 302 - Found
+	RedirectStatus int
 	// Применение сессии на все маршруты
 	AllRoutes bool
 	// Время просрочки сессии
@@ -26,14 +28,12 @@ type Session struct {
 
 // Identity Структура описывает идентификацию пользователя
 type Identity struct {
-	User   string
-	Domain string
-	// Используется для идентификации сессии в cookie
-	SessionId string
+	Username string
+	AuthName string
 }
 
 func (i Identity) String() string {
-	return fmt.Sprintf("user: %s, domain: %s", i.User, i.Domain)
+	return fmt.Sprintf("user: %s, auth_name: %s", i.Username, i.AuthName)
 }
 
 const sessionId = "session_id"
@@ -46,15 +46,16 @@ func (s *Session) check(c *Context) error {
 		return errors.New(fmt.Sprintf("Cookies [%s] not found", sessionId))
 	}
 
+	c.SessionId = key
+
 	if s.SessionHandler != nil {
-		user, domain, err := s.SessionHandler(key)
+		user, err := s.SessionHandler(key)
 		if err != nil {
 			return err
 		}
 		c.Identity = &Identity{
-			User:      user,
-			Domain:    domain,
-			SessionId: key,
+			Username: user,
+			AuthName: SessionAuth,
 		}
 	}
 
@@ -65,7 +66,7 @@ func (s *Session) check(c *Context) error {
 		user := unknown
 		domain := unknown
 
-		// Если cookie не существует, то перенаправляем запрос на условно "/login"
+		// Если cookie не существует, то перенаправляем запрос на условно "/signIn"
 		key := ctx.Cookies(sessionId)
 		if len(key) == 0 {
 			return ctx.Redirect(s.RedirectPath)
@@ -93,44 +94,44 @@ func (s *Session) check(c *Context) error {
 
 		// Возвращаем данные по пользователю и маршруту
 		return handler(ctx, &Identity{
-			User:   user,
+			Username:   user,
 			Domain: domain,
 		})
 	}*/
 }
 
 // Формируем session_id и добавляем в куки
-func (s *Session) login(c *Context) {
+func (s *Session) signIn(c *Context) {
 
 	key := utils.UUID()
 	if s.GenSessionIdHandler != nil {
 		key = s.GenSessionIdHandler()
+	}
+	c.SessionId = key
+	if s.RedirectStatus == 0 {
+		s.RedirectStatus = StatusFound
 	}
 	cookie := &http.Cookie{
 		Name:    sessionId,
 		Value:   key,
 		Expires: time.Now().Add(s.Expires),
 	}
-	cookie.Name = sessionId
-	cookie.Value = key
-	cookie.Expires = time.Now().Add(s.Expires)
 	c.SetCookie(cookie)
-	c.Identity = &Identity{SessionId: key}
 }
 
 // Очищаем куки, чтобы при маршрутизации сессия не была доступна
-func (s *Session) logout(c *Context) {
+func (s *Session) signOut(c *Context) {
 
 	key := c.Cookies(sessionId)
+	c.SessionId = key
 	identity := &Identity{
-		SessionId: key,
+		AuthName: SessionAuth,
 	}
-	user, domain, err := s.SessionHandler(key)
+	user, err := s.SessionHandler(key)
 	if err != nil {
 		identity = nil
 	} else {
-		identity.User = user
-		identity.Domain = domain
+		identity.Username = user
 	}
 	c.Identity = identity
 	c.ClearCookie(sessionId)

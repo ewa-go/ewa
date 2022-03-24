@@ -8,9 +8,9 @@ type Permission struct {
 }
 
 // check Проверяем запрос на разрешения
-func (p *Permission) check(id interface{}, path string) bool {
+func (p *Permission) check(username string, path string) bool {
 	if p.Handler == nil {
 		return true
 	}
-	return p.Handler(id, path)
+	return p.Handler(username, path)
 }
