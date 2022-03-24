@@ -142,10 +142,10 @@ func (s *Server) newRoute() *Route {
 		route.isPermission = s.Config.Permission.AllRoutes
 	}
 	if s.Config.Authorization.AllRoutes != "" {
-		route.auth = s.Config.Authorization.AllRoutes
-	} else {
+		route.auth = append(route.auth, s.Config.Authorization.AllRoutes)
+	} /*else {
 		route.auth = NoAuth
-	}
+	}*/
 	return route
 }
 

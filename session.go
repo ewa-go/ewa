@@ -59,7 +59,7 @@ func (s *Session) check(c *Context) error {
 		}
 		c.Identity = &Identity{
 			Username: user,
-			AuthName: SessionAuth,
+			AuthName: "Session",
 		}
 	}
 
@@ -126,7 +126,7 @@ func (s *Session) signOut(c *Context) {
 	key := c.Cookies(sessionId)
 	c.SessionId = key
 	identity := &Identity{
-		AuthName: SessionAuth,
+		AuthName: "Session",
 	}
 	user, err := s.SessionHandler(key)
 	if err != nil {

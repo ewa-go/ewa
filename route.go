@@ -1,18 +1,13 @@
 package egowebapi
 
 type Route struct {
-	params  []string
-	auth    Auth
-	Handler Handler
-	//isSession    bool
+	params       []string
+	auth         []string
+	Handler      Handler
+	isSession    bool
 	isPermission bool
 	sign         Sign
-	//option       Option
 }
-
-/*type WebSocket struct {
-	UpgradeHandler Handler
-}*/
 
 type Option struct {
 	Headers     []string `json:"headers,omitempty"`
@@ -21,14 +16,13 @@ type Option struct {
 	Description string   `json:"description,omitempty"`
 }
 
-type Auth string
+//type Auth string
 
 const (
-	NoAuth      = "NoAuth"
-	SessionAuth = "SessionAuth"
-	BasicAuth   = "BasicAuth"
-	DigestAuth  = "DigestAuth"
-	ApiKeyAuth  = "ApiKeyAuth"
+	//NoAuth     = "NoAuth"
+	BasicAuth  = "BasicAuth"
+	DigestAuth = "DigestAuth"
+	ApiKeyAuth = "ApiKeyAuth"
 )
 
 type Sign int
@@ -63,28 +57,22 @@ func (r *Route) SetBody(s string) *Route {
 }*/
 
 // Auth указываем метод авторизации
-func (r *Route) Auth(auth string) *Route {
-	r.auth = Auth(auth)
+func (r *Route) Auth(auth ...string) *Route {
+	r.auth = auth
 	return r
 }
 
 // Session вешаем получение аутентификации сессии,
-/*func (r *Route) Session() *Route {
+func (r *Route) Session() *Route {
 	r.isSession = true
 	return r
-}*/
+}
 
 // Permission ставим флаг для проверки маршрута на право доступа
 func (r *Route) Permission() *Route {
 	r.isPermission = true
 	return r
 }
-
-// WebSocket устанавливаем флаг для websocket соединения
-/*func (r *Route) WebSocket() *Route {
-	r.isWebSocket = true
-	return r
-}*/
 
 // EmptyHandler пустой обработчик
 func (r *Route) EmptyHandler() {
@@ -104,8 +92,39 @@ func (r *Route) getHandler(config Config, view *View) Handler {
 
 		c.View = view
 
-		// Вход/Выход из сессии
+		var (
+			err    error
+			isAuth bool
+		)
+		if len(r.auth) > 0 {
+			isAuth = true
+		}
+		for _, auth := range r.auth {
+			switch auth {
+			case BasicAuth:
+				if config.Authorization.Basic != nil {
+					err = config.Authorization.Basic.Do(c)
+					if err != nil {
+						c.Set(HeaderWWWAuthenticate, err.Error())
+					}
+				}
+				break
+			case DigestAuth:
+				if config.Authorization.Digest != nil {
+					err = config.Authorization.Digest.Do(c)
+				}
+				break
+			case ApiKeyAuth:
+				if config.Authorization.ApiKey != nil {
+					err = config.Authorization.ApiKey.Do(c)
+				}
+				break
+			}
+		}
+
+		// Проверка на сессию
 		if config.Session != nil {
+			// Вход/Выход из сессии
 			switch r.sign {
 			case SignNone:
 				break
@@ -116,43 +135,43 @@ func (r *Route) getHandler(config Config, view *View) Handler {
 				config.Session.signOut(c)
 				return c.Redirect(config.Session.RedirectPath, config.Session.RedirectStatus)
 			}
-		}
-
-		var err error
-		switch r.auth {
-		case SessionAuth:
-			err = config.Session.check(c)
-			if err != nil {
-				// Если cookie не существует, то перенаправляем запрос условно на "/signIn"
-				return c.Redirect(config.Session.RedirectPath, config.Session.RedirectStatus)
+			if !isAuth && r.isSession {
+				err = config.Session.check(c)
 			}
-			break
-		case BasicAuth:
-			if config.Authorization.Basic != nil {
-				err = config.Authorization.Basic.Do(c)
-				if err != nil {
-					c.Set(HeaderWWWAuthenticate, err.Error())
-				}
-			}
-			break
-		case DigestAuth:
-			if config.Authorization.Digest != nil {
-				err = config.Authorization.Digest.Do(c)
-			}
-			break
-		case ApiKeyAuth:
-			if config.Authorization.ApiKey != nil {
-				err = config.Authorization.ApiKey.Do(c)
-			}
-			break
 		}
 
 		// Проверка на ошибку авторизации и отправку кода 401
 		if err != nil {
-			if config.Authorization.Unauthorized != nil {
-				return config.Authorization.Unauthorized(c, StatusUnauthorized, err)
+			if isAuth {
+				if config.Authorization.Unauthorized != nil {
+					return config.Authorization.Unauthorized(c, StatusUnauthorized, err)
+				}
+				return c.SendStatus(StatusUnauthorized)
+			} else if r.isSession {
+				// Если cookie не существует, то перенаправляем запрос условно на "/login"
+				return c.Redirect(config.Session.RedirectPath, config.Session.RedirectStatus)
 			}
-			return c.SendStatus(StatusUnauthorized)
+		}
+
+		if config.Session != nil {
+			// Вход/Выход из сессии
+			switch r.sign {
+			case SignNone:
+				break
+			case SignIn:
+				config.Session.signIn(c)
+				break
+			case SignOut:
+				config.Session.signOut(c)
+				return c.Redirect(config.Session.RedirectPath, config.Session.RedirectStatus)
+			}
+			if r.isSession {
+				err = config.Session.check(c)
+				if err != nil {
+					// Если cookie не существует, то перенаправляем запрос условно на "/signIn"
+					return c.Redirect(config.Session.RedirectPath, config.Session.RedirectStatus)
+				}
+			}
 		}
 
 		// Доступ к маршрутам

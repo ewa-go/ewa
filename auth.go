@@ -16,7 +16,7 @@ const (
 )
 
 type Authorization struct {
-	AllRoutes    Auth
+	AllRoutes    string
 	Unauthorized ErrorHandler
 	Basic        BasicAuthHandler
 	Digest       DigestAuthHandler
@@ -63,7 +63,7 @@ func (b BasicAuthHandler) Do(c *Context) (err error) {
 		AuthName: BasicAuth,
 	}
 
-	return
+	return nil
 }
 
 /*func (b *Basic) Do(handler Handler, isPermission bool, permission *Permission) fiber.Handler {
