@@ -1,1 +1,1 @@
-# Web API для проектов на go
+# Ego Web API для проектов на go
