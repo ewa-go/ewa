@@ -1,5 +1,7 @@
 package egowebapi
 
+import v2 "github.com/egovorukhin/egowebapi/swagger/v2"
+
 type IGet interface {
 	Get(route *Route)
 }
@@ -33,6 +35,10 @@ type ITrace interface {
 
 type IConnect interface {
 	Connect(route *Route)
+}
+
+type ITag interface {
+	Tag() v2.Tag
 }
 
 /*type IWeb interface {

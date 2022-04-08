@@ -2,8 +2,8 @@ package egowebapi
 
 import (
 	"fmt"
+	v2 "github.com/egovorukhin/egowebapi/swagger/v2"
 	"github.com/gofiber/fiber/v2"
-	"github.com/valyala/fasthttp"
 	p "path"
 	"path/filepath"
 	"reflect"
@@ -13,23 +13,15 @@ import (
 
 const (
 	Name    = "EgoWebApi"
-	Version = "v0.2.1"
+	Version = "v0.2.5"
 )
-
-//type Framework string
-
-/*const (
-	FrameworkFiber = "fiber"
-	FrameworkEcho  = "echo"
-)*/
 
 type Server struct {
 	Config    Config
 	IsStarted bool
 	webServer IServer
+	Swagger   *v2.Swagger
 }
-
-var swagger *Swagger
 
 type IServer interface {
 	Start(addr string) error
@@ -57,55 +49,22 @@ func NewSuffix(suffix ...Suffix) (s []Suffix) {
 
 func New(server IServer, config Config) *Server {
 
-	//var server IServer
-	//Таймауты
-	//readTimeout, writeTimeout, idleTimeout := config.Timeout.Get()
-	// Буферы
-	//readBufferSize, writeBufferSize := config.BufferSize.Get()
-	//Получаем расположение исполняемого файла
-	/*exePath, err := os.Executable()
-	if err != nil {
-		return nil, err
-	}*/
-	//Настройки
-	/*settings := fiber.Config{
-		BodyLimit:       config.BodyLimit,
-		ReadTimeout:     time.Duration(readTimeout) * time.Second,
-		WriteTimeout:    time.Duration(writeTimeout) * time.Second,
-		IdleTimeout:     time.Duration(idleTimeout) * time.Second,
-		ReadBufferSize:  readBufferSize,
-		WriteBufferSize: writeBufferSize,
-	}*/
-	/*switch fw {
-	case FrameworkFiber:
-		// Указываем нужны ли страницы
-		if config.Views != nil {
-			if config.Views.Extension != None {
-				settings.Views = config.Views.Extension.Engine( config.Views.Directory, config.Views.Engine)
-			}
-			if config.Views.Layout != "" {
-				settings.ViewsLayout = config.Views.Layout
-			}
-		}
-		//Инициализируем сервер
-		server = &framework.Fiber{
-			App: fiber.New(settings),
-		}
-	case FrameworkEcho:
-		server = &framework.Echo{
-			App: echo.New(),
-		}
-	}*/
-
 	// Устанавливаем статические файлы
 	if config.Static != nil {
 		server.Static(config.Static.Prefix, config.Static.Root)
 	}
 
-	return &Server{
+	s := &Server{
 		Config:    config,
 		webServer: server,
 	}
+
+	// Инициализация swagger
+	if config.Swagger != nil {
+		s.Swagger = v2.New(config.Swagger.Host, config.Swagger.Info)
+	}
+
+	return s
 }
 
 // GetWebServer вернуть интерфейс веб сервера
@@ -115,24 +74,27 @@ func (s *Server) GetWebServer() interface{} {
 
 // Start запуск сервера
 func (s *Server) Start() (err error) {
+	// Схема
+	scheme := "http"
 	//Флаг старта
 	s.IsStarted = true
 	// Получение адреса
 	addr := fmt.Sprintf(":%d", s.Config.Port)
 	// Если флаг для безопасности true, то запускаем механизм с TLS
 	if s.Config.Secure != nil {
+		// Security
+		scheme += "s"
 		// Возвращаем данные по сертификату
 		cert, key := s.Config.Secure.Get()
 		// Запускаем слушатель с TLS настройкой
-		err = s.webServer.StartTLS(addr, cert, key)
-	} else {
-		// Запуск слушателя веб сервера
-		err = s.webServer.Start(addr)
+		return s.webServer.StartTLS(addr, cert, key)
 	}
-	if err != nil && err != fasthttp.ErrConnectionClosed {
-		return err
+	// Добавляем схему в Swagger
+	if s.Swagger != nil {
+		s.Swagger.Schemes = append(s.Swagger.Schemes, scheme)
 	}
-	return nil
+	// Запуск слушателя веб сервера
+	return s.webServer.Start(addr)
 }
 
 // Устанавливаем глобальные настройки для маршрутов
@@ -143,9 +105,8 @@ func (s *Server) newRoute() *Route {
 	}
 	if s.Config.Authorization.AllRoutes != "" {
 		route.auth = append(route.auth, s.Config.Authorization.AllRoutes)
-	} /*else {
-		route.auth = NoAuth
-	}*/
+	}
+
 	return route
 }
 
@@ -241,24 +202,6 @@ func (s *Server) add(method string, name, path string, route *Route) {
 			route.params = append(route.params, "")
 		}
 	}
-	//route.option.Method = method
-
-	// Инициализируем Swagger
-	/*if swagger == nil {
-		http := "http"
-		if s.Config.Secure != nil {
-			http += "s"
-		}
-		addr := "127.0.0.1"
-		swagger = &Swagger{
-			Uri: fmt.Sprintf("%s://%s:%d", http, addr, s.Config.Port),
-		}
-	}*/
-
-	// WebSocket
-	/*if route.webSocket != nil && route.webSocket.UpgradeHandler != nil {
-		s.webServer.Any(path, route.webSocket.UpgradeHandler)
-	}*/
 
 	var view *View
 	// Проверка на view
@@ -273,8 +216,43 @@ func (s *Server) add(method string, name, path string, route *Route) {
 		}
 	}
 
+	// Добавляем запись в swagger
+	if s.Swagger != nil {
+		// Модели
+		for _, param := range route.path.Parameters {
+			if param.Type == v2.ParameterTypeBody {
+				if param.Body != nil {
+					Type := ""
+					switch reflect.TypeOf(param.Body).Kind() {
+					case reflect.Slice, reflect.Array:
+						Type = "array"
+					}
+					param.Schema = v2.Schema{
+						Type: Type,
+						Items: map[string]string{
+							"$ref": "#/definitions/" + name,
+						},
+					}
+				}
+			}
+		}
+		// Авторизация
+		for _, a := range route.auth {
+			sec, sd := s.GetSecurityDefinitions(a)
+			route.path.Security = sec
+			s.Swagger.SecurityDefinitions = sd
+		}
+		// Добавляем тэги, контролеры
+		route.path.Tags = append(route.path.Tags, name)
+		// Добавляем методы
+		if s.Swagger.Paths[path] == nil {
+			s.Swagger.Paths[path] = v2.Methods{}
+		}
+		s.Swagger.Paths[path][strings.ToLower(method)] = route.path
+	}
+
 	// Получаем handler маршрута
-	h := route.getHandler(s.Config, view)
+	h := route.getHandler(s.Config, view, s.Swagger)
 
 	// Перебираем параметры адресной строки
 	for _, param := range route.params {
@@ -282,8 +260,6 @@ func (s *Server) add(method string, name, path string, route *Route) {
 		path = p.Join(path, param)
 		// Добавляем метод, путь и обработчик
 		s.webServer.Add(method, path, h)
-		// Добавляем запись в swagger
-		//swagger.Add(name, path, route)
 	}
 }
 
@@ -292,6 +268,16 @@ func (s *Server) RegisterEx(v interface{}, path string, name string, suffix ...S
 
 	// Устанавливаем имя и путь
 	name, path = s.getPkgNameAndPath(path, name, v, suffix...)
+	// Заполняем Tag для Swagger
+	if s.Swagger != nil {
+		if i, ok := v.(ITag); ok {
+			tag := i.Tag()
+			if tag.Name == "" {
+				tag.Name = name
+			}
+			s.Swagger.Tags = append(s.Swagger.Tags, tag)
+		}
+	}
 	// Проверка интерфейса на соответствие
 	if i, ok := v.(IGet); ok {
 		s.get(i, name, path)
@@ -333,17 +319,6 @@ func (s *Server) RegisterEx(v interface{}, path string, name string, suffix ...S
 func (s *Server) Register(i interface{}, path string) *Server {
 	return s.RegisterEx(i, path, "")
 }
-
-// SetCors Установка CORS
-//TODO for fiber and Echo
-/*func (s *Server) SetCors(config *Cors) *Server {
-	cfg := cors.ConfigDefault
-	if config != nil {
-		cfg = cors.Config(*config)
-	}
-	s.webServer.Use(cors.New(cfg))
-	return s
-}*/
 
 // Stop Остановка сервера
 func (s *Server) Stop() error {
@@ -399,4 +374,48 @@ func (s *Server) insert(a []string, index int, value string) []string {
 
 func (s *Server) String() string {
 	return fmt.Sprintf("%s %s", Name, Version)
+}
+
+func (s *Server) GetSecurityDefinitions(auth string) (sec v2.Security, sd v2.SecurityDefinitions) {
+
+	sd = v2.SecurityDefinitions{}
+	secure := v2.Secure{}
+	a := s.Config.Authorization
+	switch auth {
+	case BasicAuth:
+		sd[BasicAuth] = v2.SecurityDefinition{
+			Type:        "basic",
+			Description: "Basic Authorization",
+		}
+		secure[BasicAuth] = []string{}
+		break
+	case ApiKeyAuth:
+		if a.ApiKey != nil {
+			name, param := a.ApiKey.Get()
+			sd[ApiKeyAuth] = v2.SecurityDefinition{
+				Type:        "apiKey",
+				Description: "Api Key Authorization",
+				Name:        name,
+				In:          param,
+			}
+			secure[ApiKeyAuth] = []string{}
+		}
+		break
+		//TODO OAuth2 check
+	case OAuth2Auth:
+		values := []string{"write:pets", "read:pets"}
+		secure[ApiKeyAuth] = values
+		sd[OAuth2Auth] = v2.SecurityDefinition{
+			Type:             "oauth2",
+			Description:      "OAuth2 Authorization",
+			Flow:             "oauth2",
+			AuthorizationUrl: "",
+			TokenUrl:         "",
+			Scopes:           nil,
+		}
+	}
+
+	sec = append(sec, secure)
+
+	return sec, sd
 }

@@ -1,5 +1,7 @@
 package egowebapi
 
+import "github.com/egovorukhin/egowebapi/swagger/v2"
+
 type Route struct {
 	params       []string
 	auth         []string
@@ -7,23 +9,10 @@ type Route struct {
 	isSession    bool
 	isPermission bool
 	sign         Sign
+	path         *v2.Path
 }
 
-type Option struct {
-	Headers     []string `json:"headers,omitempty"`
-	Method      string   `json:"method,omitempty"`
-	Body        string   `json:"body,omitempty"`
-	Description string   `json:"description,omitempty"`
-}
-
-//type Auth string
-
-const (
-	//NoAuth     = "NoAuth"
-	BasicAuth  = "BasicAuth"
-	DigestAuth = "DigestAuth"
-	ApiKeyAuth = "ApiKeyAuth"
-)
+type Map map[string]interface{}
 
 type Sign int
 
@@ -39,22 +28,50 @@ func (r *Route) SetParams(params ...string) *Route {
 	return r
 }
 
+// SetParameters указываем информацию о параметрах адресной строки для Swagger
+func (r *Route) SetParameters(params ...v2.Parameter) *Route {
+	if r.path == nil {
+		r.path = &v2.Path{}
+	}
+	r.path.Parameters = params
+	return r
+}
+
+// SetConsumes устанавливаем Content-Type запроса для Swagger
+func (r *Route) SetConsumes(c ...string) *Route {
+	if r.path == nil {
+		r.path = &v2.Path{}
+	}
+	r.path.Consumers = c
+	return r
+}
+
+// SetProduces устанавливаем Content-Type ответа для Swagger
+func (r *Route) SetProduces(p ...string) *Route {
+	if r.path == nil {
+		r.path = &v2.Path{}
+	}
+	r.path.Produces = p
+	return r
+}
+
+// SetResponse описываем варианты ответов для Swagger
+func (r *Route) SetResponse(code int, resp v2.Response) *Route {
+	if r.path == nil {
+		r.path = &v2.Path{}
+	}
+	if r.path.Responses == nil {
+		r.path.Responses = map[int]v2.Response{}
+	}
+	r.path.Responses[code] = resp
+	return r
+}
+
+// SetSign устанавливаем вариант входа/выхода для маршрута
 func (r *Route) SetSign(sign Sign) *Route {
 	r.sign = sign
 	return r
 }
-
-// SetDescription устанавливаем описание маршрута
-/*func (r *Route) SetDescription(s string) *Route {
-	r.option.Description = s
-	return r
-}
-
-// SetBody устанавливаем описание тела маршрута
-func (r *Route) SetBody(s string) *Route {
-	r.option.Body = s
-	return r
-}*/
 
 // Auth указываем метод авторизации
 func (r *Route) Auth(auth ...string) *Route {
@@ -86,11 +103,12 @@ func (r *Route) SetHandler(handler Handler) *Route {
 }
 
 // getHandler возвращаем обработчик основанный на параметрах конфигурации маршрута
-func (r *Route) getHandler(config Config, view *View) Handler {
+func (r *Route) getHandler(config Config, view *View, swagger *v2.Swagger) Handler {
 
 	return func(c *Context) error {
 
 		c.View = view
+		c.Swagger = swagger
 
 		var (
 			err    error
@@ -189,66 +207,4 @@ func (r *Route) getHandler(config Config, view *View) Handler {
 		// Обычный маршрут
 		return r.Handler(c)
 	}
-	/*switch h := r.Handler.(type) {
-	// handler для маршрутов с identity
-	case func(*fiber.Ctx, *Identity) error:
-		// Авторизация
-		switch r.Authorization {
-		case BasicAuth:
-			if config.Authorization.Basic != nil {
-				return config.Authorization.Basic.Do(h, r.IsPermission, config.Permission)
-			}
-			break
-		case DigestAuth:
-			if config.Authorization.Digest != nil {
-				return config.Authorization.Digest.Do(h, r.IsPermission, config.Permission)
-			}
-			break
-		case ApiKeyAuth:
-			if config.Authorization.ApiKey != nil {
-				return config.Authorization.ApiKey.Do(h, r.IsPermission, config.Permission)
-			}
-			break
-		}
-
-		// Проверяем маршрут на актуальность сессии
-		if (r.IsSession && config.Session != nil) || r.IsSession {
-			return config.Session.check(h, r.IsPermission, config.Permission)
-		}
-		return func(ctx *fiber.Ctx) error {
-			return h(ctx, nil)
-		}
-
-	// Swagger handler для добавления описания маршрутов
-	case func(*fiber.Ctx, *Swagger) error:
-		return func(ctx *fiber.Ctx) error {
-			return h(ctx, swagger)
-		}
-
-	// LoginHandler для маршрута web авторизации Login
-	case func(*fiber.Ctx, string) error:
-		if config.Session != nil {
-			return config.Session.signIn(h)
-		}
-		break
-	// LogoutHandler для маршрута web авторизации Logout
-	case func(*fiber.Ctx, *Identity, string) error:
-		if config.Session != nil {
-			return config.Session.signOut(h)
-		}
-		break
-
-	// Handler для маршрут WebSocket соединения
-	case func(*websocket.Conn):
-		return websocket.New(h)
-
-	// Обычный обработчик без ништяков
-	case func(*fiber.Ctx) error:
-		return h
-	}
-
-	// Ну если ни один из обработчиков не удовлетворяет требованиям, то вернем ответ с кодом 404
-	return func(ctx *fiber.Ctx) error {
-		return ctx.Status(fiber.StatusNotFound).SendString(fmt.Sprintf("%s %s", ctx.Route().Method, ctx.Route().Path))
-	}*/
 }

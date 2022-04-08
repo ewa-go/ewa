@@ -7,8 +7,8 @@ import (
 type Home struct{}
 
 func (Home) Get(route *ewa.Route) {
-	route.Auth(ewa.BasicAuth).Session().Permission()
+	route.Session()
 	route.Handler = func(c *ewa.Context) error {
-		return c.ViewRender(nil)
+		return c.Render("home", nil, "layouts/base")
 	}
 }

@@ -1,25 +1,25 @@
-package echo
+package gin
 
 import (
-	"context"
 	ewa "github.com/egovorukhin/egowebapi"
-	"github.com/labstack/echo/v4"
+	"github.com/gin-gonic/gin"
 )
 
 type Server struct {
-	App *echo.Echo
+	App *gin.Engine
 }
 
 func (s *Server) Start(addr string) error {
-	return s.App.Start(addr)
+	return s.App.Run(addr)
 }
 
 func (s *Server) StartTLS(addr, cert, key string) error {
-	return s.App.StartTLS(addr, cert, key)
+	return s.App.RunTLS(addr, cert, key)
 }
 
 func (s *Server) Stop() error {
-	return s.App.Shutdown(context.Background())
+	return nil
+	//return s.App.Shutdown(context.Background())
 }
 
 func (s *Server) Static(prefix, root string) {
@@ -27,23 +27,23 @@ func (s *Server) Static(prefix, root string) {
 }
 
 func (s *Server) Any(path string, handler interface{}) {
-	if h, ok := handler.(echo.HandlerFunc); ok {
+	if h, ok := handler.(gin.HandlerFunc); ok {
 		s.App.Any(path, h)
 	}
 }
 
 func (s *Server) Use(params ...interface{}) {
 	for _, param := range params {
-		if h, ok := param.(echo.MiddlewareFunc); ok {
+		if h, ok := param.(gin.HandlerFunc); ok {
 			s.App.Use(h)
 		}
 	}
 }
 
 func (s *Server) Add(method, path string, handler ewa.Handler) {
-	s.App.Add(method, path, func(c echo.Context) error {
+	s.App.Handle(method, path, func(c *gin.Context) {
 		ctx := ewa.NewContext(&Context{Ctx: c})
-		return handler(ctx)
+		_ = handler(ctx)
 	})
 }
 
@@ -52,7 +52,7 @@ func (s *Server) GetApp() interface{} {
 }
 
 func (s *Server) NotFoundPage(path, page string) {
-	s.App.Any(path, func(c echo.Context) error {
-		return c.Render(200, page, nil)
+	s.App.Any(path, func(c *gin.Context) {
+		c.HTML(200, page, nil)
 	})
 }

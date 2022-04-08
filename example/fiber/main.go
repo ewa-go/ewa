@@ -8,6 +8,8 @@ import (
 	"github.com/egovorukhin/egowebapi/example/fiber/src/storage"
 	f "github.com/egovorukhin/egowebapi/fiber"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/favicon"
 	"os"
 	"os/signal"
 	"syscall"
@@ -45,24 +47,28 @@ func main() {
 		return false
 	}
 
+	root := "./views"
+
 	// Fiber
 	app := fiber.New(fiber.Config{
-		Views: f.NewViews("./views" /*filepath.Join(filepath.Dir(exe), "views")*/, f.Html, &f.Engine{
+		Views: f.NewViews(root, f.Html, &f.Engine{
 			Reload: true,
 		}),
 	})
-	//app.Static("/", "./views")
+	app.Use(favicon.New(favicon.Config{
+		File: "./dist/favicon.ico",
+	}))
+	app.Use(cors.New())
 	server := &f.Server{App: app}
 	// Конфиг
 	cfg := ewa.Config{
 		Port: 3005,
 		Static: &ewa.Static{
 			Prefix: "/",
-			Root:   "./views",
+			Root:   root,
 		},
 		Views: &ewa.Views{
-			Root:   "./views",
-			Layout: "layouts/base",
+			Root:   root,
 			Engine: f.Html,
 		},
 		Authorization: ewa.Authorization{
@@ -85,7 +91,8 @@ func main() {
 	)*/
 	//Инициализируем сервер
 	ws := ewa.New(server, cfg)
-	ws.Register(new(web.Home), "/")
+	ws.Register(new(web.Index), "/")
+	ws.Register(new(web.Home), "/home")
 	ws.Register(new(web.Login), "/login")
 	ws.Register(new(web.Logout), "/logout")
 	//ws.RegisterEx(new(api2.Username), "", "person", suffix...)

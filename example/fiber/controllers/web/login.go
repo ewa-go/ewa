@@ -24,14 +24,17 @@ func (l Login) Post(route *ewa.Route) {
 
 		err := c.BodyParser(&l)
 		if err != nil {
-			err = c.SendString(501, err.Error())
-			return err
+			return c.JSON(400, map[string]interface{}{
+				"message": err.Error(),
+			})
 		}
 
 		if l.Username == "user" && l.Password == "Qq123456" {
 			if c.SessionId != nil {
 				storage.SetStorage(c.SessionId.(string), l.Username)
-				return c.SendStatus(200)
+				return c.JSON(200, map[string]interface{}{
+					"session_id": c.SessionId,
+				})
 			}
 		}
 

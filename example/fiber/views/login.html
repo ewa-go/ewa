@@ -343,11 +343,11 @@
                 'password': document.getElementById('password').value
             })
         }).then(resp => {
+            if (resp.ok) {
+                location.href = '/';
+                return;
+            }
             resp.text().then(text => {
-                if (text === "OK") {
-                    location.href = '/';
-                    return
-                }
                 document.getElementById('info').innerText = text;
             });
         }).catch(reason => {

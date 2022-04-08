@@ -1,6 +1,7 @@
 package egowebapi
 
 import (
+	"github.com/egovorukhin/egowebapi/swagger"
 	"path/filepath"
 )
 
@@ -13,9 +14,7 @@ type Config struct {
 	Static        *Static
 	NotFoundPage  string
 	Views         *Views
-	//Timeout       Timeout
-	//BufferSize    BufferSize
-	//BodyLimit     int
+	Swagger       *swagger.Config
 }
 
 type Views struct {

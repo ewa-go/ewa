@@ -9,7 +9,7 @@ import (
 type Logout struct{}
 
 func (Logout) Get(route *ewa.Route) {
-	route.SetSign(ewa.SignOut)
+	route.SetSign(ewa.SignOut).Permission()
 	route.Handler = func(c *ewa.Context) error {
 		if c.SessionId != nil {
 			sessionId := c.SessionId.(string)

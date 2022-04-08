@@ -24,20 +24,19 @@ func main() {
 		return false
 	}
 	//Session
-	checkSession := func(key string) (string, string, error) {
+	checkSession := func(key string) (string, error) {
 		if value, ok := storage.GetStorage(key); ok {
-			return value, "", nil
+			return value, nil
 		}
-		return "", "", errors.New("Элемент не найден")
+		return "", errors.New("Элемент не найден")
 	}
 	//Обработчик ошибок
 	errorHandler := func(c *ewa.Context, code int, err interface{}) error {
 		return c.Render("error", map[string]interface{}{"Code": code, "Text": err})
 	}
 	//Permission
-	checkPermission := func(id interface{}, path string) bool {
-		user, _ := storage.GetStorage(id.(string))
-		if user == "user" {
+	checkPermission := func(username, path string) bool {
+		if username == "user" {
 			switch path {
 			case "/":
 				return true
@@ -63,10 +62,13 @@ func main() {
 			Basic: basicAuthHandler,
 		},
 		Session: &ewa.Session{
-			RedirectPath:   "/login",
-			Expires:        1 * time.Minute,
-			SessionHandler: checkSession,
-			ErrorHandler:   errorHandler,
+			RedirectPath:        "/login",
+			RedirectStatus:      0,
+			AllRoutes:           false,
+			Expires:             1 * time.Minute,
+			SessionHandler:      checkSession,
+			GenSessionIdHandler: nil,
+			ErrorHandler:        errorHandler,
 		},
 		Permission: &ewa.Permission{
 			Handler: checkPermission,

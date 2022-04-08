@@ -3,6 +3,7 @@ package egowebapi
 import (
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"strings"
 )
 
@@ -13,6 +14,16 @@ const (
 	Sha256SessAlgorithm    = "SHA-256-sess"
 	Sha512256Algorithm     = "SHA-512-256"
 	Sha512256SessAlgorithm = "SHA-512-256-sess"
+)
+
+type Auth string
+
+const (
+	NoAuth     = "NoAuth"
+	BasicAuth  = "Basic"
+	DigestAuth = "Digest"
+	ApiKeyAuth = "ApiKey"
+	OAuth2Auth = "OAuth2"
 )
 
 type Authorization struct {
@@ -135,18 +146,27 @@ func (d DigestAuthHandler) Do(c *Context) (err error) {
 }
 
 type ApiKey struct {
-	KeyName string
-	Handler ApiKeyAuthHandler
+	KeyName  string
+	IsHeader bool
+	Handler  ApiKeyAuthHandler
 }
 
 func (a ApiKey) Do(c *Context) (err error) {
 
-	// Пытаемся получить из заголовка токен
-	value := c.Get(a.KeyName)
-
-	// Если не нашли в заголовке, то ищем в переменных запроса адресной строки
-	if value == "" {
+	value := ""
+	param := ""
+	if a.IsHeader {
+		// Пытаемся получить из заголовка токен
+		value = c.Get(a.KeyName)
+		param = "header"
+	} else {
+		// Если не нашли в заголовке, то ищем в переменных запроса адресной строки
 		value = c.QueryParam(a.KeyName)
+		param = "query"
+	}
+
+	if value == "" {
+		return errors.New(fmt.Sprintf("Not found token by [%s]", param))
 	}
 
 	username := ""
@@ -159,5 +179,14 @@ func (a ApiKey) Do(c *Context) (err error) {
 		AuthName: ApiKeyAuth,
 	}
 
+	return
+}
+
+func (a ApiKey) Get() (name, param string) {
+	param = "query"
+	if a.IsHeader {
+		param = "header"
+	}
+	name = a.KeyName
 	return
 }
