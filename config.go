@@ -1,20 +1,19 @@
 package egowebapi
 
 import (
-	"github.com/egovorukhin/egowebapi/swagger"
+	"github.com/egovorukhin/egowebapi/security"
 	"path/filepath"
 )
 
 type Config struct {
 	Port          int
 	Secure        *Secure
-	Authorization Authorization
+	Authorization security.Authorization
 	Session       *Session
 	Permission    *Permission
 	Static        *Static
 	NotFoundPage  string
 	Views         *Views
-	Swagger       *swagger.Config
 }
 
 type Views struct {

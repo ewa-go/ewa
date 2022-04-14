@@ -1,7 +1,7 @@
 package egowebapi
 
 import (
-	"github.com/egovorukhin/egowebapi/swagger/v2"
+	"github.com/egovorukhin/egowebapi/security"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -9,9 +9,9 @@ import (
 )
 
 type Context struct {
-	Identity  *Identity
+	Identity  *security.Identity
 	View      *View
-	Swagger   *v2.Swagger
+	Swagger   Swagger
 	SessionId interface{}
 	IContext
 }

@@ -2,7 +2,6 @@ package api
 
 import (
 	ewa "github.com/egovorukhin/egowebapi"
-	"github.com/egovorukhin/egowebapi/swagger/v2"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -71,7 +70,7 @@ func (u *User) Delete(route *ewa.Route) {
 		}
 }
 
-func (u *User) Options(swagger *v2.Swagger) ewa.EmptyHandler {
+func (u *User) Options(swagger *s.Swagger) ewa.EmptyHandler {
 	return func(ctx *fiber.Ctx) error {
 		//ctx.Append("Allow", "GET, POST, PUT, DELETE, OPTIONS")
 		swagger.Allow(ctx)

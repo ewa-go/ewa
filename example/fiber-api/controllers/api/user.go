@@ -3,13 +3,14 @@ package api
 import (
 	ewa "github.com/egovorukhin/egowebapi"
 	"github.com/egovorukhin/egowebapi/example/fiber-api/models"
-	"github.com/egovorukhin/egowebapi/swagger/v2"
+	"github.com/egovorukhin/egowebapi/security"
 )
 
 type User struct{}
 
 func (User) Get(route *ewa.Route) {
-	route.SetParams("", "/:id").Auth(ewa.BasicAuth)
+	route.SetSecurity(security.BasicAuth)
+	route.SetParameters(true, ewa.NewInPath("/{id}", false, "ID пользователя"))
 	route.Handler = func(c *ewa.Context) error {
 		id := c.Params("id")
 		if id != "" {
@@ -20,19 +21,17 @@ func (User) Get(route *ewa.Route) {
 		return c.JSON(200, users)
 	}
 	route.SetProduces(ewa.MIMEApplicationJSON)
-	route.SetParameters(v2.Parameter{
-		Name:     "id",
-		In:       v2.ParameterTypePath,
-		Required: false,
-		Type:     "integer",
-	})
-	route.SetResponse(200, v2.Response{
-		Description: "Возвращает - OK",
-	})
+	route.SetSummary("Вернётся пользовате(ль/ли)")
+	route.SetDefaultResponse(ewa.NewResponse(ewa.NewSchema(models.User{})).AddHeader("Login", ewa.NewHeader("", false, "Login пользователя")))
+	route.SetOperationID("getUser")
 }
 
 func (User) Post(route *ewa.Route) {
-	route.Auth(ewa.BasicAuth)
+	route.SetSecurity(security.BasicAuth)
+	route.SetParameters(false, ewa.NewInBody(true, ewa.NewSchema(models.User{}), "Необходимо заполнить тело запроса"))
+	route.SetProduces(ewa.MIMEApplicationJSON)
+	route.SetOperationID("setUser")
+	route.SetSummary("Добавить пользователя")
 	route.Handler = func(c *ewa.Context) error {
 		user := models.User{}
 		err := c.BodyParser(&user)
@@ -42,16 +41,14 @@ func (User) Post(route *ewa.Route) {
 		user.Set()
 		return c.SendString(200, "OK")
 	}
-	route.SetParameters(v2.Parameter{
-		Name:     v2.ParameterTypeBody,
-		In:       v2.ParameterTypeBody,
-		Required: true,
-		Body:     models.User{},
-	})
 }
 
 func (User) Put(route *ewa.Route) {
-	route.SetParams("/:id").Auth(ewa.BasicAuth)
+	route.SetSecurity(security.BasicAuth)
+	route.SetParameters(false, ewa.NewInPath("/{id}", true, "ID пользователя"))
+	route.SetProduces(ewa.MIMEApplicationJSON)
+	route.SetOperationID("updateUser")
+	route.SetSummary("Изменить данные по пользователю")
 	route.Handler = func(c *ewa.Context) error {
 		user := models.User{}
 		err := c.BodyParser(&user)
@@ -67,18 +64,13 @@ func (User) Put(route *ewa.Route) {
 }
 
 func (User) Delete(route *ewa.Route) {
-	route.Auth(ewa.BasicAuth)
+	route.SetSecurity(security.BasicAuth)
+	route.SetParameters(false, ewa.NewInPath("/{id}", true, "ID пользователя"))
 	route.Handler = func(c *ewa.Context) error {
 		user := models.User{
 			Id: c.Params("id"),
 		}
 		user.Delete()
 		return c.SendString(200, "OK")
-	}
-}
-
-func (User) Tag() v2.Tag {
-	return v2.Tag{
-		Description: "Описание",
 	}
 }

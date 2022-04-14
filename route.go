@@ -1,17 +1,20 @@
 package egowebapi
 
-import "github.com/egovorukhin/egowebapi/swagger/v2"
+import (
+	"github.com/egovorukhin/egowebapi/security"
+	"strconv"
+)
 
 type Route struct {
-	params       []string
-	auth         []string
+	isEmptyParam bool
 	Handler      Handler
 	isSession    bool
 	isPermission bool
 	sign         Sign
-	path         *v2.Path
+	Operation
 }
 
+// Map тип список
 type Map map[string]interface{}
 
 type Sign int
@@ -22,48 +25,52 @@ const (
 	SignOut
 )
 
-// SetParams указываем параметры маршрута
-func (r *Route) SetParams(params ...string) *Route {
-	r.params = params
-	return r
-}
-
-// SetParameters указываем информацию о параметрах адресной строки для Swagger
-func (r *Route) SetParameters(params ...v2.Parameter) *Route {
-	if r.path == nil {
-		r.path = &v2.Path{}
-	}
-	r.path.Parameters = params
+// SetParameters указываем параметры маршрута
+func (r *Route) SetParameters(isEmptyParam bool, params ...*Parameter) *Route {
+	r.isEmptyParam = isEmptyParam
+	r.Parameters = params
 	return r
 }
 
 // SetConsumes устанавливаем Content-Type запроса для Swagger
 func (r *Route) SetConsumes(c ...string) *Route {
-	if r.path == nil {
-		r.path = &v2.Path{}
-	}
-	r.path.Consumers = c
+	r.Consumes = c
 	return r
 }
 
 // SetProduces устанавливаем Content-Type ответа для Swagger
 func (r *Route) SetProduces(p ...string) *Route {
-	if r.path == nil {
-		r.path = &v2.Path{}
-	}
-	r.path.Produces = p
+	r.Produces = p
+	return r
+}
+
+// SetOperationID устанавливаем идентификатор операции для Swagger
+func (r *Route) SetOperationID(id string) *Route {
+	r.ID = id
+	return r
+}
+
+// SetDefaultResponse описываем варианты ответов для Swagger
+func (r *Route) SetDefaultResponse(resp Response) *Route {
+	r.Responses["default"] = resp
 	return r
 }
 
 // SetResponse описываем варианты ответов для Swagger
-func (r *Route) SetResponse(code int, resp v2.Response) *Route {
-	if r.path == nil {
-		r.path = &v2.Path{}
-	}
-	if r.path.Responses == nil {
-		r.path.Responses = map[int]v2.Response{}
-	}
-	r.path.Responses[code] = resp
+func (r *Route) SetResponse(code int, resp Response) *Route {
+	r.Responses[strconv.Itoa(code)] = resp
+	return r
+}
+
+// SetDescription описание операции
+func (r *Route) SetDescription(desc string) *Route {
+	r.Description = desc
+	return r
+}
+
+// SetSummary резюме запроса
+func (r *Route) SetSummary(s string) *Route {
+	r.Summary = s
 	return r
 }
 
@@ -73,9 +80,14 @@ func (r *Route) SetSign(sign Sign) *Route {
 	return r
 }
 
-// Auth указываем метод авторизации
-func (r *Route) Auth(auth ...string) *Route {
-	r.auth = auth
+// SetSecurity указываем метод авторизации
+func (r *Route) SetSecurity(security ...string) *Route {
+	for _, sec := range security {
+		r.Security = append(r.Security, map[string][]string{
+			sec: {},
+		})
+	}
+	//r.auth = auth
 	return r
 }
 
@@ -103,7 +115,7 @@ func (r *Route) SetHandler(handler Handler) *Route {
 }
 
 // getHandler возвращаем обработчик основанный на параметрах конфигурации маршрута
-func (r *Route) getHandler(config Config, view *View, swagger *v2.Swagger) Handler {
+func (r *Route) getHandler(config Config, view *View, swagger Swagger) Handler {
 
 	return func(c *Context) error {
 
@@ -114,29 +126,45 @@ func (r *Route) getHandler(config Config, view *View, swagger *v2.Swagger) Handl
 			err    error
 			isAuth bool
 		)
-		if len(r.auth) > 0 {
+		if len(r.Security) > 0 {
 			isAuth = true
 		}
-		for _, auth := range r.auth {
-			switch auth {
-			case BasicAuth:
-				if config.Authorization.Basic != nil {
-					err = config.Authorization.Basic.Do(c)
-					if err != nil {
-						c.Set(HeaderWWWAuthenticate, err.Error())
+		for _, sec := range r.Security {
+			for key := range sec {
+				switch key {
+				case security.BasicAuth:
+					if config.Authorization.Basic != nil {
+						config.Authorization.Basic.SetHeader(c.Get(HeaderAuthorization))
+						c.Identity, err = config.Authorization.Basic.Do()
+						if err != nil {
+							c.Set(HeaderWWWAuthenticate, err.Error())
+						}
 					}
+					break
+				case security.DigestAuth:
+					if config.Authorization.Digest != nil {
+						c.Identity, err = config.Authorization.Digest.Do()
+					}
+					break
+				case security.ApiKeyAuth:
+					if config.Authorization.ApiKey != nil {
+						a := config.Authorization.ApiKey
+						var value string
+						switch a.Param {
+						// Пытаемся получить из заголовка токен
+						case security.ParamQuery:
+							value = c.QueryParam(a.KeyName)
+							break
+						// Если не нашли в заголовке, то ищем в переменных запроса адресной строки
+						case security.ParamHeader:
+							value = c.Get(a.KeyName)
+							break
+						}
+						a.SetValue(value)
+						c.Identity, err = a.Do()
+					}
+					break
 				}
-				break
-			case DigestAuth:
-				if config.Authorization.Digest != nil {
-					err = config.Authorization.Digest.Do(c)
-				}
-				break
-			case ApiKeyAuth:
-				if config.Authorization.ApiKey != nil {
-					err = config.Authorization.ApiKey.Do(c)
-				}
-				break
 			}
 		}
 
@@ -161,8 +189,8 @@ func (r *Route) getHandler(config Config, view *View, swagger *v2.Swagger) Handl
 		// Проверка на ошибку авторизации и отправку кода 401
 		if err != nil {
 			if isAuth {
-				if config.Authorization.Unauthorized != nil {
-					return config.Authorization.Unauthorized(c, StatusUnauthorized, err)
+				if config.Authorization.Unauthorized != nil && config.Authorization.Unauthorized(err) {
+					return c.SendString(StatusUnauthorized, err.Error())
 				}
 				return c.SendStatus(StatusUnauthorized)
 			} else if r.isSession {

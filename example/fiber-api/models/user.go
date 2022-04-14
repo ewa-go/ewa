@@ -5,9 +5,9 @@ import "errors"
 var users Users
 
 type User struct {
-	Id        string `json:"id"`
-	Firstname string `json:"firstname"`
-	Lastname  string `json:"lastname"`
+	Id        string `json:"id,omitempty"`
+	Firstname string `json:"firstname" jsonschema:"required,format=string,description=Имя"`
+	Lastname  string `json:"lastname" jsonschema:"description=Фамилия"`
 }
 
 type Users map[string]*User

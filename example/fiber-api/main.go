@@ -5,9 +5,9 @@ import (
 	ewa "github.com/egovorukhin/egowebapi"
 	"github.com/egovorukhin/egowebapi/example/fiber-api/controllers"
 	"github.com/egovorukhin/egowebapi/example/fiber-api/controllers/api"
+	"github.com/egovorukhin/egowebapi/example/fiber-api/models"
 	f "github.com/egovorukhin/egowebapi/fiber"
-	"github.com/egovorukhin/egowebapi/swagger"
-	"github.com/egovorukhin/egowebapi/swagger/v2"
+	"github.com/egovorukhin/egowebapi/security"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"os"
@@ -38,30 +38,34 @@ func main() {
 			Key:  "key.pem",
 			Cert: "cert.pem",
 		},
-		Authorization: ewa.Authorization{
-			Basic: basicAuthHandler,
-		},
-		Swagger: &swagger.Config{
-			Host: "10.28.0.73:8070",
-			Info: v2.Info{
-				Description:    "Описание приложения",
-				Version:        "1.0.0",
-				Title:          "FiberApi",
-				TermsOfService: "",
-				Contact: v2.Contact{
-					Email: "user@mail.ru",
-				},
-				License: v2.License{
-					Name: "Пользуйся на здоровье",
-				},
+		Authorization: security.Authorization{
+			Basic: &security.Basic{
+				Handler: basicAuthHandler,
 			},
 		},
 	}
+
+	info := ewa.Info{
+		Description: "Описание приложения",
+		Version:     "1.0.0",
+		Title:       "FiberApi",
+		Contact: &ewa.Contact{
+			Email: "user@mail.ru",
+		},
+		License: &ewa.License{
+			Name: "Пользуйся на здоровье",
+		},
+	}
+
 	//Инициализируем сервер
 	ws := ewa.New(server, cfg)
-	ws.Register(new(api.User), "")
+	ws.Register(new(api.User))
 	// Swagger
-	ws.Register(new(controllers.Api), "")
+	ws.Register(new(controllers.Api))
+
+	// Описываем swagger
+	ws.Swagger.SetInfo(fmt.Sprintf("10.28.0.73:%d", cfg.Port), &info, nil)
+	ws.Swagger.SetDefinitions(models.User{})
 
 	// Канал для получения ошибки, если таковая будет
 	errChan := make(chan error, 2)

@@ -56,3 +56,7 @@ func (s *Server) NotFoundPage(path, page string) {
 		return c.Render(200, page, nil)
 	})
 }
+
+func (s *Server) ConvertParam(param string) string {
+	return "{" + param + "}"
+}

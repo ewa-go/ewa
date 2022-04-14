@@ -3,6 +3,7 @@ package egowebapi
 import (
 	"errors"
 	"fmt"
+	"github.com/egovorukhin/egowebapi/security"
 	"github.com/gofiber/fiber/v2/utils"
 	"net/http"
 	"time"
@@ -26,16 +27,6 @@ type Session struct {
 	ErrorHandler ErrorHandler
 }
 
-// Identity Структура описывает идентификацию пользователя
-type Identity struct {
-	Username string
-	AuthName string
-}
-
-func (i Identity) String() string {
-	return fmt.Sprintf("user: %s, auth_name: %s", i.Username, i.AuthName)
-}
-
 const sessionId = "session_id"
 
 // Проверяем куки и извлекаем по ключу id по которому в бд/файле/памяти находим запись
@@ -57,7 +48,7 @@ func (s *Session) check(c *Context) error {
 		if err != nil {
 			return err
 		}
-		c.Identity = &Identity{
+		c.Identity = &security.Identity{
 			Username: user,
 			AuthName: "Session",
 		}
@@ -125,7 +116,7 @@ func (s *Session) signOut(c *Context) {
 
 	key := c.Cookies(sessionId)
 	c.SessionId = key
-	identity := &Identity{
+	identity := &security.Identity{
 		AuthName: "Session",
 	}
 	user, err := s.SessionHandler(key)
