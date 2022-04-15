@@ -83,61 +83,64 @@ func (s *Server) Start() (err error) {
 		v.initialize()
 		path := v.Path
 		name := v.Tag.Name
+		show := v.IsShow
 
 		// Добавляем тэги контроллера
-		s.Swagger.Tags = append(s.Swagger.Tags, v.Tag)
+		if show {
+			s.Swagger.Tags = append(s.Swagger.Tags, v.Tag)
+		}
 
 		// Проверка интерфейса на соответствие
 		if i, ok := v.Interface.(IGet); ok {
-			err = s.get(i, name, path)
+			err = s.get(i, name, path, show)
 			if err != nil {
 				return
 			}
 		}
 		if i, ok := v.Interface.(IPost); ok {
-			err = s.post(i, name, path)
+			err = s.post(i, name, path, show)
 			if err != nil {
 				return
 			}
 		}
 		if i, ok := v.Interface.(IPut); ok {
-			err = s.put(i, name, path)
+			err = s.put(i, name, path, show)
 			if err != nil {
 				return
 			}
 		}
 		if i, ok := v.Interface.(IDelete); ok {
-			err = s.delete(i, name, path)
+			err = s.delete(i, name, path, show)
 			if err != nil {
 				return
 			}
 		}
 		if i, ok := v.Interface.(IOptions); ok {
-			err = s.options(i, name, path)
+			err = s.options(i, name, path, show)
 			if err != nil {
 				return
 			}
 		}
 		if i, ok := v.Interface.(IPatch); ok {
-			err = s.patch(i, name, path)
+			err = s.patch(i, name, path, show)
 			if err != nil {
 				return
 			}
 		}
 		if i, ok := v.Interface.(IHead); ok {
-			err = s.head(i, name, path)
+			err = s.head(i, name, path, show)
 			if err != nil {
 				return
 			}
 		}
 		if i, ok := v.Interface.(IConnect); ok {
-			err = s.connect(i, name, path)
+			err = s.connect(i, name, path, show)
 			if err != nil {
 				return
 			}
 		}
 		if i, ok := v.Interface.(ITrace); ok {
-			err = s.trace(i, name, path)
+			err = s.trace(i, name, path, show)
 			if err != nil {
 				return
 			}
@@ -196,71 +199,70 @@ func (s *Server) newRoute() *Route {
 }
 
 // Обрабатываем метод GET
-func (s *Server) get(i IGet, name, path string) error {
+func (s *Server) get(i IGet, name, path string, show bool) error {
 	route := s.newRoute()
 	i.Get(route)
-	return s.add(MethodGet, name, path, route)
+	return s.add(MethodGet, name, path, route, show)
 }
 
 // Обрабатываем метод POST
-func (s *Server) post(i IPost, name, path string) error {
+func (s *Server) post(i IPost, name, path string, show bool) error {
 	route := s.newRoute()
 	i.Post(route)
-	return s.add(MethodPost, name, path, route)
+	return s.add(MethodPost, name, path, route, show)
 }
 
 // Обрабатываем метод PUT
-func (s *Server) put(i IPut, name, path string) error {
+func (s *Server) put(i IPut, name, path string, show bool) error {
 	route := s.newRoute()
-
 	i.Put(route)
-	return s.add(MethodPut, name, path, route)
+	return s.add(MethodPut, name, path, route, show)
 }
 
 // Обрабатываем метод DELETE
-func (s *Server) delete(i IDelete, name, path string) error {
+func (s *Server) delete(i IDelete, name, path string, show bool) error {
 	route := s.newRoute()
 	i.Delete(route)
-	return s.add(MethodDelete, name, path, route)
+	return s.add(MethodDelete, name, path, route, show)
 }
 
 // Обрабатываем метод OPTIONS
-func (s *Server) options(i IOptions, name, path string) error {
+func (s *Server) options(i IOptions, name, path string, show bool) error {
 	route := s.newRoute()
 	i.Options(route)
-	return s.add(MethodOptions, name, path, route)
+	return s.add(MethodOptions, name, path, route, show)
 }
 
 // Обрабатываем метод PATCH
-func (s *Server) patch(i IPatch, name, path string) error {
+func (s *Server) patch(i IPatch, name, path string, show bool) error {
 	route := s.newRoute()
 	i.Patch(route)
-	return s.add(MethodPatch, name, path, route)
+	return s.add(MethodPatch, name, path, route, show)
 }
 
 // Обрабатываем метод HEAD
-func (s *Server) head(i IHead, name, path string) error {
+func (s *Server) head(i IHead, name, path string, show bool) error {
 	route := s.newRoute()
 	i.Head(route)
-	return s.add(MethodHead, name, path, route)
+	return s.add(MethodHead, name, path, route, show)
 }
 
 // Обрабатываем метод CONNECT
-func (s *Server) connect(i IConnect, name, path string) error {
+func (s *Server) connect(i IConnect, name, path string, show bool) error {
 	route := s.newRoute()
 	i.Connect(route)
-	return s.add(MethodConnect, name, path, route)
+	return s.add(MethodConnect, name, path, route, show)
 }
 
 // Обрабатываем метод TRACE
-func (s *Server) trace(i ITrace, name, path string) error {
+func (s *Server) trace(i ITrace, name, path string, show bool) error {
 	route := s.newRoute()
 	i.Trace(route)
-	return s.add(MethodTrace, name, path, route)
+	return s.add(MethodTrace, name, path, route, show)
 }
 
 // Добавить маршрут в веб сервер
-func (s *Server) add(method, tagName, path string, route *Route) error {
+func (s *Server) add(method, tagName, path string, route *Route, show bool) error {
 
 	// Если нет ни одного handler, то выходим
 	if route.Handler == nil {
@@ -305,7 +307,7 @@ func (s *Server) add(method, tagName, path string, route *Route) error {
 		// Объединяем путь и параметры
 		fullPath := p.Join(path, param)
 
-		if param != "" || (param == "" && !route.isEmptyParam) {
+		if (param != "" || (param == "" && !route.isEmptyParam)) && show {
 			// Добавляем пути и методы в swagger
 			s.Swagger.setPath(fullPath, strings.ToLower(method), route.Operation)
 		}
@@ -329,6 +331,7 @@ func (s *Server) add(method, tagName, path string, route *Route) error {
 func (s *Server) Register(i interface{}) *Controller {
 	controller := &Controller{
 		Interface: i,
+		IsShow:    true,
 	}
 	s.Controllers = append(s.Controllers, controller)
 	return controller
