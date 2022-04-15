@@ -1,18 +1,22 @@
 package models
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 var users Users
 
 type User struct {
-	Id        string `json:"id,omitempty"`
-	Firstname string `json:"firstname" jsonschema:"required,format=string,description=Имя"`
+	Id        int    `json:"id,omitempty" jsonschema:"description=Идентификатор пользователя"`
+	Firstname string `json:"firstname" jsonschema:"description=Имя"`
 	Lastname  string `json:"lastname" jsonschema:"description=Фамилия"`
 }
 
-type Users map[string]*User
+type Users map[int]*User
+type UserArray []*User
 
-func GetUser(id string) *User {
+func GetUser(id int) *User {
 	for _, user := range users {
 		if user.Id == id {
 			return user
@@ -30,12 +34,12 @@ func GetUsers() Users {
 
 func (u User) Set() {
 	if users == nil {
-		return
+		users = map[int]*User{}
 	}
 	users[u.Id] = &u
 }
 
-func (u User) Update(id string) error {
+func (u User) Update(id int) error {
 	if users == nil {
 		return nil
 	}
@@ -43,7 +47,7 @@ func (u User) Update(id string) error {
 		users[id] = &u
 		return nil
 	}
-	return errors.New("Запись не найдена - " + id)
+	return errors.New(fmt.Sprintf("Запись не найдена - %d", id))
 }
 
 func (u User) Delete() {

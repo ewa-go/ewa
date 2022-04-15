@@ -1,10 +1,12 @@
 package egowebapi
 
 import (
-	"github.com/alecthomas/jsonschema"
+	"encoding/json"
 	"github.com/egovorukhin/egowebapi/security"
+	"github.com/invopop/jsonschema"
 	"reflect"
 	"regexp"
+	"strings"
 	"time"
 )
 
@@ -58,6 +60,18 @@ type Paths map[string]PathItem
 
 type PathItem map[string]Operation
 
+/*type PathItem struct {
+	Get       *Operation
+	Post      *Operation
+	Put       *Operation
+	Delete    *Operation
+	Options   *Operation
+	Patch     *Operation
+	Head      *Operation
+	Trace     *Operation
+	Connect   *Operation
+}*/
+
 type Operation struct {
 	Description  string              `json:"description,omitempty"`
 	Consumes     []string            `json:"consumes,omitempty"`
@@ -74,22 +88,27 @@ type Operation struct {
 }
 
 type Parameter struct {
-	Path            string  `json:"-"`
-	Description     string  `json:"description,omitempty"`
-	Name            string  `json:"name,omitempty"`
-	In              string  `json:"in,omitempty"`
-	Required        bool    `json:"required,omitempty"`
-	Schema          *Schema `json:"schema,omitempty"`
-	AllowEmptyValue bool    `json:"allowEmptyValue,omitempty"`
+	Path             string  `json:"-"`
+	Type             string  `json:"type,omitempty"`
+	Description      string  `json:"description,omitempty"`
+	Name             string  `json:"name,omitempty"`
+	In               string  `json:"in,omitempty"`
+	Required         bool    `json:"required,omitempty"`
+	Schema           *Schema `json:"schema,omitempty"`
+	CollectionFormat string  `json:"collectionFormat,omitempty"`
+	AllowEmptyValue  bool    `json:"allowEmptyValue,omitempty"`
+	Items            *Items  `json:"items,omitempty"`
 }
 
 type Schema struct {
-	Ref           string        `json:"$ref,omitempty"`
-	Discriminator string        `json:"discriminator,omitempty"`
+	Ref   string `json:"$ref,omitempty"`
+	Type  string `json:"type,omitempty"`
+	Items *Items `json:"items,omitempty"`
+	/*Discriminator string        `json:"discriminator,omitempty"`
 	ReadOnly      bool          `json:"readOnly,omitempty"`
 	XML           *XMLObject    `json:"xml,omitempty"`
 	ExternalDocs  *ExternalDocs `json:"externalDocs,omitempty"`
-	Example       interface{}   `json:"example,omitempty"`
+	Example       interface{}   `json:"example,omitempty"`*/
 }
 
 type XMLObject struct {
@@ -161,6 +180,23 @@ const (
 	InFormData = "formData"
 )
 
+const (
+	TypeString = "string"
+	TypeArray  = "array"
+)
+
+const (
+	CollectionFormatMulti = "multi"
+)
+
+const (
+	RefDefinitions = "#/definitions/"
+)
+
+func (s *Swagger) JSON() ([]byte, error) {
+	return json.Marshal(s)
+}
+
 // SetDefinitions Преобразование моделей в формат JSON Schema
 func (s *Swagger) SetDefinitions(models ...interface{}) *Swagger {
 	for _, model := range models {
@@ -178,6 +214,14 @@ func (s *Swagger) SetSchemes(scheme ...string) *Swagger {
 	return s
 }
 
+// setRefDefinitions Проверка модели на существование
+func (s *Swagger) setRefDefinitions(ref string) (string, bool) {
+	if _, ok := s.Definitions[ref]; ok {
+		return RefDefinitions + ref, ok
+	}
+	return "", false
+}
+
 // Устанавливаем путь с операциями
 func (s *Swagger) setPath(path, method string, operation Operation) *Swagger {
 
@@ -186,8 +230,11 @@ func (s *Swagger) setPath(path, method string, operation Operation) *Swagger {
 		if response.Schema == nil {
 			continue
 		}
-		if _, ok := s.Definitions[response.Schema.Ref]; ok {
-			response.Schema.Ref = "#/definitions/" + response.Schema.Ref
+		// Пытаемся найти модель в определениях
+		var exists bool
+		response.Schema.Ref, exists = s.setRefDefinitions(response.Schema.Ref)
+		if !exists && response.Schema.Items != nil {
+			response.Schema.Items.Ref, _ = s.setRefDefinitions(response.Schema.Items.Ref)
 		}
 	}
 
@@ -199,7 +246,7 @@ func (s *Swagger) setPath(path, method string, operation Operation) *Swagger {
 				break
 			}
 			if _, ok := s.Definitions[param.Schema.Ref]; ok {
-				param.Schema.Ref = "#/definitions/" + param.Schema.Ref
+				param.Schema.Ref = RefDefinitions + param.Schema.Ref
 			}
 			break
 		}
@@ -214,6 +261,44 @@ func (s *Swagger) setPath(path, method string, operation Operation) *Swagger {
 	s.Paths[path][method] = operation
 	return s
 }
+
+/*func (p *PathItem) setOperation(method string, operation *Operation) {
+	switch method {
+	case MethodGet:
+		p.Get = operation
+		break
+	case MethodPost:
+		p.Post = operation
+		break
+	case MethodPut:
+		p.Put = operation
+		break
+	case MethodDelete:
+		p.Delete = operation
+		break
+	case MethodOptions:
+		p.Options = operation
+		break
+	case MethodPatch:
+		p.Patch = operation
+		break
+	case MethodHead:
+		p.Head = operation
+		break
+	case MethodTrace:
+		p.Trace = operation
+		break
+	case MethodConnect:
+		p.Connect = operation
+		break
+	}
+}
+
+func (p PathItem) MarshalJSON() ([]byte, error) {
+	m := map[string]Operation{}
+
+	return json.Marshal(m)
+}*/
 
 // Устанавливаем необходимые поля для определения авторизации
 func (s *Swagger) setSecurityDefinition(authName string, sec security.Definition) *Swagger {
@@ -243,6 +328,16 @@ func NewSchema(i interface{}) *Schema {
 	}
 }
 
+// NewSchemaArray Инициализация схемы с массивом для параметров
+func NewSchemaArray(i interface{}) *Schema {
+	return &Schema{
+		Type: TypeArray,
+		Items: &Items{
+			Ref: RefDefinition(i),
+		},
+	}
+}
+
 // RefDefinition Получаем имя модели, чтобы затем сформировать ссылку
 func RefDefinition(i interface{}) string {
 
@@ -256,6 +351,7 @@ func RefDefinition(i interface{}) string {
 	return t.Name()
 }
 
+// NewInPath Инициализация параметра in: path
 func NewInPath(path string, required bool, desc ...string) *Parameter {
 
 	// Извлекаем параметр из пути
@@ -277,9 +373,11 @@ func NewInPath(path string, required bool, desc ...string) *Parameter {
 	return p
 }
 
+// NewInBody Инициализация параметра in: body
 func NewInBody(required bool, schema *Schema, desc ...string) *Parameter {
 	p := &Parameter{
 		In:       InBody,
+		Name:     InBody,
 		Required: required,
 		Schema:   schema,
 	}
@@ -289,9 +387,11 @@ func NewInBody(required bool, schema *Schema, desc ...string) *Parameter {
 	return p
 }
 
-func NewInHeader(required bool, desc ...string) *Parameter {
+// NewInHeader Инициализация параметра in: header
+func NewInHeader(name string, required bool, desc ...string) *Parameter {
 	p := &Parameter{
 		In:       InHeader,
+		Name:     name,
 		Required: required,
 	}
 	if desc != nil {
@@ -300,9 +400,12 @@ func NewInHeader(required bool, desc ...string) *Parameter {
 	return p
 }
 
-func NewInQuery(required bool, desc ...string) *Parameter {
+// NewInQuery Инициализация параметра in: query
+func NewInQuery(name string, required bool, desc ...string) *Parameter {
 	p := &Parameter{
 		In:       InQuery,
+		Name:     name,
+		Type:     TypeString,
 		Required: required,
 	}
 	if desc != nil {
@@ -311,9 +414,47 @@ func NewInQuery(required bool, desc ...string) *Parameter {
 	return p
 }
 
-func NewInFormData(required bool, desc ...string) *Parameter {
+// NewInQueryArray Инициализация параметра in: query с типом массив
+func NewInQueryArray(name, array string, required bool, desc ...string) *Parameter {
+	var (
+		enum        []interface{}
+		defaultItem string
+	)
+	for i, a := range strings.Split(array, ",") {
+		a = strings.Trim(a, " ")
+		if i == 0 {
+			defaultItem = a
+		}
+		enum = append(enum, a)
+	}
+	p := &Parameter{
+		In:               InQuery,
+		Name:             name,
+		Type:             TypeArray,
+		CollectionFormat: CollectionFormatMulti,
+		Required:         required,
+		Items: &Items{
+			CommonValidations: CommonValidations{
+				Enum: enum,
+			},
+			SimpleSchema: SimpleSchema{
+				Type: TypeString,
+				//CollectionFormat: CollectionFormatMulti,
+				Default: defaultItem,
+			},
+		},
+	}
+	if desc != nil {
+		p.Description = desc[0]
+	}
+	return p
+}
+
+// NewInFormData Инициализация параметра in: formData
+func NewInFormData(name string, required bool, desc ...string) *Parameter {
 	p := &Parameter{
 		In:       InFormData,
+		Name:     name,
 		Required: required,
 	}
 	if desc != nil {
@@ -322,6 +463,7 @@ func NewInFormData(required bool, desc ...string) *Parameter {
 	return p
 }
 
+// NewResponse Инициализация ответа
 func NewResponse(schema *Schema, desc ...string) Response {
 	r := Response{
 		Schema:  schema,
@@ -333,11 +475,13 @@ func NewResponse(schema *Schema, desc ...string) Response {
 	return r
 }
 
+// AddHeader Добавить заголовок в ответ
 func (r Response) AddHeader(name string, header Header) Response {
 	r.Headers[name] = header
 	return r
 }
 
+// NewHeader Инициализация заголовка
 func NewHeader(t interface{}, nullable bool, desc ...string) Header {
 
 	h := Header{
