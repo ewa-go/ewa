@@ -28,7 +28,12 @@ const (
 // SetParameters указываем параметры маршрута
 func (r *Route) SetParameters(isEmptyParam bool, params ...*Parameter) *Route {
 	r.isEmptyParam = isEmptyParam
-	r.Parameters = params
+	for _, param := range params {
+		if param.In == InPath {
+			param.AllowEmptyValue = isEmptyParam
+		}
+		r.Parameters = append(r.Parameters, param)
+	}
 	return r
 }
 

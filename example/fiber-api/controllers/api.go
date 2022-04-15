@@ -15,6 +15,7 @@ func (Api) Get(route *ewa.Route) {
 			return c.SendString(422, err.Error())
 		}
 
-		return c.SendString(200, string(b))
+		return c.Send(200, ewa.MIMEApplicationJSON, b)
+		//return c.JSON(200, c.Swagger)
 	}
 }

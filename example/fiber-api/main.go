@@ -59,9 +59,9 @@ func main() {
 
 	//Инициализируем сервер
 	ws := ewa.New(server, cfg)
-	ws.Register(new(api.User))
+	ws.Register(new(api.User)).SetDescription("Пользователи")
 	// Swagger
-	ws.Register(new(controllers.Api))
+	ws.Register(new(controllers.Api)).SetDescription("Swagger")
 
 	// Описываем swagger
 	ws.Swagger.SetInfo(fmt.Sprintf("10.28.0.73:%d", cfg.Port), &info, nil)

@@ -2,8 +2,8 @@ package egowebapi
 
 import (
 	"fmt"
-	"github.com/alecthomas/jsonschema"
 	"github.com/egovorukhin/egowebapi/security"
+	"github.com/invopop/jsonschema"
 	p "path"
 	"regexp"
 	"strings"
@@ -63,7 +63,7 @@ func New(server IServer, config Config) *Server {
 			BasePath:            "/",
 			SecurityDefinitions: SecurityDefinitions{},
 			Paths:               Paths{},
-			Definitions:         map[string]*jsonschema.Type{},
+			Definitions:         map[string]*jsonschema.Schema{},
 		},
 	}
 
@@ -305,8 +305,10 @@ func (s *Server) add(method, tagName, path string, route *Route) error {
 		// Объединяем путь и параметры
 		fullPath := p.Join(path, param)
 
-		// Добавляем пути и методы в swagger
-		s.Swagger.setPath(fullPath, strings.ToLower(method), route.Operation)
+		if param != "" || (param == "" && !route.isEmptyParam) {
+			// Добавляем пути и методы в swagger
+			s.Swagger.setPath(fullPath, strings.ToLower(method), route.Operation)
+		}
 
 		// Проверка на пустые пути
 		if param != "" {
@@ -323,7 +325,7 @@ func (s *Server) add(method, tagName, path string, route *Route) error {
 	return nil
 }
 
-// Register Регмтсрация контроллера
+// Register Регистрация контроллера
 func (s *Server) Register(i interface{}) *Controller {
 	controller := &Controller{
 		Interface: i,
