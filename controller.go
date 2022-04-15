@@ -43,6 +43,7 @@ type IConnect interface {
 
 type Controller struct {
 	Interface interface{}
+	IsShow    bool
 	Name      string
 	Path      string
 	Suffix    []Suffix
@@ -82,6 +83,12 @@ func (c *Controller) SetDescription(desc string) *Controller {
 // SetSuffix Устанавливаем суффикс пути контроллера
 func (c *Controller) SetSuffix(suffix ...Suffix) *Controller {
 	c.Suffix = append(c.Suffix, suffix...)
+	return c
+}
+
+// NotShow Установка флага отображения контроллера в swagger
+func (c *Controller) NotShow() *Controller {
+	c.IsShow = false
 	return c
 }
 
