@@ -1,6 +1,7 @@
 package egowebapi
 
 import (
+	"encoding/json"
 	"github.com/egovorukhin/egowebapi/security"
 	"github.com/invopop/jsonschema"
 	"reflect"
@@ -192,8 +193,8 @@ const (
 	RefDefinitions = "#/definitions/"
 )
 
-func (s *Swagger) MarshalJSON() ([]byte, error) {
-	return nil, nil
+func (s *Swagger) JSON() ([]byte, error) {
+	return json.Marshal(s)
 }
 
 // SetDefinitions Преобразование моделей в формат JSON Schema
