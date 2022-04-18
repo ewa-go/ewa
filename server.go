@@ -11,7 +11,7 @@ import (
 
 const (
 	Name    = "EgoWebApi"
-	Version = "v0.2.6"
+	Version = "v0.2.12"
 )
 
 type Server struct {
@@ -308,9 +308,6 @@ func (s *Server) add(method string, c *Controller, route *Route) error {
 	// Получаем handler маршрута
 	h := route.getHandler(s.Config, nil, *s.Swagger)
 
-	// Корректировка параметров
-	c.Path = s.convertParams(c.Path)
-
 	// Перебираем параметры адресной строки
 	for _, param := range params {
 
@@ -324,10 +321,8 @@ func (s *Server) add(method string, c *Controller, route *Route) error {
 			s.Swagger.setPath(fullPath[l:], strings.ToLower(method), route.Operation)
 		}
 
-		// Проверка на пустые пути
-		if param != "" {
-			fullPath = s.convertParams(fullPath)
-		}
+		// Корректировка параметров пути
+		fullPath = s.convertParams(fullPath)
 
 		// Добавляем метод, путь и обработчик
 		s.WebServer.Add(method, fullPath, h)
@@ -353,9 +348,11 @@ func (s *Server) String() string {
 
 // convertParams Корректировка параметров адресной строки
 func (s *Server) convertParams(path string) string {
-	matches := regexp.MustCompile(`{(\w+)}`).FindStringSubmatch(path)
-	if len(matches) == 2 {
-		return strings.ReplaceAll(path, matches[0], s.WebServer.ConvertParam(matches[1]))
+	matches := regexp.MustCompile(`{(\w+)}`).FindAllStringSubmatch(path, -1)
+	for _, match := range matches {
+		if len(match) == 2 {
+			path = strings.ReplaceAll(path, match[0], s.WebServer.ConvertParam(match[1]))
+		}
 	}
 	return path
 }
