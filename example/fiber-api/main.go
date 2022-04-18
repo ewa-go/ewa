@@ -4,7 +4,7 @@ import (
 	"fmt"
 	ewa "github.com/egovorukhin/egowebapi"
 	"github.com/egovorukhin/egowebapi/example/fiber-api/controllers"
-	"github.com/egovorukhin/egowebapi/example/fiber-api/controllers/api"
+	"github.com/egovorukhin/egowebapi/example/fiber-api/controllers/api/storage"
 	"github.com/egovorukhin/egowebapi/example/fiber-api/models"
 	f "github.com/egovorukhin/egowebapi/fiber"
 	"github.com/egovorukhin/egowebapi/security"
@@ -59,7 +59,7 @@ func main() {
 
 	//Инициализируем сервер
 	ws := ewa.New(server, cfg)
-	ws.Register(new(api.User)).SetDescription("Пользователи")
+	ws.Register(new(storage.User)).SetDescription("Пользователи")
 	// Swagger
 	ws.Register(new(controllers.Api)).NotShow()
 

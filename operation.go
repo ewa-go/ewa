@@ -303,3 +303,16 @@ func NewHeader(t interface{}, nullable bool, desc ...string) Header {
 	}
 	return h
 }
+
+// getParams Извлекаем пути из параметров
+func (o Operation) getParams() (params []string) {
+	for _, param := range o.Parameters {
+		params = append(params, param.Path)
+	}
+	return
+}
+
+// addTag Добавить tag в список
+func (o *Operation) addTag(tag string) {
+	o.Tags = append(o.Tags, tag)
+}

@@ -233,10 +233,10 @@ func (s *Swagger) SetBasePath(basePath string) *Swagger {
 
 // compareBasePath Сравнение базового пути и пути маршрута.
 // Добавляем только те маршруты, которые включают базовый путь
-func (s *Swagger) compareBasePath(path string) bool {
+func (s *Swagger) compareBasePath(path string) (bool, int) {
 	l := len(s.BasePath)
 	if path[:l] == s.BasePath {
-		return true
+		return true, l
 	}
-	return false
+	return false, l
 }
