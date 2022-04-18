@@ -80,7 +80,7 @@ func (s *Server) Start() (err error) {
 
 	for _, v := range s.Controllers {
 
-		v.initialize()
+		v.initialize(s.Swagger.BasePath)
 		path := v.Path
 		name := v.Tag.Name
 		show := v.IsShow
@@ -269,7 +269,7 @@ func (s *Server) add(method, tagName, path string, route *Route, show bool) erro
 		return nil
 	}
 
-	params := route.Operation.GetParams()
+	params := route.Operation.getParams()
 
 	if params == nil || route.isEmptyParam {
 		params = append(params, "")
@@ -296,7 +296,7 @@ func (s *Server) add(method, tagName, path string, route *Route, show bool) erro
 	}
 
 	// Добавляем ссылку на тэг в контроллере
-	route.Operation.Tags = append(route.Operation.Tags, tagName)
+	route.Operation.addTag(tagName)
 
 	// Получаем handler маршрута
 	h := route.getHandler(s.Config, nil, *s.Swagger)
@@ -307,9 +307,11 @@ func (s *Server) add(method, tagName, path string, route *Route, show bool) erro
 		// Объединяем путь и параметры
 		fullPath := p.Join(path, param)
 
-		if (param != "" || (param == "" && !route.isEmptyParam)) && (s.Swagger.compareBasePath(path) && show) {
+		// Проверка на соответствие базового пути
+		ok, l := s.Swagger.compareBasePath(path)
+		if (param != "" || (param == "" && !route.isEmptyParam)) && (ok && show) {
 			// Добавляем пути и методы в swagger
-			s.Swagger.setPath(fullPath, strings.ToLower(method), route.Operation)
+			s.Swagger.setPath(fullPath[l:], strings.ToLower(method), route.Operation)
 		}
 
 		// Проверка на пустые пути

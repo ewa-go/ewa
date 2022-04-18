@@ -93,7 +93,7 @@ func (c *Controller) NotShow() *Controller {
 }
 
 // initialize инициализация контролера
-func (c *Controller) initialize() {
+func (c *Controller) initialize(basePath string) {
 
 	//Извлекаем имя и путь до "controllers"
 	var t reflect.Type
@@ -111,11 +111,6 @@ func (c *Controller) initialize() {
 		-1,
 	)
 
-	if c.Name == "" {
-		c.Name = strings.ToTitle(t.Name())
-		c.Tag.Name = strings.Title(t.Name())
-	}
-
 	if c.Path == "" {
 		c.Path = pkg
 	}
@@ -125,7 +120,19 @@ func (c *Controller) initialize() {
 	for _, item := range c.Suffix {
 		c.PathTree = insert(c.FileTree, item.Index, item.Value)
 	}
-	c.Path = strings.Join(c.PathTree, "/") + "/" + strings.ToLower(c.Name)
+	c.Path = strings.Join(c.PathTree, "/")
+
+	if c.Name == "" {
+		name := t.Name()
+		var path string
+		if c.Path != "" && c.Path[:len(basePath)] == basePath {
+			path = c.Path[len(basePath):]
+		}
+		c.Name = strings.ToLower(name)
+		c.Tag.Name = strings.ToLower(path + "/" + name)
+	}
+
+	c.Path += "/" + c.Name
 }
 
 func insert(a []string, index int, value string) []string {

@@ -1,4 +1,4 @@
-package api
+package storage
 
 import (
 	ewa "github.com/egovorukhin/egowebapi"
