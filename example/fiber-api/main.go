@@ -61,7 +61,7 @@ func main() {
 	ws := ewa.New(server, cfg)
 	ws.Register(new(storage.User)).SetDescription("Пользователи")
 	// Swagger
-	ws.Register(new(controllers.Api)).NotShow()
+	ws.Register(new(controllers.Api)).SetPath("/").NotShow()
 
 	// Описываем swagger
 	ws.Swagger.SetInfo(fmt.Sprintf("10.28.0.73:%d", cfg.Port), &info, nil).SetBasePath("/api")

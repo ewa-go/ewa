@@ -125,7 +125,7 @@ func (c *Controller) initialize(basePath string) {
 	if c.Name == "" {
 		name := t.Name()
 		var path string
-		if c.Path != "" && c.Path[:len(basePath)] == basePath {
+		if c.Path != "" && c.Path != "/" && c.Path[:len(basePath)] == basePath {
 			path = c.Path[len(basePath):]
 		}
 		c.Name = strings.ToLower(name)
