@@ -241,3 +241,11 @@ func (r *Route) getHandler(config Config, view *View, swagger Swagger) Handler {
 		return r.Handler(c)
 	}
 }
+
+// GetParams Извлекаем пути из параметров
+func (o Operation) GetParams() (params []string) {
+	for _, param := range o.Parameters {
+		params = append(params, param.Path)
+	}
+	return
+}

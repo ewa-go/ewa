@@ -64,7 +64,7 @@ func main() {
 	ws.Register(new(controllers.Api)).NotShow()
 
 	// Описываем swagger
-	ws.Swagger.SetInfo(fmt.Sprintf("10.28.0.73:%d", cfg.Port), &info, nil)
+	ws.Swagger.SetInfo(fmt.Sprintf("10.28.0.73:%d", cfg.Port), &info, nil).SetBasePath("/api")
 	ws.Swagger.SetDefinitions(models.User{})
 
 	// Канал для получения ошибки, если таковая будет
