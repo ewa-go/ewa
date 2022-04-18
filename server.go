@@ -147,25 +147,25 @@ func (s *Server) Start() (err error) {
 		}
 	}
 
-	// Схема
-	scheme := "http"
 	//Флаг старта
 	s.IsStarted = true
 	// Получение адреса
 	addr := fmt.Sprintf(":%d", s.Config.Port)
+	// Установка порта в swagger
+	s.Swagger.setPort(addr)
 	// Если флаг для безопасности true, то запускаем механизм с TLS
 	if s.Config.Secure != nil {
-		// Security
-		scheme += "s"
+		// Добавляем схему в Swagger
+		s.Swagger.SetSchemes("https")
 		// Возвращаем данные по сертификату
 		cert, key := s.Config.Secure.Get()
 		// Запускаем слушатель с TLS настройкой
 		return s.WebServer.StartTLS(addr, cert, key)
 	}
+
 	// Добавляем схему в Swagger
-	if s.Swagger != nil {
-		s.Swagger.SetSchemes(scheme)
-	}
+	s.Swagger.SetSchemes("http")
+
 	// Запуск слушателя веб сервера
 	return s.WebServer.Start(addr)
 }
@@ -307,7 +307,7 @@ func (s *Server) add(method, tagName, path string, route *Route, show bool) erro
 		// Объединяем путь и параметры
 		fullPath := p.Join(path, param)
 
-		if (param != "" || (param == "" && !route.isEmptyParam)) && show {
+		if (param != "" || (param == "" && !route.isEmptyParam)) && (s.Swagger.compareBasePath(path) && show) {
 			// Добавляем пути и методы в swagger
 			s.Swagger.setPath(fullPath, strings.ToLower(method), route.Operation)
 		}
