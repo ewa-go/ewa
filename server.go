@@ -308,6 +308,9 @@ func (s *Server) add(method string, c *Controller, route *Route) error {
 	// Получаем handler маршрута
 	h := route.getHandler(s.Config, nil, *s.Swagger)
 
+	// Корректировка параметров
+	c.Path = s.convertParams(c.Path)
+
 	// Перебираем параметры адресной строки
 	for _, param := range params {
 
@@ -323,10 +326,7 @@ func (s *Server) add(method string, c *Controller, route *Route) error {
 
 		// Проверка на пустые пути
 		if param != "" {
-			matches := regexp.MustCompile(`{(\w+)}`).FindStringSubmatch(fullPath)
-			if len(matches) == 2 {
-				fullPath = strings.ReplaceAll(fullPath, matches[0], s.WebServer.ConvertParam(matches[1]))
-			}
+			fullPath = s.convertParams(fullPath)
 		}
 
 		// Добавляем метод, путь и обработчик
@@ -349,4 +349,13 @@ func (s *Server) Register(i interface{}) *Controller {
 // Функция вернет Имя и версию
 func (s *Server) String() string {
 	return fmt.Sprintf("%s %s", Name, Version)
+}
+
+// convertParams Корректировка параметров адресной строки
+func (s *Server) convertParams(path string) string {
+	matches := regexp.MustCompile(`{(\w+)}`).FindStringSubmatch(path)
+	if len(matches) == 2 {
+		return strings.ReplaceAll(path, matches[0], s.WebServer.ConvertParam(matches[1]))
+	}
+	return path
 }
