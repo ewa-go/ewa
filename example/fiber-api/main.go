@@ -57,9 +57,15 @@ func main() {
 		},
 	}
 
+	hostname := ewa.Suffix{
+		Index:       3,
+		Value:       "{hostname}",
+		Description: "Set hostname device",
+	}
+
 	//Инициализируем сервер
 	ws := ewa.New(server, cfg)
-	ws.Register(new(storage.User)).SetDescription("Пользователи")
+	ws.Register(new(storage.User)).SetSuffix(hostname).SetDescription("Пользователи")
 	// Swagger
 	ws.Register(new(controllers.Api)).SetPath("/").NotShow()
 

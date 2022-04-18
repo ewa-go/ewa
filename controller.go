@@ -118,18 +118,27 @@ func (c *Controller) initialize(basePath string) {
 	c.FileTree = strings.Split(c.Path, "/")
 	c.PathTree = c.FileTree
 	for _, item := range c.Suffix {
+		if regexp.MustCompile(`{\w+}`).MatchString(item.Value) {
+			item.isParam = true
+		}
 		c.PathTree = insert(c.FileTree, item.Index, item.Value)
 	}
 	c.Path = strings.Join(c.PathTree, "/")
 
 	if c.Name == "" {
-		name := t.Name()
+		name := "/" + t.Name()
 		var path string
 		if c.Path != "" && c.Path != "/" && c.Path[:len(basePath)] == basePath {
-			path = c.Path[len(basePath):]
+			index := len(c.Path)
+			loc := regexp.MustCompile(`{\w+}`).FindStringIndex(c.Path)
+			if loc != nil {
+				index = loc[1]
+				name = ""
+			}
+			path = c.Path[len(basePath):index]
 		}
-		c.Name = strings.ToLower(name)
-		c.Tag.Name = strings.ToLower(path + "/" + name)
+		c.Name = strings.ToLower(t.Name())
+		c.Tag.Name = strings.ToLower(path + name)
 	}
 
 	c.Path += "/" + c.Name

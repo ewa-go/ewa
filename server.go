@@ -36,8 +36,10 @@ type IServer interface {
 }
 
 type Suffix struct {
-	Index int
-	Value string
+	Index       int
+	Value       string
+	isParam     bool
+	Description string
 }
 
 func NewSuffix(suffix ...Suffix) (s []Suffix) {
@@ -78,69 +80,66 @@ func (s *Server) GetWebServer() interface{} {
 // Start запуск сервера
 func (s *Server) Start() (err error) {
 
-	for _, v := range s.Controllers {
+	for _, c := range s.Controllers {
 
-		v.initialize(s.Swagger.BasePath)
-		path := v.Path
-		name := v.Tag.Name
-		show := v.IsShow
+		c.initialize(s.Swagger.BasePath)
 
 		// Добавляем тэги контроллера
-		if show {
-			s.Swagger.Tags = append(s.Swagger.Tags, v.Tag)
+		if c.IsShow {
+			s.Swagger.Tags = append(s.Swagger.Tags, c.Tag)
 		}
 
 		// Проверка интерфейса на соответствие
-		if i, ok := v.Interface.(IGet); ok {
-			err = s.get(i, name, path, show)
+		if i, ok := c.Interface.(IGet); ok {
+			err = s.get(i, c)
 			if err != nil {
 				return
 			}
 		}
-		if i, ok := v.Interface.(IPost); ok {
-			err = s.post(i, name, path, show)
+		if i, ok := c.Interface.(IPost); ok {
+			err = s.post(i, c)
 			if err != nil {
 				return
 			}
 		}
-		if i, ok := v.Interface.(IPut); ok {
-			err = s.put(i, name, path, show)
+		if i, ok := c.Interface.(IPut); ok {
+			err = s.put(i, c)
 			if err != nil {
 				return
 			}
 		}
-		if i, ok := v.Interface.(IDelete); ok {
-			err = s.delete(i, name, path, show)
+		if i, ok := c.Interface.(IDelete); ok {
+			err = s.delete(i, c)
 			if err != nil {
 				return
 			}
 		}
-		if i, ok := v.Interface.(IOptions); ok {
-			err = s.options(i, name, path, show)
+		if i, ok := c.Interface.(IOptions); ok {
+			err = s.options(i, c)
 			if err != nil {
 				return
 			}
 		}
-		if i, ok := v.Interface.(IPatch); ok {
-			err = s.patch(i, name, path, show)
+		if i, ok := c.Interface.(IPatch); ok {
+			err = s.patch(i, c)
 			if err != nil {
 				return
 			}
 		}
-		if i, ok := v.Interface.(IHead); ok {
-			err = s.head(i, name, path, show)
+		if i, ok := c.Interface.(IHead); ok {
+			err = s.head(i, c)
 			if err != nil {
 				return
 			}
 		}
-		if i, ok := v.Interface.(IConnect); ok {
-			err = s.connect(i, name, path, show)
+		if i, ok := c.Interface.(IConnect); ok {
+			err = s.connect(i, c)
 			if err != nil {
 				return
 			}
 		}
-		if i, ok := v.Interface.(ITrace); ok {
-			err = s.trace(i, name, path, show)
+		if i, ok := c.Interface.(ITrace); ok {
+			err = s.trace(i, c)
 			if err != nil {
 				return
 			}
@@ -199,70 +198,70 @@ func (s *Server) newRoute() *Route {
 }
 
 // Обрабатываем метод GET
-func (s *Server) get(i IGet, name, path string, show bool) error {
+func (s *Server) get(i IGet, c *Controller) error {
 	route := s.newRoute()
 	i.Get(route)
-	return s.add(MethodGet, name, path, route, show)
+	return s.add(MethodGet, c, route)
 }
 
 // Обрабатываем метод POST
-func (s *Server) post(i IPost, name, path string, show bool) error {
+func (s *Server) post(i IPost, c *Controller) error {
 	route := s.newRoute()
 	i.Post(route)
-	return s.add(MethodPost, name, path, route, show)
+	return s.add(MethodPost, c, route)
 }
 
 // Обрабатываем метод PUT
-func (s *Server) put(i IPut, name, path string, show bool) error {
+func (s *Server) put(i IPut, c *Controller) error {
 	route := s.newRoute()
 	i.Put(route)
-	return s.add(MethodPut, name, path, route, show)
+	return s.add(MethodPut, c, route)
 }
 
 // Обрабатываем метод DELETE
-func (s *Server) delete(i IDelete, name, path string, show bool) error {
+func (s *Server) delete(i IDelete, c *Controller) error {
 	route := s.newRoute()
 	i.Delete(route)
-	return s.add(MethodDelete, name, path, route, show)
+	return s.add(MethodDelete, c, route)
 }
 
 // Обрабатываем метод OPTIONS
-func (s *Server) options(i IOptions, name, path string, show bool) error {
+func (s *Server) options(i IOptions, c *Controller) error {
 	route := s.newRoute()
 	i.Options(route)
-	return s.add(MethodOptions, name, path, route, show)
+	return s.add(MethodOptions, c, route)
 }
 
 // Обрабатываем метод PATCH
-func (s *Server) patch(i IPatch, name, path string, show bool) error {
+func (s *Server) patch(i IPatch, c *Controller) error {
 	route := s.newRoute()
 	i.Patch(route)
-	return s.add(MethodPatch, name, path, route, show)
+	return s.add(MethodPatch, c, route)
 }
 
 // Обрабатываем метод HEAD
-func (s *Server) head(i IHead, name, path string, show bool) error {
+func (s *Server) head(i IHead, c *Controller) error {
 	route := s.newRoute()
 	i.Head(route)
-	return s.add(MethodHead, name, path, route, show)
+	return s.add(MethodHead, c, route)
 }
 
 // Обрабатываем метод CONNECT
-func (s *Server) connect(i IConnect, name, path string, show bool) error {
+func (s *Server) connect(i IConnect, c *Controller) error {
 	route := s.newRoute()
 	i.Connect(route)
-	return s.add(MethodConnect, name, path, route, show)
+	return s.add(MethodConnect, c, route)
 }
 
 // Обрабатываем метод TRACE
-func (s *Server) trace(i ITrace, name, path string, show bool) error {
+func (s *Server) trace(i ITrace, c *Controller) error {
 	route := s.newRoute()
 	i.Trace(route)
-	return s.add(MethodTrace, name, path, route, show)
+	return s.add(MethodTrace, c, route)
 }
 
 // Добавить маршрут в веб сервер
-func (s *Server) add(method, tagName, path string, route *Route, show bool) error {
+func (s *Server) add(method string, c *Controller, route *Route) error {
 
 	// Если нет ни одного handler, то выходим
 	if route.Handler == nil {
@@ -295,8 +294,16 @@ func (s *Server) add(method, tagName, path string, route *Route, show bool) erro
 		}
 	}
 
+	// Добавляем в swagger параметр указанный в суффиксе
+	for _, suffix := range c.Suffix {
+		if suffix.isParam {
+			continue
+		}
+		route.Operation.Parameters = append(route.Operation.Parameters, NewInPath(suffix.Value, true, suffix.Description))
+	}
+
 	// Добавляем ссылку на тэг в контроллере
-	route.Operation.addTag(tagName)
+	route.Operation.addTag(c.Tag.Name)
 
 	// Получаем handler маршрута
 	h := route.getHandler(s.Config, nil, *s.Swagger)
@@ -305,11 +312,11 @@ func (s *Server) add(method, tagName, path string, route *Route, show bool) erro
 	for _, param := range params {
 
 		// Объединяем путь и параметры
-		fullPath := p.Join(path, param)
+		fullPath := p.Join(c.Path, param)
 
 		// Проверка на соответствие базового пути
-		ok, l := s.Swagger.compareBasePath(path)
-		if (param != "" || (param == "" && !route.isEmptyParam)) && (ok && show) {
+		ok, l := s.Swagger.compareBasePath(c.Path)
+		if (param != "" || (param == "" && !route.isEmptyParam)) && (ok && c.IsShow) {
 			// Добавляем пути и методы в swagger
 			s.Swagger.setPath(fullPath[l:], strings.ToLower(method), route.Operation)
 		}
