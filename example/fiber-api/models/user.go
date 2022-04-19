@@ -8,9 +8,9 @@ import (
 var users Users
 
 type User struct {
-	Id        int    `json:"id,omitempty" jsonschema:"description=Идентификатор пользователя"`
-	Firstname string `json:"firstname" jsonschema:"description=Имя"`
-	Lastname  string `json:"lastname" jsonschema:"description=Фамилия"`
+	Id        int    `json:"id,omitempty" jsonschema:"description=ID user"`
+	Firstname string `json:"firstname" jsonschema:"description=Firstname"`
+	Lastname  string `json:"lastname" jsonschema:"description=Lastname"`
 }
 
 type Users map[int]*User

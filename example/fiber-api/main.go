@@ -46,26 +46,26 @@ func main() {
 	}
 
 	info := ewa.Info{
-		Description: "Описание приложения",
+		Description: "Description",
 		Version:     "1.0.0",
 		Title:       "FiberApi",
 		Contact: &ewa.Contact{
 			Email: "user@mail.ru",
 		},
 		License: &ewa.License{
-			Name: "Пользуйся на здоровье",
+			Name: "License",
 		},
 	}
 
-	hostname := ewa.Suffix{
+	/*hostname := ewa.Suffix{
 		Index:       3,
 		Value:       "{hostname}",
 		Description: "Set hostname device",
-	}
+	}*/
 
 	//Инициализируем сервер
 	ws := ewa.New(server, cfg)
-	ws.Register(new(storage.User)).SetSuffix(hostname).SetDescription("Пользователи")
+	ws.Register(new(storage.User)). /*.SetSuffix(hostname)*/ SetDescription("Users")
 	// Swagger
 	ws.Register(new(controllers.Api)).SetPath("/").NotShow()
 
