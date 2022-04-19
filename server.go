@@ -11,7 +11,7 @@ import (
 
 const (
 	Name    = "EgoWebApi"
-	Version = "v0.2.12"
+	Version = "v0.2.14"
 )
 
 type Server struct {
@@ -317,8 +317,13 @@ func (s *Server) add(method string, c *Controller, route *Route) error {
 		// Проверка на соответствие базового пути
 		ok, l := s.Swagger.compareBasePath(c.Path)
 		if (param != "" || (param == "" && !route.isEmptyParam)) && (ok && c.IsShow) {
+			lowerMethod := strings.ToLower(method)
+			// Установка ID операции
+			if route.Operation.ID == "" {
+				route.SetOperationID(lowerMethod + strings.ReplaceAll(fullPath[l:], "/", "-"))
+			}
 			// Добавляем пути и методы в swagger
-			s.Swagger.setPath(fullPath[l:], strings.ToLower(method), route.Operation)
+			s.Swagger.setPath(fullPath[l:], lowerMethod, route.Operation)
 		}
 
 		// Корректировка параметров пути

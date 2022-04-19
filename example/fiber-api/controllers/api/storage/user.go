@@ -12,9 +12,9 @@ type User struct{}
 func (User) Get(route *ewa.Route) {
 	route.SetSecurity(security.BasicAuth)
 	route.SetParameters(true,
-		ewa.NewInPath("/{id}", false, "ID пользователя"),
-		ewa.NewInQuery("id", false, "ID пользователя"),
-		ewa.NewInQueryArray("firstname", "Егор, Вася, Петя", false, "Имена пользователей"),
+		ewa.NewInPath("/{id}", false, "ID users"),
+		ewa.NewInQuery("id", false, "ID users"),
+		ewa.NewInQueryArray("firstname", "User1, User2, User3", false, "Name users"),
 	)
 	route.Handler = func(c *ewa.Context) error {
 		id, err := strconv.Atoi(c.Params("id", "0"))
@@ -30,18 +30,16 @@ func (User) Get(route *ewa.Route) {
 	}
 	route.SetProduces(ewa.MIMEApplicationJSON)
 	route.SetSummary("Get users")
-	route.SetDefaultResponse(ewa.NewResponse(ewa.NewSchema(models.User{})).AddHeader("Login", ewa.NewHeader("", false, "Login пользователя")))
+	route.SetDefaultResponse(ewa.NewResponse(ewa.NewSchema(models.User{})).AddHeader("Login", ewa.NewHeader("", false, "User login")))
 	route.SetResponse(200, ewa.NewResponse(ewa.NewSchemaArray(models.User{}), "Return array users"))
 	route.SetResponse(422, ewa.NewResponse(nil, "Return parse parameter error"))
-	route.SetOperationID("getUser")
 }
 
 func (User) Post(route *ewa.Route) {
 	route.SetSecurity(security.BasicAuth)
-	route.SetParameters(false, ewa.NewInBody(true, ewa.NewSchema(models.User{}), "Необходимо заполнить тело запроса"))
+	route.SetParameters(false, ewa.NewInBody(true, ewa.NewSchema(models.User{}), "Must have request body"))
 	route.SetProduces(ewa.MIMEApplicationJSON)
-	route.SetOperationID("setUser")
-	route.SetSummary("Добавить пользователя")
+	route.SetSummary("Create user")
 	route.Handler = func(c *ewa.Context) error {
 		user := models.User{}
 		err := c.BodyParser(&user)
@@ -57,12 +55,11 @@ func (User) Post(route *ewa.Route) {
 func (User) Put(route *ewa.Route) {
 	route.SetSecurity(security.BasicAuth)
 	route.SetParameters(false,
-		ewa.NewInQuery("id", false, "id пользователя"),
-		ewa.NewInBody(true, ewa.NewSchema(models.User{}), "Необходимо заполнить тело запроса"),
+		ewa.NewInQuery("id", false, "id user"),
+		ewa.NewInBody(true, ewa.NewSchema(models.User{}), "Must have request body"),
 	)
 	route.SetProduces(ewa.MIMEApplicationJSON)
-	route.SetOperationID("updateUser")
-	route.SetSummary("Изменить данные по пользователю")
+	route.SetSummary("Update user")
 	route.Handler = func(c *ewa.Context) error {
 
 		id, err := strconv.Atoi(c.QueryParam("id"))
@@ -87,8 +84,7 @@ func (User) Put(route *ewa.Route) {
 func (User) Delete(route *ewa.Route) {
 	route.SetSecurity(security.BasicAuth)
 	route.SetParameters(false, ewa.NewInPath("/{id}", true, "ID user"))
-	route.SetOperationID("deleteUser")
-	route.SetSummary("Удалить пользователя")
+	route.SetSummary("Delete user")
 	route.Handler = func(c *ewa.Context) error {
 		id, err := strconv.Atoi(c.Params("id"))
 		if err != nil {
