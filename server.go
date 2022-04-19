@@ -11,7 +11,7 @@ import (
 
 const (
 	Name    = "EgoWebApi"
-	Version = "v0.2.14"
+	Version = "v0.2.15"
 )
 
 type Server struct {
@@ -180,6 +180,10 @@ func (s *Server) newRoute() *Route {
 
 	route := &Route{
 		Operation: Operation{
+			Produces: []string{
+				MIMEApplicationJSON,
+				MIMEApplicationXML,
+			},
 			Responses: map[string]Response{
 				"default": {
 					Description: "successful operation",

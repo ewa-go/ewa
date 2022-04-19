@@ -28,7 +28,6 @@ func (User) Get(route *ewa.Route) {
 		users := models.GetUsers()
 		return c.JSON(200, users)
 	}
-	route.SetProduces(ewa.MIMEApplicationJSON)
 	route.SetSummary("Get users")
 	route.SetDefaultResponse(ewa.NewResponse(ewa.NewSchema(models.User{})).AddHeader("Login", ewa.NewHeader("", false, "User login")))
 	route.SetResponse(200, ewa.NewResponse(ewa.NewSchemaArray(models.User{}), "Return array users"))
@@ -38,7 +37,6 @@ func (User) Get(route *ewa.Route) {
 func (User) Post(route *ewa.Route) {
 	route.SetSecurity(security.BasicAuth)
 	route.SetParameters(false, ewa.NewInBody(true, ewa.NewSchema(models.User{}), "Must have request body"))
-	route.SetProduces(ewa.MIMEApplicationJSON)
 	route.SetSummary("Create user")
 	route.Handler = func(c *ewa.Context) error {
 		user := models.User{}
@@ -58,7 +56,6 @@ func (User) Put(route *ewa.Route) {
 		ewa.NewInQuery("id", false, "id user"),
 		ewa.NewInBody(true, ewa.NewSchema(models.User{}), "Must have request body"),
 	)
-	route.SetProduces(ewa.MIMEApplicationJSON)
 	route.SetSummary("Update user")
 	route.Handler = func(c *ewa.Context) error {
 
