@@ -130,7 +130,7 @@ func (s *Swagger) setRefDefinitions(ref string) (string, bool) {
 	if _, ok := s.Definitions[ref]; ok {
 		return RefDefinitions + ref, ok
 	}
-	return "", false
+	return ref, false
 }
 
 // Устанавливаем путь с операциями
