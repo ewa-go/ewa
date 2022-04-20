@@ -307,6 +307,9 @@ func NewHeader(t interface{}, nullable bool, desc ...string) Header {
 // getParams Извлекаем пути из параметров
 func (o Operation) getParams() (params []string) {
 	for _, param := range o.Parameters {
+		if param.In != InPath {
+			continue
+		}
 		params = append(params, param.Path)
 	}
 	return
