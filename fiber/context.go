@@ -77,6 +77,10 @@ func (c *Context) SendFile(file string) error {
 	return c.Ctx.SendFile(file)
 }
 
+func (c *Context) SaveFile(fileHeader *multipart.FileHeader, path string) error {
+	return c.Ctx.SaveFile(fileHeader, path)
+}
+
 func (c *Context) SendStream(code int, contentType string, stream io.Reader) error {
 	c.Ctx.Set(fiber.HeaderContentType, contentType)
 	return c.Ctx.Status(code).SendStream(stream)
