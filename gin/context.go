@@ -81,6 +81,10 @@ func (c *Context) SendFile(file string) error {
 	return nil
 }
 
+func (c *Context) SaveFile(fileHeader *multipart.FileHeader, path string) error {
+	return c.Ctx.SaveFile(fileHeader, path)
+}
+
 func (c *Context) SendStream(code int, contentType string, stream io.Reader) error {
 	return c.Ctx.Stream(code, contentType, stream)
 }

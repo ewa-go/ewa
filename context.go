@@ -31,6 +31,7 @@ type IContext interface {
 	Send(code int, contentType string, b []byte) error
 	SendString(code int, s string) error
 	SendFile(file string) error
+	SaveFile(fileHeader *multipart.FileHeader, path string) error
 	SendStream(code int, contentType string, stream io.Reader) error
 	Cookies(key string) string
 	SetCookie(cookie *http.Cookie)
