@@ -11,7 +11,7 @@ type User struct{}
 
 func (User) Get(route *ewa.Route) {
 	route.SetSecurity(security.BasicAuth)
-	route.SetParameters(true,
+	route.SetParameters(false,
 		ewa.NewInPath("/{id}", false, "ID users"),
 		ewa.NewInQuery("id", false, "ID users"),
 		ewa.NewInQueryArray("firstname", "User1, User2, User3", false, "Name users"),

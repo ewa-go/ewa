@@ -66,6 +66,7 @@ func main() {
 	//Инициализируем сервер
 	ws := ewa.New(server, cfg)
 	ws.Register(new(storage.User)). /*.SetSuffix(hostname)*/ SetDescription("Users")
+	ws.Register(new(controllers.Home))
 	// Swagger
 	ws.Register(new(controllers.Api)).SetPath("/").NotShow()
 
