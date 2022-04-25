@@ -38,4 +38,23 @@ func TestInitialize(t *testing.T) {
 
 	c.initialize("/api")
 	fmt.Println(c.Name, c.Path, c.Tag.Name)
+
+	c = Controller{
+		Interface: new(User),
+		IsShow:    true,
+		Path:      "/",
+	}
+
+	c.initialize("/api")
+	fmt.Println(c.Name, c.Path, c.Tag.Name)
+
+	c = Controller{
+		Interface: new(User),
+		IsShow:    true,
+		Path:      "/",
+		Name:      "MyUser",
+	}
+
+	c.initialize("/api")
+	fmt.Println(c.Name, c.Path, c.Tag.Name)
 }
