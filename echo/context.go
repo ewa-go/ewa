@@ -7,6 +7,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/url"
+	"os"
 )
 
 type Context struct {
@@ -81,6 +82,55 @@ func (c *Context) Send(code int, contentType string, b []byte) error {
 
 func (c *Context) SendFile(file string) error {
 	return c.Ctx.File(file)
+}
+
+func (c *Context) SaveFile(fh *multipart.FileHeader, path string) (err error) {
+	var (
+		f  multipart.File
+		ff *os.File
+	)
+	f, err = fh.Open()
+	if err != nil {
+		return
+	}
+
+	var ok bool
+	if ff, ok = f.(*os.File); ok {
+		// Windows can't rename files that are opened.
+		if err = f.Close(); err != nil {
+			return
+		}
+
+		// If renaming fails we try the normal copying method.
+		// Renaming could fail if the files are on different devices.
+		if os.Rename(ff.Name(), path) == nil {
+			return nil
+		}
+
+		// Reopen f for the code below.
+		if f, err = fh.Open(); err != nil {
+			return
+		}
+	}
+
+	defer func() {
+		e := f.Close()
+		if err == nil {
+			err = e
+		}
+	}()
+
+	if ff, err = os.Create(path); err != nil {
+		return
+	}
+	defer func() {
+		e := ff.Close()
+		if err == nil {
+			err = e
+		}
+	}()
+
+	return
 }
 
 func (c *Context) SendStream(code int, contentType string, stream io.Reader) error {
