@@ -25,6 +25,7 @@ type Operation struct {
 type Parameter struct {
 	Path             string  `json:"-"`
 	Type             string  `json:"type,omitempty"`
+	Format           string  `json:"format,omitempty"`
 	Description      string  `json:"description,omitempty"`
 	Name             string  `json:"name,omitempty"`
 	In               string  `json:"in,omitempty"`
@@ -230,13 +231,56 @@ func NewInQueryArray(name, array string, required bool, desc ...string) *Paramet
 // NewInFormData Инициализация параметра in: formData
 func NewInFormData(name string, required bool, desc ...string) *Parameter {
 	p := &Parameter{
-		In:       InFormData,
 		Name:     name,
+		In:       InFormData,
 		Required: required,
 	}
 	if desc != nil {
 		p.Description = desc[0]
 	}
+	return p
+}
+
+// NewParameter Инициализация параметра
+func NewParameter(name string) *Parameter {
+	return &Parameter{
+		Name: name,
+	}
+}
+
+// SetType Установка типа данных параметра
+func (p *Parameter) SetType(t string) *Parameter {
+	p.Type = t
+	return p
+}
+
+// SetIn Установка типа параметра
+func (p *Parameter) SetIn(i string) *Parameter {
+	p.In = i
+	return p
+}
+
+// SetFormat Установка формата данных параметра
+func (p *Parameter) SetFormat(format string) *Parameter {
+	p.Format = format
+	return p
+}
+
+// SetRequired Установка флага обязательности параметра
+func (p *Parameter) SetRequired(required bool) *Parameter {
+	p.Required = required
+	return p
+}
+
+// SetDescription Установка описания параметра
+func (p *Parameter) SetDescription(desc string) *Parameter {
+	p.Description = desc
+	return p
+}
+
+// SetSchema Установка описания параметра
+func (p *Parameter) SetSchema(schema *Schema) *Parameter {
+	p.Schema = schema
 	return p
 }
 
