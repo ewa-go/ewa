@@ -91,6 +91,7 @@ const (
 	TypeFile    = "file"
 	TypeInteger = "integer"
 	TypeObject  = "object"
+	TypeBoolean = "boolean"
 )
 
 const (
