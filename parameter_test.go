@@ -5,12 +5,12 @@ import (
 	"testing"
 )
 
-type Person struct {
-	Id        int    `json:"id"`
-	Firstname string `json:"firstname"`
-}
-
 func TestParameters(t *testing.T) {
+
+	type Person struct {
+		Id        int    `json:"id"`
+		Firstname string `json:"firstname"`
+	}
 
 	param := NewInBody(true, NewSchema(Person{}), "Описание")
 	fmt.Printf("In Body: %+v\n", param)
