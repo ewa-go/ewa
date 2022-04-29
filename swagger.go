@@ -86,8 +86,12 @@ const (
 )
 
 const (
-	TypeString = "string"
-	TypeArray  = "array"
+	TypeString  = "string"
+	TypeArray   = "array"
+	TypeFile    = "file"
+	TypeInteger = "integer"
+	TypeObject  = "object"
+	TypeBoolean = "boolean"
 )
 
 const (
