@@ -1,6 +1,7 @@
 package egowebapi
 
 import (
+	"path"
 	"reflect"
 	"regexp"
 	"strings"
@@ -111,12 +112,15 @@ func (c *Controller) initialize(basePath string) {
 		-1,
 	)
 
+	// Путь указанный в ручную
 	if c.Path == "" {
 		c.Path = pkg
 	}
 
+	// Формирование дерева путей
 	c.FileTree = strings.Split(c.Path, "/")
 	c.PathTree = c.FileTree
+	// Вставляем суффиксы по индексу пути
 	for _, item := range c.Suffix {
 		if regexp.MustCompile(`{\w+}`).MatchString(item.Value) {
 			item.isParam = true
@@ -125,23 +129,27 @@ func (c *Controller) initialize(basePath string) {
 	}
 	c.Path = strings.Join(c.PathTree, "/")
 
+	// Имя комнтроллера указанное в ручную
 	if c.Name == "" {
-		name := "/" + t.Name()
-		var path string
-		if c.Path != "" && c.Path != "/" && c.Path[:len(basePath)] == basePath {
-			index := len(c.Path)
-			loc := regexp.MustCompile(`{\w+}`).FindStringIndex(c.Path)
-			if loc != nil {
-				index = loc[1]
-				name = ""
-			}
-			path = c.Path[len(basePath):index]
+		c.Name = t.Name()
+	}
+	c.Name = strings.ToLower(c.Name)
+
+	// Формирование имени для тэга контроллера
+	var p string
+	name := c.Name
+	if c.Path != "" && c.Path != "/" && c.Path[:len(basePath)] == basePath {
+		index := len(c.Path)
+		loc := regexp.MustCompile(`{\w+}`).FindStringIndex(c.Path)
+		if loc != nil {
+			index = loc[1]
+			name = ""
 		}
-		c.Name = strings.ToLower(t.Name())
-		c.Tag.Name = strings.ToLower(path + name)
+		p = strings.ToLower(c.Path[len(basePath):index])
 	}
 
-	c.Path += "/" + c.Name
+	c.Tag.Name = path.Join(p, name)
+	c.Path = path.Join(c.Path, c.Name)
 }
 
 func insert(a []string, index int, value string) []string {

@@ -57,18 +57,18 @@ func main() {
 		},
 	}
 
-	/*hostname := ewa.Suffix{
+	hostname := ewa.Suffix{
 		Index:       3,
 		Value:       "{hostname}",
 		Description: "Set hostname device",
-	}*/
+	}
 
 	//Инициализируем сервер
 	ws := ewa.New(server, cfg)
-	ws.Register(new(storage.User)). /*.SetSuffix(hostname)*/ SetDescription("Users")
-	ws.Register(new(controllers.Home))
+	ws.Register(new(storage.User)).SetSuffix(hostname).SetDescription("Users")
+	ws.Register(new(controllers.Home)).SetPath("/")
 	// Swagger
-	ws.Register(new(controllers.Api)).SetPath("/").NotShow()
+	ws.Register(new(controllers.Api)).NotShow()
 
 	// Описываем swagger
 	ws.Swagger.SetInfo(fmt.Sprintf("10.28.0.73:%d", cfg.Port), &info, nil).SetBasePath("/api")
