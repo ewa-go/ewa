@@ -9,11 +9,17 @@ import (
 )
 
 type Route struct {
-	isEmptyParam bool
-	session      SessionTurn
-	isPermission bool
-	Handler      Handler
+	emptyPathParam *EmptyPathParam
+	session        SessionTurn
+	isPermission   bool
+	Handler        Handler
 	Operation
+}
+
+type EmptyPathParam struct {
+	Summary     string              `json:"summary,omitempty"`
+	Description string              `json:"description,omitempty"`
+	Responses   map[string]Response `json:"responses,omitempty"`
 }
 
 // Map тип список
@@ -28,13 +34,33 @@ const (
 	Off
 )
 
+// NewEmptyPathParam Инициализация пустого параметра пути маршрута
+func NewEmptyPathParam(summary string, desc ...string) *EmptyPathParam {
+	e := &EmptyPathParam{
+		Summary:   summary,
+		Responses: map[string]Response{},
+	}
+	if desc != nil {
+		e.Description = desc[0]
+	}
+	return e
+}
+
+// SetResponse описываем варианты ответов для Swagger
+func (e *EmptyPathParam) SetResponse(code int, resp Response) *EmptyPathParam {
+	e.Responses[strconv.Itoa(code)] = resp
+	return e
+}
+
+// SetEmptyParam указываем параметры маршрута
+func (r *Route) SetEmptyParam(e *EmptyPathParam) *Route {
+	r.emptyPathParam = e
+	return r
+}
+
 // SetParameters указываем параметры маршрута
-func (r *Route) SetParameters(isEmptyParam bool, params ...*Parameter) *Route {
-	r.isEmptyParam = isEmptyParam
+func (r *Route) SetParameters(params ...*Parameter) *Route {
 	for _, param := range params {
-		if param.In == InPath {
-			param.AllowEmptyValue = isEmptyParam
-		}
 		r.Parameters = append(r.Parameters, param)
 	}
 	return r

@@ -129,7 +129,7 @@ func (c *Controller) initialize(basePath string) {
 	}
 	c.Path = strings.Join(c.PathTree, "/")
 
-	// Имя комнтроллера указанное в ручную
+	// Имя контроллера указанное в ручную
 	if c.Name == "" {
 		c.Name = t.Name()
 	}

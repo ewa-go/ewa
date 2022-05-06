@@ -11,8 +11,12 @@ type User struct{}
 
 func (User) Get(route *ewa.Route) {
 	route.SetSecurity(security.BasicAuth)
-	route.SetParameters(false,
-		ewa.NewInPath("/{id}", false, "ID users").SetType(ewa.TypeInteger),
+	route.SetEmptyParam(
+		ewa.NewEmptyPathParam("Get users").
+			SetResponse(200, ewa.NewResponse(ewa.NewSchemaArray(models.User{}), "Return array users")),
+	)
+	route.SetParameters(
+		ewa.NewInPath("/{id}", "ID users").SetType(ewa.TypeInteger),
 		ewa.NewInQuery("id", false, "ID users"),
 		ewa.NewInQueryArray("firstname", "User1, User2, User3", false, "Name users"),
 	)
@@ -28,15 +32,15 @@ func (User) Get(route *ewa.Route) {
 		users := models.GetUsers()
 		return c.JSON(200, users)
 	}
-	route.SetSummary("Get users")
+	route.SetSummary("Get user")
 	route.SetDefaultResponse(ewa.NewResponse(ewa.NewSchema(models.User{})).AddHeader("Login", ewa.NewHeader("", false, "User login")))
-	route.SetResponse(200, ewa.NewResponse(ewa.NewSchemaArray(models.User{}), "Return array users"))
 	route.SetResponse(422, ewa.NewResponse(nil, "Return parse parameter error"))
+	route.SetResponse(200, ewa.NewResponse(ewa.NewSchema(models.User{}), "Return user struct"))
 }
 
 func (User) Post(route *ewa.Route) {
 	route.SetSecurity(security.BasicAuth)
-	route.SetParameters(false, ewa.NewInBody(true, ewa.NewSchema(models.User{}), "Must have request body"))
+	route.SetParameters(ewa.NewInBody(true, ewa.NewSchema(models.User{}), "Must have request body"))
 	route.SetSummary("Create user")
 	route.Handler = func(c *ewa.Context) error {
 		user := models.User{}
@@ -52,7 +56,7 @@ func (User) Post(route *ewa.Route) {
 
 func (User) Put(route *ewa.Route) {
 	route.SetSecurity(security.BasicAuth)
-	route.SetParameters(false,
+	route.SetParameters(
 		ewa.NewInQuery("id", false, "id user"),
 		ewa.NewInBody(true, ewa.NewSchema(models.User{}), "Must have request body"),
 	)
@@ -80,7 +84,7 @@ func (User) Put(route *ewa.Route) {
 
 func (User) Delete(route *ewa.Route) {
 	route.SetSecurity(security.BasicAuth)
-	route.SetParameters(false, ewa.NewInPath("/{id}", true, "ID user"))
+	route.SetParameters(ewa.NewInPath("/{id}", "ID user"))
 	route.SetSummary("Delete user")
 	route.Handler = func(c *ewa.Context) error {
 		id, err := strconv.Atoi(c.Params("id"))
