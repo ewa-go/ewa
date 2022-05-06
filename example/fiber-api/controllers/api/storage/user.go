@@ -16,9 +16,9 @@ func (User) Get(route *ewa.Route) {
 			SetResponse(200, ewa.NewResponse(ewa.NewSchemaArray(models.User{}), "Return array users")),
 	)
 	route.SetParameters(
-		ewa.NewInPath("/{id}", "ID users").SetType(ewa.TypeInteger),
-		ewa.NewInQuery("id", false, "ID users"),
-		ewa.NewInQueryArray("firstname", "User1, User2, User3", false, "Name users"),
+		ewa.NewPathParam("/{id}", "ID users").SetType(ewa.TypeInteger),
+		ewa.NewQueryParam("id", false, "ID users"),
+		ewa.NewQueryArrayParam("firstname", "User1, User2, User3", false, "Name users"),
 	)
 	route.Handler = func(c *ewa.Context) error {
 		id, err := strconv.Atoi(c.Params("id", "0"))
@@ -40,7 +40,7 @@ func (User) Get(route *ewa.Route) {
 
 func (User) Post(route *ewa.Route) {
 	route.SetSecurity(security.BasicAuth)
-	route.SetParameters(ewa.NewInBody(true, ewa.NewSchema(models.User{}), "Must have request body"))
+	route.SetParameters(ewa.NewBodyParam(true, ewa.NewSchema(models.User{}), "Must have request body"))
 	route.SetSummary("Create user")
 	route.Handler = func(c *ewa.Context) error {
 		user := models.User{}
@@ -57,8 +57,8 @@ func (User) Post(route *ewa.Route) {
 func (User) Put(route *ewa.Route) {
 	route.SetSecurity(security.BasicAuth)
 	route.SetParameters(
-		ewa.NewInQuery("id", false, "id user"),
-		ewa.NewInBody(true, ewa.NewSchema(models.User{}), "Must have request body"),
+		ewa.NewQueryParam("id", false, "id user"),
+		ewa.NewBodyParam(true, ewa.NewSchema(models.User{}), "Must have request body"),
 	)
 	route.SetSummary("Update user")
 	route.Handler = func(c *ewa.Context) error {
@@ -84,7 +84,7 @@ func (User) Put(route *ewa.Route) {
 
 func (User) Delete(route *ewa.Route) {
 	route.SetSecurity(security.BasicAuth)
-	route.SetParameters(ewa.NewInPath("/{id}", "ID user"))
+	route.SetParameters(ewa.NewPathParam("/{id}", "ID user"))
 	route.SetSummary("Delete user")
 	route.Handler = func(c *ewa.Context) error {
 		id, err := strconv.Atoi(c.Params("id"))

@@ -19,8 +19,8 @@ type Parameter struct {
 	Items            *Items  `json:"items,omitempty"`
 }
 
-// NewInPath Инициализация параметра in: path
-func NewInPath(path string, desc ...string) *Parameter {
+// NewPathParam Инициализация параметра in: path
+func NewPathParam(path string, desc ...string) *Parameter {
 
 	// Извлекаем параметр из пути
 	matches := regexp.MustCompile(`{(\w+)}`).FindStringSubmatch(path)
@@ -42,8 +42,8 @@ func NewInPath(path string, desc ...string) *Parameter {
 	return p
 }
 
-// NewInBody Инициализация параметра in: body
-func NewInBody(required bool, schema *Schema, desc ...string) *Parameter {
+// NewBodyParam Инициализация параметра in: body
+func NewBodyParam(required bool, schema *Schema, desc ...string) *Parameter {
 	p := &Parameter{
 		In:       InBody,
 		Name:     InBody,
@@ -56,8 +56,8 @@ func NewInBody(required bool, schema *Schema, desc ...string) *Parameter {
 	return p
 }
 
-// NewInHeader Инициализация параметра in: header
-func NewInHeader(name string, required bool, desc ...string) *Parameter {
+// NewHeaderParam Инициализация параметра in: header
+func NewHeaderParam(name string, required bool, desc ...string) *Parameter {
 	p := &Parameter{
 		In:       InHeader,
 		Name:     name,
@@ -70,8 +70,8 @@ func NewInHeader(name string, required bool, desc ...string) *Parameter {
 	return p
 }
 
-// NewInQuery Инициализация параметра in: query
-func NewInQuery(name string, required bool, desc ...string) *Parameter {
+// NewQueryParam Инициализация параметра in: query
+func NewQueryParam(name string, required bool, desc ...string) *Parameter {
 	p := &Parameter{
 		In:       InQuery,
 		Name:     name,
@@ -84,8 +84,8 @@ func NewInQuery(name string, required bool, desc ...string) *Parameter {
 	return p
 }
 
-// NewInQueryArray Инициализация параметра in: query с типом массив
-func NewInQueryArray(name, array string, required bool, desc ...string) *Parameter {
+// NewQueryArrayParam Инициализация параметра in: query с типом массив
+func NewQueryArrayParam(name, array string, required bool, desc ...string) *Parameter {
 	var (
 		enum        []interface{}
 		defaultItem string
@@ -120,8 +120,8 @@ func NewInQueryArray(name, array string, required bool, desc ...string) *Paramet
 	return p
 }
 
-// NewInFormData Инициализация параметра in: formData
-func NewInFormData(name, t string, required bool, desc ...string) *Parameter {
+// NewFormDataParam Инициализация параметра in: formData
+func NewFormDataParam(name, t string, required bool, desc ...string) *Parameter {
 	p := &Parameter{
 		Name:     name,
 		In:       InFormData,
