@@ -113,13 +113,30 @@ func RefDefinition(i interface{}) string {
 	return t.Name()
 }
 
-// getParams Извлекаем пути из параметров
-func (o Operation) getParams() (params []string) {
+// getPathParams Извлекаем пути из параметров
+func (o Operation) getPathParams() (params []string) {
 	for _, param := range o.Parameters {
 		if param.In != InPath {
 			continue
 		}
 		params = append(params, param.Path)
+	}
+	return
+}
+
+// getParams Извлекаем пути из параметров
+func (o Operation) getParams(excludes ...string) (params []*Parameter) {
+	for _, param := range o.Parameters {
+		isTrue := true
+		for _, ex := range excludes {
+			if param.In == InPath && param.Path == ex {
+				isTrue = false
+				break
+			}
+		}
+		if isTrue {
+			params = append(params, param)
+		}
 	}
 	return
 }

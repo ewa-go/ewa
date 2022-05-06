@@ -20,7 +20,7 @@ type Parameter struct {
 }
 
 // NewInPath Инициализация параметра in: path
-func NewInPath(path string, required bool, desc ...string) *Parameter {
+func NewInPath(path string, desc ...string) *Parameter {
 
 	// Извлекаем параметр из пути
 	matches := regexp.MustCompile(`{(\w+)}`).FindStringSubmatch(path)
@@ -32,7 +32,7 @@ func NewInPath(path string, required bool, desc ...string) *Parameter {
 		Path:     path,
 		Name:     matches[1],
 		In:       InPath,
-		Required: required,
+		Required: true,
 		Type:     TypeString,
 	}
 	if desc != nil {
@@ -49,7 +49,6 @@ func NewInBody(required bool, schema *Schema, desc ...string) *Parameter {
 		Name:     InBody,
 		Required: required,
 		Schema:   schema,
-		Type:     TypeString,
 	}
 	if desc != nil {
 		p.Description = desc[0]
@@ -172,14 +171,20 @@ func (p *Parameter) SetDescription(desc string) *Parameter {
 	return p
 }
 
-// SetSchema Установка описания параметра
+// SetSchema Установка схемы параметра
 func (p *Parameter) SetSchema(schema *Schema) *Parameter {
 	p.Schema = schema
 	return p
 }
 
-// SetTypeFormat Установка описания параметра
+// SetTypeFormat Установка типа и формата параметра
 func (p *Parameter) SetTypeFormat(t interface{}) *Parameter {
 	p.Type, p.Format = setTypeFormat(t)
+	return p
+}
+
+// SetAllowEmptyValue Установка на отправку пустого параметра
+func (p *Parameter) SetAllowEmptyValue(allowEmptyValue bool) *Parameter {
+	p.AllowEmptyValue = allowEmptyValue
 	return p
 }

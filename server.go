@@ -12,7 +12,7 @@ import (
 
 const (
 	Name    = "EgoWebApi"
-	Version = "v0.2.20"
+	Version = "v0.2.21"
 )
 
 type Server struct {
@@ -277,9 +277,9 @@ func (s *Server) add(method string, c *Controller, route *Route) error {
 		return nil
 	}
 
-	params := route.Operation.getParams()
+	params := route.Operation.getPathParams()
 
-	if params == nil || route.isEmptyParam {
+	if params == nil || route.emptyPathParam != nil {
 		params = append(params, "")
 	}
 
@@ -295,7 +295,7 @@ func (s *Server) add(method string, c *Controller, route *Route) error {
 		if suffix.isParam {
 			continue
 		}
-		route.Operation.Parameters = append(route.Operation.Parameters, NewInPath(suffix.Value, true, suffix.Description))
+		route.Operation.Parameters = append(route.Operation.Parameters, NewInPath(suffix.Value, suffix.Description))
 	}
 
 	// Добавляем ссылку на тэг в контроллере
@@ -312,14 +312,28 @@ func (s *Server) add(method string, c *Controller, route *Route) error {
 
 		// Проверка на соответствие базового пути
 		ok, l := s.Swagger.compareBasePath(c.Path)
-		if (param != "" || (param == "" && !route.isEmptyParam)) && (ok && c.IsShow) {
+		if ok && c.IsShow {
+
+			operation := route.Operation
+			// Если пустой путь, то применяем некоторые настройки из основного
+			if param == "" && route.emptyPathParam != nil {
+				operation.ID = ""
+				for key, value := range route.emptyPathParam.Responses {
+					operation.Responses[key] = value
+				}
+				operation.Description = route.emptyPathParam.Description
+				operation.Summary = route.emptyPathParam.Summary
+				operation.Parameters = route.Operation.getParams(params...)
+			}
+
 			lowerMethod := strings.ToLower(method)
 			// Установка ID операции
 			if route.Operation.ID == "" {
 				route.SetOperationID(lowerMethod + strings.ReplaceAll(fullPath[l:], "/", "-"))
 			}
+
 			// Добавляем пути и методы в swagger
-			s.Swagger.setPath(fullPath[l:], lowerMethod, route.Operation)
+			s.Swagger.setPath(fullPath[l:], lowerMethod, operation)
 		}
 
 		// Корректировка параметров пути

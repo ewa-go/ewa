@@ -15,7 +15,7 @@ type Swagger struct {
 	Info                *Info                `json:"info,omitempty"`
 	Host                string               `json:"host,omitempty"`
 	BasePath            string               `json:"basePath,omitempty"`
-	Paths               Paths                `json:"paths"`
+	Paths               Paths                `json:"paths,omitempty"`
 	Parameters          map[string]Parameter `json:"parameters,omitempty"`
 	Responses           map[string]Response  `json:"responses,omitempty"`
 	SecurityDefinitions SecurityDefinitions  `json:"securityDefinitions,omitempty"`
