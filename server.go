@@ -2,6 +2,7 @@ package egowebapi
 
 import (
 	"fmt"
+	"github.com/egovorukhin/egowebapi/consts"
 	"github.com/egovorukhin/egowebapi/security"
 	"github.com/invopop/jsonschema"
 	p "path"
@@ -11,7 +12,7 @@ import (
 
 const (
 	Name    = "EgoWebApi"
-	Version = "v0.2.19"
+	Version = "v0.2.20"
 )
 
 type Server struct {
@@ -54,6 +55,10 @@ func New(server IServer, config Config) *Server {
 	// Устанавливаем статические файлы
 	if config.Static != nil {
 		server.Static(config.Static.Prefix, config.Static.Root)
+	}
+
+	if config.Session != nil {
+		config.Session.Default()
 	}
 
 	s := &Server{
@@ -181,8 +186,8 @@ func (s *Server) newRoute() *Route {
 	route := &Route{
 		Operation: Operation{
 			Produces: []string{
-				MIMEApplicationJSON,
-				MIMEApplicationXML,
+				consts.MIMEApplicationJSON,
+				consts.MIMEApplicationXML,
 			},
 			Responses: map[string]Response{
 				"default": {
@@ -205,63 +210,63 @@ func (s *Server) newRoute() *Route {
 func (s *Server) get(i IGet, c *Controller) error {
 	route := s.newRoute()
 	i.Get(route)
-	return s.add(MethodGet, c, route)
+	return s.add(consts.MethodGet, c, route)
 }
 
 // Обрабатываем метод POST
 func (s *Server) post(i IPost, c *Controller) error {
 	route := s.newRoute()
 	i.Post(route)
-	return s.add(MethodPost, c, route)
+	return s.add(consts.MethodPost, c, route)
 }
 
 // Обрабатываем метод PUT
 func (s *Server) put(i IPut, c *Controller) error {
 	route := s.newRoute()
 	i.Put(route)
-	return s.add(MethodPut, c, route)
+	return s.add(consts.MethodPut, c, route)
 }
 
 // Обрабатываем метод DELETE
 func (s *Server) delete(i IDelete, c *Controller) error {
 	route := s.newRoute()
 	i.Delete(route)
-	return s.add(MethodDelete, c, route)
+	return s.add(consts.MethodDelete, c, route)
 }
 
 // Обрабатываем метод OPTIONS
 func (s *Server) options(i IOptions, c *Controller) error {
 	route := s.newRoute()
 	i.Options(route)
-	return s.add(MethodOptions, c, route)
+	return s.add(consts.MethodOptions, c, route)
 }
 
 // Обрабатываем метод PATCH
 func (s *Server) patch(i IPatch, c *Controller) error {
 	route := s.newRoute()
 	i.Patch(route)
-	return s.add(MethodPatch, c, route)
+	return s.add(consts.MethodPatch, c, route)
 }
 
 // Обрабатываем метод HEAD
 func (s *Server) head(i IHead, c *Controller) error {
 	route := s.newRoute()
 	i.Head(route)
-	return s.add(MethodHead, c, route)
+	return s.add(consts.MethodHead, c, route)
 }
 
 // Обрабатываем метод CONNECT
 func (s *Server) connect(i IConnect, c *Controller) error {
 	route := s.newRoute()
 	i.Connect(route)
-	return s.add(MethodConnect, c, route)
+	return s.add(consts.MethodConnect, c, route)
 }
 
 // Обрабатываем метод TRACE
 func (s *Server) trace(i ITrace, c *Controller) error {
 	route := s.newRoute()
 	i.Trace(route)
-	return s.add(MethodTrace, c, route)
+	return s.add(consts.MethodTrace, c, route)
 }
 
 // Добавить маршрут в веб сервер
@@ -277,19 +282,6 @@ func (s *Server) add(method string, c *Controller, route *Route) error {
 	if params == nil || route.isEmptyParam {
 		params = append(params, "")
 	}
-
-	/*var view *View
-	// Проверка на view
-	if s.Config.Views != nil {
-		files, _ := filepath.Glob(filepath.Join(s.Config.Views.Root, strings.ToLower(name)+s.Config.Views.Engine))
-		for _, file := range files {
-			view = &View{
-				Filename: strings.Replace(filepath.Base(file), s.Config.Views.Engine, "", -1),
-				Filepath: file,
-				Layout:   s.Config.Views.Layout,
-			}
-		}
-	}*/
 
 	// Авторизация в swagger
 	for _, sec := range route.Security {

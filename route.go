@@ -1,28 +1,31 @@
 package egowebapi
 
 import (
+	"github.com/egovorukhin/egowebapi/consts"
 	"github.com/egovorukhin/egowebapi/security"
+	"net/http"
 	"strconv"
+	"time"
 )
 
 type Route struct {
 	isEmptyParam bool
-	Handler      Handler
-	isSession    bool
+	session      SessionTurn
 	isPermission bool
-	sign         Sign
+	Handler      Handler
 	Operation
 }
 
 // Map тип список
 type Map map[string]interface{}
 
-type Sign int
+type SessionTurn int
 
 const (
-	SignNone Sign = iota
-	SignIn
-	SignOut
+	None SessionTurn = iota
+	Is
+	On
+	Off
 )
 
 // SetParameters указываем параметры маршрута
@@ -80,10 +83,10 @@ func (r *Route) SetSummary(s string) *Route {
 }
 
 // SetSign устанавливаем вариант входа/выхода для маршрута
-func (r *Route) SetSign(sign Sign) *Route {
+/*func (r *Route) SetSign(sign Sign) *Route {
 	r.sign = sign
 	return r
-}
+}*/
 
 // SetSecurity указываем метод авторизации
 func (r *Route) SetSecurity(security ...string) *Route {
@@ -97,8 +100,12 @@ func (r *Route) SetSecurity(security ...string) *Route {
 }
 
 // Session вешаем получение аутентификации сессии,
-func (r *Route) Session() *Route {
-	r.isSession = true
+func (r *Route) Session(t ...SessionTurn) *Route {
+	if t == nil {
+		r.session = Is
+	} else {
+		r.session = t[0]
+	}
 	return r
 }
 
@@ -128,100 +135,92 @@ func (r *Route) getHandler(config Config, view *View, swagger Swagger) Handler {
 		c.Swagger = swagger
 
 		var (
-			err    error
-			isAuth bool
+			err        error
+			isSecurity bool
 		)
-		if len(r.Security) > 0 {
-			isAuth = true
-		}
 		for _, sec := range r.Security {
 			for key := range sec {
 				switch key {
 				case security.BasicAuth:
 					if config.Authorization.Basic != nil {
-						config.Authorization.Basic.SetHeader(c.Get(HeaderAuthorization))
+						config.Authorization.Basic.SetHeader(c.Get(consts.HeaderAuthorization))
 						c.Identity, err = config.Authorization.Basic.Do()
 						if err != nil {
-							c.Set(HeaderWWWAuthenticate, err.Error())
+							c.Set(consts.HeaderWWWAuthenticate, err.Error())
 						}
 					}
-					break
 				case security.DigestAuth:
 					if config.Authorization.Digest != nil {
 						c.Identity, err = config.Authorization.Digest.Do()
 					}
-					break
 				case security.ApiKeyAuth:
 					if config.Authorization.ApiKey != nil {
 						a := config.Authorization.ApiKey
 						var value string
 						switch a.Param {
-						// Пытаемся получить из заголовка токен
+						// Если не нашли в заголовке, то ищем в переменных запроса адресной строки
 						case security.ParamQuery:
 							value = c.QueryParam(a.KeyName)
 							break
-						// Если не нашли в заголовке, то ищем в переменных запроса адресной строки
+						// Пытаемся получить из заголовка токен
 						case security.ParamHeader:
 							value = c.Get(a.KeyName)
 							break
 						}
-						a.SetValue(value)
-						c.Identity, err = a.Do()
+						c.Identity, err = a.SetValue(value).Do()
 					}
-					break
+				}
+				if err == nil {
+					isSecurity = true
 				}
 			}
 		}
 
 		// Проверка на сессию
-		if config.Session != nil {
-			// Вход/Выход из сессии
-			switch r.sign {
-			case SignNone:
-				break
-			case SignIn:
-				config.Session.signIn(c)
-				break
-			case SignOut:
-				config.Session.signOut(c)
+		if config.Session != nil && r.session != None {
+			keyName := config.Session.KeyName
+			switch r.session {
+			case Is:
+				if isSecurity {
+					break
+				}
+				c.Identity, err = config.Session.Check(c.Cookies(keyName))
+				if c.Session != nil {
+					c.Session.LastTime = time.Now()
+				}
+			case On:
+				value := config.Session.GenSessionIdHandler()
+				cookie := &http.Cookie{
+					Name:    keyName,
+					Value:   value,
+					Expires: time.Now().Add(config.Session.Expires),
+				}
+				c.SetCookie(cookie)
+				now := time.Now()
+				c.Session = &Session{
+					Key:      keyName,
+					Value:    value,
+					Created:  now,
+					LastTime: now,
+				}
+			case Off:
+				c.Identity, err = config.Session.Check(c.Cookies(keyName))
+				c.ClearCookie(config.Session.KeyName)
+				c.Session = nil
 				return c.Redirect(config.Session.RedirectPath, config.Session.RedirectStatus)
-			}
-			if !isAuth && r.isSession {
-				err = config.Session.check(c)
 			}
 		}
 
 		// Проверка на ошибку авторизации и отправку кода 401
 		if err != nil {
-			if isAuth {
+			if isSecurity {
 				if config.Authorization.Unauthorized != nil && config.Authorization.Unauthorized(err) {
-					return c.SendString(StatusUnauthorized, err.Error())
+					return c.SendString(consts.StatusUnauthorized, err.Error())
 				}
-				return c.SendStatus(StatusUnauthorized)
-			} else if r.isSession {
+				return c.SendStatus(consts.StatusUnauthorized)
+			} else if r.session != None {
 				// Если cookie не существует, то перенаправляем запрос условно на "/login"
 				return c.Redirect(config.Session.RedirectPath, config.Session.RedirectStatus)
-			}
-		}
-
-		if config.Session != nil {
-			// Вход/Выход из сессии
-			switch r.sign {
-			case SignNone:
-				break
-			case SignIn:
-				config.Session.signIn(c)
-				break
-			case SignOut:
-				config.Session.signOut(c)
-				return c.Redirect(config.Session.RedirectPath, config.Session.RedirectStatus)
-			}
-			if r.isSession {
-				err = config.Session.check(c)
-				if err != nil {
-					// Если cookie не существует, то перенаправляем запрос условно на "/signIn"
-					return c.Redirect(config.Session.RedirectPath, config.Session.RedirectStatus)
-				}
 			}
 		}
 
@@ -230,9 +229,9 @@ func (r *Route) getHandler(config Config, view *View, swagger Swagger) Handler {
 			if c.Identity != nil {
 				if !config.Permission.check(c.Identity.Username, c.Path()) {
 					if config.Permission.NotPermissionHandler != nil {
-						return config.Permission.NotPermissionHandler(c, StatusForbidden, "Forbidden")
+						return config.Permission.NotPermissionHandler(c, consts.StatusForbidden, "Forbidden")
 					}
-					return c.SendStatus(StatusForbidden)
+					return c.SendStatus(consts.StatusForbidden)
 				}
 			}
 		}

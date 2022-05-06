@@ -6,14 +6,22 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/url"
+	"time"
 )
 
 type Context struct {
-	Identity  *security.Identity
-	View      *View
-	Swagger   Swagger
-	SessionId interface{}
+	Identity *security.Identity
+	View     *View
+	Swagger  Swagger
+	Session  *Session
 	IContext
+}
+
+type Session struct {
+	Key      string
+	Value    string
+	Created  time.Time
+	LastTime time.Time
 }
 
 type View struct {

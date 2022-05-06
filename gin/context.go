@@ -44,7 +44,7 @@ func (c *Context) Cookies(key string) string {
 	return value
 }
 
-func (c *Context) SetCookie(cookie *http.Cookie) {
+func (c *Context) SetCookie(cookie *consts.Cookie) {
 	c.Ctx.SetCookie(cookie.Name, cookie.Value, cookie.MaxAge, cookie.Path, cookie.Domain, cookie.Secure, cookie.HttpOnly)
 }
 

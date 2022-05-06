@@ -19,8 +19,9 @@ const (
 	ParamHeader = "header"
 )
 
-func (a *ApiKey) SetValue(value string) {
+func (a *ApiKey) SetValue(value string) *ApiKey {
 	a.value = value
+	return a
 }
 
 func (a ApiKey) Do() (identity *Identity, err error) {
