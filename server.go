@@ -12,7 +12,7 @@ import (
 
 const (
 	Name    = "EgoWebApi"
-	Version = "v0.2.21"
+	Version = "v0.2.22"
 )
 
 type Server struct {
@@ -277,9 +277,9 @@ func (s *Server) add(method string, c *Controller, route *Route) error {
 		return nil
 	}
 
-	params := route.Operation.getPathParams()
-
-	if params == nil || route.emptyPathParam != nil {
+	pathParams := route.Operation.getPathParams()
+	params := []string{pathParams}
+	if pathParams == "" || route.emptyPathParam != nil {
 		params = append(params, "")
 	}
 
@@ -295,7 +295,7 @@ func (s *Server) add(method string, c *Controller, route *Route) error {
 		if suffix.isParam {
 			continue
 		}
-		route.Operation.Parameters = append(route.Operation.Parameters, NewInPath(suffix.Value, suffix.Description))
+		route.Operation.Parameters = append(route.Operation.Parameters, NewPathParam(suffix.Value, suffix.Description))
 	}
 
 	// Добавляем ссылку на тэг в контроллере
