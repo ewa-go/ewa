@@ -33,6 +33,7 @@ func NewInPath(path string, required bool, desc ...string) *Parameter {
 		Name:     matches[1],
 		In:       InPath,
 		Required: required,
+		Type:     TypeString,
 	}
 	if desc != nil {
 		p.Description = desc[0]

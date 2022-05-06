@@ -7,6 +7,8 @@ import (
 	"github.com/egovorukhin/egowebapi/example/fiber/controllers/web"
 	"github.com/egovorukhin/egowebapi/example/fiber/src/storage"
 	f "github.com/egovorukhin/egowebapi/fiber"
+	"github.com/egovorukhin/egowebapi/security"
+	"github.com/egovorukhin/egowebapi/session"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/favicon"
@@ -47,7 +49,7 @@ func main() {
 		return false
 	}
 
-	root := "./views"
+	root := "./dist"
 
 	// Fiber
 	app := fiber.New(fiber.Config{
@@ -71,18 +73,20 @@ func main() {
 			Root:   root,
 			Engine: f.Html,
 		},
-		Authorization: ewa.Authorization{
-			Basic: basicAuthHandler,
+		Authorization: security.Authorization{
+			Basic: &security.Basic{
+				Handler: basicAuthHandler,
+			},
 		},
-		Session: &ewa.Session{
+		Session: &session.Config{
 			RedirectPath:   "/login",
 			Expires:        1 * time.Minute,
 			SessionHandler: checkSession,
-			ErrorHandler:   errorHandler,
 		},
 		Permission: &ewa.Permission{
 			Handler: checkPermission,
 		},
+		ErrorHandler: errorHandler,
 	}
 	// Указываем суффиксы
 	/*suffix := ewa.NewSuffix(
@@ -91,14 +95,10 @@ func main() {
 	)*/
 	//Инициализируем сервер
 	ws := ewa.New(server, cfg)
-	ws.Register(new(web.Index), "/")
-	ws.Register(new(web.Home), "/home")
-	ws.Register(new(web.Login), "/login")
-	ws.Register(new(web.Logout), "/logout")
-	//ws.RegisterEx(new(api2.Username), "", "person", suffix...)
-	//ws.Register(new(api2.WS), "")
-	//webSocket
-	//ws.Register(new(controllers.WS), "")
+	ws.Register(new(web.Index)).SetPath("/").SetName("")
+	//ws.Register(new(web.Home)).SetPath("/")
+	ws.Register(new(web.Login)).SetPath("/")
+	ws.Register(new(web.Logout)).SetPath("/")
 
 	// Канал для получения ошибки, если таковая будет
 	errChan := make(chan error, 2)

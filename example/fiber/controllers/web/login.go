@@ -4,6 +4,7 @@ import (
 	"errors"
 	ewa "github.com/egovorukhin/egowebapi"
 	"github.com/egovorukhin/egowebapi/example/fiber/src/storage"
+	"time"
 )
 
 type Login struct {
@@ -13,27 +14,28 @@ type Login struct {
 
 func (Login) Get(route *ewa.Route) {
 	route.Handler = func(c *ewa.Context) error {
-		//return c.ViewRender(nil)
-		return c.Render(c.View.Filename, nil)
+		return c.Render("login", nil)
 	}
 }
 
 func (l Login) Post(route *ewa.Route) {
-	route.SetSign(ewa.SignIn)
+	route.Session(ewa.On)
 	route.Handler = func(c *ewa.Context) error {
 
 		err := c.BodyParser(&l)
 		if err != nil {
-			return c.JSON(400, map[string]interface{}{
+			return c.JSON(400, ewa.Map{
 				"message": err.Error(),
 			})
 		}
 
 		if l.Username == "user" && l.Password == "Qq123456" {
-			if c.SessionId != nil {
-				storage.SetStorage(c.SessionId.(string), l.Username)
-				return c.JSON(200, map[string]interface{}{
-					"session_id": c.SessionId,
+			if c.Session != nil {
+				storage.SetStorage(c.Session.Value, l.Username)
+				return c.JSON(200, ewa.Map{
+					c.Session.Key: c.Session.Value,
+					"created":     c.Session.Created,
+					"last_time":   c.Session.LastTime.Format(time.RFC3339),
 				})
 			}
 		}

@@ -2,6 +2,7 @@ package egowebapi
 
 import (
 	"github.com/egovorukhin/egowebapi/security"
+	"github.com/egovorukhin/egowebapi/session"
 	"path/filepath"
 )
 
@@ -9,11 +10,12 @@ type Config struct {
 	Port          int
 	Secure        *Secure
 	Authorization security.Authorization
-	Session       *Session
+	Session       *session.Config
 	Permission    *Permission
 	Static        *Static
 	NotFoundPage  string
 	Views         *Views
+	ErrorHandler  ErrorHandler
 }
 
 type Views struct {

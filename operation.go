@@ -164,6 +164,7 @@ func NewHeader(t interface{}, nullable bool, desc ...string) Header {
 	return h
 }
 
+// setTypeFormat Получение типа и формата на основе интерфейса
 func setTypeFormat(t interface{}) (Type string, Format string) {
 
 	switch t.(type) {
