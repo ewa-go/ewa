@@ -85,6 +85,9 @@ type Items struct {
 
 // NewSchema Инициализация схемы для параметров
 func NewSchema(i interface{}) *Schema {
+	if i == nil {
+		return nil
+	}
 	return &Schema{
 		Ref: RefDefinition(i),
 	}
@@ -92,6 +95,9 @@ func NewSchema(i interface{}) *Schema {
 
 // NewSchemaArray Инициализация схемы с массивом для параметров
 func NewSchemaArray(i interface{}) *Schema {
+	if i == nil {
+		return nil
+	}
 	return &Schema{
 		Type: TypeArray,
 		Items: &Items{

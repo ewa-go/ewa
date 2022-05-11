@@ -68,7 +68,7 @@ func TestParameter_SetTypeFormat(t *testing.T) {
 
 func TestModelToParameters(t *testing.T) {
 	type User struct {
-		Id          int        `ewa:"path:/{id},name=id;header:name=id,desc=заголовок"`
+		Id          int        `ewa:"path:/{id};header:name=id,desc=заголовок"`
 		Pid         int64      `ewa:"header:name=pid"`
 		Firstname   string     `ewa:"query:name=firstname,required"`
 		Lastname    string     `ewa:"query:name=lastname, empty"`

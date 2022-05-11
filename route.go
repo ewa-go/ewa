@@ -12,7 +12,7 @@ type Route struct {
 	emptyPathParam *EmptyPathParam
 	session        SessionTurn
 	isPermission   bool
-	model          interface{}
+	Model          *Model
 	Handler        Handler
 	Operation
 }
@@ -67,9 +67,29 @@ func (r *Route) SetParameters(params ...*Parameter) *Route {
 	return r
 }
 
-func (r *Route) NewParametersByModel() *Route {
-	r.SetParameters(ModelToParameters(r.model)...)
+// InitParametersByModel Формирование параметров на основе модели
+func (r *Route) InitParametersByModel(e *EmptyPathParam) *Route {
+	if r.Model != nil && r.Model.Parameter != nil {
+		r.SetParameters(modelToParameters(r.Model.Parameter)...)
+	}
+	r.SetEmptyParam(e)
 	return r
+}
+
+// ParameterModel Вернуть модель параметров
+func (r *Route) ParameterModel() interface{} {
+	if r.Model != nil && r.Model.Parameter != nil {
+		return r.Model.Parameter
+	}
+	return nil
+}
+
+// ResponseModel Вернуть модель для ответа
+func (r *Route) ResponseModel() interface{} {
+	if r.Model != nil && r.Model.Response != nil {
+		return r.Model.Response
+	}
+	return nil
 }
 
 // SetConsumes устанавливаем Content-Type запроса для Swagger

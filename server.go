@@ -181,7 +181,7 @@ func (s *Server) Stop() error {
 }
 
 // Устанавливаем глобальные настройки для маршрутов
-func (s *Server) newRoute(model interface{}) *Route {
+func (s *Server) newRoute(model *Model) *Route {
 
 	route := &Route{
 		Operation: Operation{
@@ -195,10 +195,15 @@ func (s *Server) newRoute(model interface{}) *Route {
 				},
 			},
 		},
-		model: model,
+		Model: model,
 	}
 	if model != nil {
-		s.Swagger.setDefinition(model)
+		if model.Parameter != nil {
+			s.Swagger.setDefinition(model.Parameter)
+		}
+		if model.Response != nil {
+			s.Swagger.setDefinition(model.Response)
+		}
 	}
 	if s.Config.Permission != nil {
 		route.isPermission = s.Config.Permission.AllRoutes

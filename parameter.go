@@ -120,7 +120,7 @@ func NewFormDataParam(name, t string, required bool, desc ...string) *Parameter 
 	return p
 }
 
-func ModelToParameters(v interface{}) (p []*Parameter) {
+func modelToParameters(v interface{}) (p []*Parameter) {
 
 	if v == nil {
 		return
@@ -147,7 +147,7 @@ func ModelToParameters(v interface{}) (p []*Parameter) {
 				case InPath, InHeader, InQuery:
 
 					// Инициализация параметра
-					param = NewParameter(inName).SetType(t).SetFormat(f)
+					param = NewParameter(inName).SetName(strings.ToLower(field.Name)).SetType(t).SetFormat(f)
 					// Если параметр пути, то прописываем свойства *обязательно
 					if inName == InPath {
 						param.SetRequired(true)
@@ -187,8 +187,6 @@ func ModelToParameters(v interface{}) (p []*Parameter) {
 							param.SetFormat(items[1])
 						case "type":
 							param.SetType(items[1])
-						case "desc":
-							param.SetDescription(items[1])
 						case "array":
 							if inName == InQuery {
 								param.SetItems(items[1])
