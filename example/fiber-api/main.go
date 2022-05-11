@@ -65,14 +65,14 @@ func main() {
 
 	//Инициализируем сервер
 	ws := ewa.New(server, cfg)
-	ws.Register(new(storage.User)).SetSuffix(hostname).SetDescription("Users")
+	ws.Register(new(storage.User)).SetSuffix(hostname).SetModel(models.User{}).SetDescription("Users")
 	ws.Register(new(controllers.Home)).SetPath("/")
 	// Swagger
 	ws.Register(new(controllers.Api)).NotShow()
 
 	// Описываем swagger
 	ws.Swagger.SetInfo(fmt.Sprintf("10.28.0.73:%d", cfg.Port), &info, nil).SetBasePath("/api")
-	ws.Swagger.SetDefinitions(models.User{})
+	//ws.Swagger.SetDefinitions(models.User{})
 
 	// Канал для получения ошибки, если таковая будет
 	errChan := make(chan error, 2)

@@ -92,13 +92,9 @@ const (
 	TypeInteger = "integer"
 	TypeObject  = "object"
 	TypeBoolean = "boolean"
-)
 
-const (
 	CollectionFormatMulti = "multi"
-)
 
-const (
 	RefDefinitions = "#/definitions/"
 )
 
@@ -106,13 +102,19 @@ func (s *Swagger) JSON() ([]byte, error) {
 	return json.Marshal(s)
 }
 
-// SetDefinitions Преобразование моделей в формат JSON Schema
-func (s *Swagger) SetDefinitions(models ...interface{}) *Swagger {
+// setDefinitions Преобразование моделей в формат JSON Schema
+func (s *Swagger) setDefinitions(models ...interface{}) *Swagger {
 	for _, model := range models {
-		schema := jsonschema.Reflect(model)
-		for key, value := range schema.Definitions {
-			s.Definitions[key] = value
-		}
+		s.setDefinition(model)
+	}
+	return s
+}
+
+// setDefinitions Преобразование моделей в формат JSON Schema
+func (s *Swagger) setDefinition(model interface{}) *Swagger {
+	schema := jsonschema.Reflect(model)
+	for key, value := range schema.Definitions {
+		s.Definitions[key] = value
 	}
 	return s
 }

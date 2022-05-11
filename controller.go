@@ -157,6 +157,7 @@ func (c *Controller) initialize(basePath string) {
 	}
 }
 
+// SetModel Добавить модель для определения параметров для swagger
 func (c *Controller) SetModel(model interface{}) *Controller {
 	c.Model = model
 	return c
