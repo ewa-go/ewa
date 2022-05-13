@@ -63,9 +63,11 @@ func main() {
 		Description: "Set hostname device",
 	}
 
+	response := models.Response{}
+
 	//Инициализируем сервер
 	ws := ewa.New(server, cfg)
-	ws.Register(new(storage.User)).SetSuffix(hostname).SetModel(models.User{}, models.Response{}).SetDescription("Users")
+	ws.Register(new(storage.User)).SetSuffix(hostname).SetModel(models.User{}, response).SetDescription("Users")
 	ws.Register(new(controllers.Home)).SetPath("/")
 	// Swagger
 	ws.Register(new(controllers.Api)).NotShow()

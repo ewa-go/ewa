@@ -11,8 +11,15 @@ import (
 type User struct{}
 
 func (User) Get(route *ewa.Route) {
-	route.SetSecurity(security.BasicAuth)
-	route.InitParametersByModel(ewa.NewEmptyPathParam("Get users").SetResponse(200, ewa.NewResponse(ewa.NewSchemaArray(route.ParameterModel()), "Return array users")))
+
+	route.SetSecurity(security.BasicAuth).
+		SetEmptyParam(ewa.NewEmptyPathParam("Get users").SetResponse(200, ewa.NewResponse(ewa.NewSchemaArray(route.ParameterModel()), "Return array users"))).
+		SetParameters(ewa.NewPathParam("/{id}", "Id пользователя")).
+		InitParametersByModel().
+		SetSummary("Get user")
+	route.SetResponse(422, ewa.NewResponse(nil, "Return parse parameter error")).
+		SetResponse(200, ewa.NewResponse(ewa.NewSchema(route.ParameterModel()), "Return user struct"))
+
 	route.Handler = func(c *ewa.Context) error {
 		id, err := strconv.Atoi(c.Params("id", "0"))
 		if err != nil {
@@ -25,9 +32,6 @@ func (User) Get(route *ewa.Route) {
 		users := models.GetUsers()
 		return c.JSON(200, users)
 	}
-	route.SetSummary("Get user")
-	route.SetResponse(422, ewa.NewResponse(nil, "Return parse parameter error"))
-	route.SetResponse(200, ewa.NewResponse(ewa.NewSchema(route.ResponseModel()), "Return user struct"))
 }
 
 func (User) Post(route *ewa.Route) {

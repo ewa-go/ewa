@@ -68,11 +68,10 @@ func (r *Route) SetParameters(params ...*Parameter) *Route {
 }
 
 // InitParametersByModel Формирование параметров на основе модели
-func (r *Route) InitParametersByModel(e *EmptyPathParam) *Route {
+func (r *Route) InitParametersByModel() *Route {
 	if r.Model != nil && r.Model.Parameter != nil {
-		r.SetParameters(modelToParameters(r.Model.Parameter)...)
+		r.SetParameters(ModelToParameters(r.Model.Parameter)...)
 	}
-	r.SetEmptyParam(e)
 	return r
 }
 
@@ -179,11 +178,11 @@ func (r *Route) SetHandler(handler Handler) *Route {
 }
 
 // getHandler возвращаем обработчик основанный на параметрах конфигурации маршрута
-func (r *Route) getHandler(config Config, view *View, swagger Swagger) Handler {
+func (r *Route) getHandler(config Config, swagger Swagger) Handler {
 
 	return func(c *Context) error {
 
-		c.View = view
+		//c.View = view
 		c.Swagger = swagger
 
 		var (

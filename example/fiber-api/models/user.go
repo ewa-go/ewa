@@ -8,7 +8,7 @@ import (
 var users Users
 
 type User struct {
-	Id        int    `json:"id,omitempty" jsonschema:"description=ID user" ewa:"path:/{id},desc:Id пользователя;query:desc:Id пользователя"`
+	Id        int    `json:"id,omitempty" jsonschema:"description=ID user" ewa:"query:desc:Id пользователя"`
 	Firstname string `json:"firstname" jsonschema:"description=Firstname" ewa:"query:desc:Имя пользователя"`
 	Lastname  string `json:"lastname" jsonschema:"description=Lastname" ewa:"query:desc:Фамилия пользователя,array=User1&User2&User3"`
 }

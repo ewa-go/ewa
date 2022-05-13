@@ -120,7 +120,7 @@ func NewFormDataParam(name, t string, required bool, desc ...string) *Parameter 
 	return p
 }
 
-func modelToParameters(v interface{}) (p []*Parameter) {
+func ModelToParameters(v interface{}) (p []*Parameter) {
 
 	if v == nil {
 		return
