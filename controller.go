@@ -149,7 +149,7 @@ func (c *Controller) initialize(basePath string) {
 		p = strings.ToLower(pkgPath[len(basePath):index])
 	}
 
-	c.Tag.Name = path.Join(p, c.Name)
+	c.Tag.Name = strings.ReplaceAll(path.Join(p, c.Name)[1:], "/", "-")
 	if c.Path != "" {
 		c.Path = pkgPath
 	} else {
