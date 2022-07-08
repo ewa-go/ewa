@@ -1,10 +1,11 @@
 package egowebapi
 
 import (
+	"errors"
 	"fmt"
 	"github.com/egovorukhin/egowebapi/consts"
 	"github.com/egovorukhin/egowebapi/security"
-	"github.com/invopop/jsonschema"
+	"github.com/mustan989/jsonschema"
 	p "path"
 	"regexp"
 	"strings"
@@ -12,7 +13,7 @@ import (
 
 const (
 	Name    = "EgoWebApi"
-	Version = "v0.2.23"
+	Version = "v0.2.35"
 )
 
 type Server struct {
@@ -30,7 +31,7 @@ type IServer interface {
 	Static(prefix, root string)
 	Any(path string, handler interface{})
 	Use(params ...interface{})
-	Add(method, path string, handler Handler)
+	Add(method, path string, handler interface{})
 	GetApp() interface{}
 	NotFoundPage(path, page string)
 	ConvertParam(param string) string
@@ -70,9 +71,13 @@ func New(server IServer, config Config) *Server {
 			BasePath:            "/",
 			SecurityDefinitions: SecurityDefinitions{},
 			Paths:               Paths{},
-			Definitions:         map[string]*jsonschema.Schema{},
+			Definitions:         jsonschema.Definitions{},
+			models:              Models{},
 		},
 	}
+
+	// Глобальная переменная для указания ссылки на объект
+	jsonschema.SetReferencePrefix(RefDefinitions)
 
 	return s
 }
@@ -84,6 +89,10 @@ func (s *Server) GetWebServer() interface{} {
 
 // Start запуск сервера
 func (s *Server) Start() (err error) {
+
+	if s.Config.ContextHandler == nil {
+		return errors.New("Specify the handler - ContextHandler")
+	}
 
 	for _, c := range s.Controllers {
 
@@ -166,10 +175,8 @@ func (s *Server) Start() (err error) {
 		// Запускаем слушатель с TLS настройкой
 		return s.WebServer.StartTLS(addr, cert, key)
 	}
-
 	// Добавляем схему в Swagger
 	s.Swagger.SetSchemes("http")
-
 	// Запуск слушателя веб сервера
 	return s.WebServer.Start(addr)
 }
@@ -189,12 +196,13 @@ func (s *Server) newRoute() *Route {
 				consts.MIMEApplicationJSON,
 				consts.MIMEApplicationXML,
 			},
-			Responses: map[string]Response{
+			Responses: map[string]*Response{
 				"default": {
 					Description: "successful operation",
 				},
 			},
 		},
+		models: s.Swagger.models,
 	}
 	if s.Config.Permission != nil {
 		route.isPermission = s.Config.Permission.AllRoutes
@@ -279,7 +287,7 @@ func (s *Server) add(method string, c *Controller, route *Route) error {
 
 	pathParams := route.Operation.getPathParams()
 	params := []string{pathParams}
-	if pathParams == "" || route.emptyPathParam != nil {
+	if route.emptyPathParam != nil && pathParams != "" {
 		params = append(params, "")
 	}
 
@@ -302,7 +310,7 @@ func (s *Server) add(method string, c *Controller, route *Route) error {
 	route.Operation.addTag(c.Tag.Name)
 
 	// Получаем handler маршрута
-	h := route.getHandler(s.Config, nil, *s.Swagger)
+	h := s.Config.ContextHandler(route.getHandler(s.Config, s.Swagger))
 
 	// Перебираем параметры адресной строки
 	for _, param := range params {
@@ -317,7 +325,10 @@ func (s *Server) add(method string, c *Controller, route *Route) error {
 			operation := route.Operation
 			// Если пустой путь, то применяем некоторые настройки из основного
 			if param == "" && route.emptyPathParam != nil {
-				operation.ID = ""
+				operation.Responses = make(map[string]*Response)
+				for key, value := range route.Responses {
+					operation.Responses[key] = value
+				}
 				for key, value := range route.emptyPathParam.Responses {
 					operation.Responses[key] = value
 				}
@@ -328,9 +339,7 @@ func (s *Server) add(method string, c *Controller, route *Route) error {
 
 			lowerMethod := strings.ToLower(method)
 			// Установка ID операции
-			if route.Operation.ID == "" {
-				route.SetOperationID(lowerMethod + strings.ReplaceAll(fullPath[l:], "/", "-"))
-			}
+			operation.ID = lowerMethod + strings.ReplaceAll(fullPath[l:], "/", "-")
 
 			// Добавляем пути и методы в swagger
 			s.Swagger.setPath(fullPath[l:], lowerMethod, operation)

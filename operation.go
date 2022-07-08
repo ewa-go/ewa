@@ -1,23 +1,22 @@
 package egowebapi
 
 import (
-	"reflect"
 	"time"
 )
 
 type Operation struct {
-	Description  string              `json:"description,omitempty"`
-	Consumes     []string            `json:"consumes,omitempty"`
-	Produces     []string            `json:"produces,omitempty"`
-	Schemes      []string            `json:"schemes,omitempty"`
-	Tags         []string            `json:"tags,omitempty"`
-	Summary      string              `json:"summary,omitempty"`
-	ExternalDocs *ExternalDocs       `json:"externalDocs,omitempty"`
-	ID           string              `json:"operationId,omitempty"`
-	Deprecated   bool                `json:"deprecated,omitempty"`
-	Security     Security            `json:"security,omitempty"`
-	Parameters   []*Parameter        `json:"parameters,omitempty"`
-	Responses    map[string]Response `json:"responses,omitempty"`
+	Description  string               `json:"description,omitempty"`
+	Consumes     []string             `json:"consumes,omitempty"`
+	Produces     []string             `json:"produces,omitempty"`
+	Schemes      []string             `json:"schemes,omitempty"`
+	Tags         []string             `json:"tags,omitempty"`
+	Summary      string               `json:"summary,omitempty"`
+	ExternalDocs *ExternalDocs        `json:"externalDocs,omitempty"`
+	ID           string               `json:"operationId,omitempty"`
+	Deprecated   bool                 `json:"deprecated,omitempty"`
+	Security     Security             `json:"security,omitempty"`
+	Parameters   []*Parameter         `json:"parameters,omitempty"`
+	Responses    map[string]*Response `json:"responses,omitempty"`
 }
 
 type Schema struct {
@@ -42,7 +41,7 @@ type Schema struct {
 type Response struct {
 	Description string                 `json:"description"`
 	Schema      *Schema                `json:"schema,omitempty"`
-	Headers     map[string]Header      `json:"headers,omitempty"`
+	Headers     Headers                `json:"headers,omitempty"`
 	Examples    map[string]interface{} `json:"examples,omitempty"`
 }
 
@@ -51,6 +50,8 @@ type Header struct {
 	CommonValidations
 	SimpleSchema
 }
+
+type Headers map[string]Header
 
 type CommonValidations struct {
 	Maximum          *float64      `json:"maximum,omitempty"`
@@ -84,33 +85,22 @@ type Items struct {
 }
 
 // NewSchema Инициализация схемы для параметров
-func NewSchema(i interface{}) *Schema {
+func NewSchema(modelName string, isArray bool) *Schema {
+	if len(modelName) == 0 {
+		return nil
+	}
+	if isArray {
+		return &Schema{
+			Type: TypeArray,
+			Items: &Items{
+				Ref: modelName,
+			},
+		}
+	}
+
 	return &Schema{
-		Ref: RefDefinition(i),
+		Ref: modelName,
 	}
-}
-
-// NewSchemaArray Инициализация схемы с массивом для параметров
-func NewSchemaArray(i interface{}) *Schema {
-	return &Schema{
-		Type: TypeArray,
-		Items: &Items{
-			Ref: RefDefinition(i),
-		},
-	}
-}
-
-// RefDefinition Получаем имя модели, чтобы затем сформировать ссылку
-func RefDefinition(i interface{}) string {
-
-	var t reflect.Type
-	value := reflect.ValueOf(i)
-	if value.Type().Kind() == reflect.Ptr {
-		t = reflect.Indirect(value).Type()
-	} else {
-		t = value.Type()
-	}
-	return t.Name()
 }
 
 // getPathParams Извлекаем пути из параметров
@@ -185,33 +175,33 @@ func NewHeader(t interface{}, nullable bool, desc ...string) Header {
 func setTypeFormat(t interface{}) (Type string, Format string) {
 
 	switch t.(type) {
-	case string:
+	case string, *string:
 		Type = TypeString
 		break
-	case int:
+	case int, *int:
 		Type = TypeInteger
 		break
-	case int8:
+	case int8, *int8:
 		Type = TypeInteger
 		Format = "int8"
 		break
-	case int16:
+	case int16, *int16:
 		Type = TypeInteger
 		Format = "int16"
 		break
-	case int32:
+	case int32, *int32:
 		Type = TypeInteger
 		Format = "int32"
 		break
-	case int64:
+	case int64, *int64:
 		Type = TypeInteger
 		Format = "int64"
 		break
-	case time.Time:
+	case time.Time, *time.Time:
 		Type = TypeString
 		Format = "date-time"
 		break
-	case bool:
+	case bool, *bool:
 		Type = TypeBoolean
 		break
 	}

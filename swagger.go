@@ -3,27 +3,29 @@ package egowebapi
 import (
 	"encoding/json"
 	"github.com/egovorukhin/egowebapi/security"
-	"github.com/invopop/jsonschema"
+	"github.com/mustan989/jsonschema"
+	"reflect"
 )
 
 type Swagger struct {
-	ID                  string               `json:"id,omitempty"`
-	Consumes            []string             `json:"consumes,omitempty"`
-	Produces            []string             `json:"produces,omitempty"`
-	Schemes             []string             `json:"schemes,omitempty"`
-	Swagger             string               `json:"swagger,omitempty"`
-	Info                *Info                `json:"info,omitempty"`
-	Host                string               `json:"host,omitempty"`
-	BasePath            string               `json:"basePath,omitempty"`
-	Paths               Paths                `json:"paths,omitempty"`
-	Parameters          map[string]Parameter `json:"parameters,omitempty"`
-	Responses           map[string]Response  `json:"responses,omitempty"`
-	SecurityDefinitions SecurityDefinitions  `json:"securityDefinitions,omitempty"`
-	Security            Security             `json:"security,omitempty"`
-	Tags                []Tag                `json:"tags,omitempty"`
-	ExternalDocs        *ExternalDocs        `json:"externalDocs,omitempty"`
+	ID                  string                 `json:"id,omitempty"`
+	Consumes            []string               `json:"consumes,omitempty"`
+	Produces            []string               `json:"produces,omitempty"`
+	Schemes             []string               `json:"schemes,omitempty"`
+	Swagger             string                 `json:"swagger,omitempty"`
+	Info                *Info                  `json:"info,omitempty"`
+	Host                string                 `json:"host,omitempty"`
+	BasePath            string                 `json:"basePath,omitempty"`
+	Paths               Paths                  `json:"paths,omitempty"`
+	Parameters          map[string]Parameter   `json:"parameters,omitempty"`
+	Responses           map[string]Response    `json:"responses,omitempty"`
+	SecurityDefinitions SecurityDefinitions    `json:"securityDefinitions,omitempty"`
+	Security            Security               `json:"security,omitempty"`
+	Tags                []Tag                  `json:"tags,omitempty"`
+	ExternalDocs        *ExternalDocs          `json:"externalDocs,omitempty"`
+	Definitions         jsonschema.Definitions `json:"definitions,omitempty"`
+	models              Models
 	//spec.Swagger
-	Definitions jsonschema.Definitions `json:"definitions,omitempty"`
 }
 
 type Info struct {
@@ -56,18 +58,6 @@ type Paths map[string]PathItem
 
 type PathItem map[string]Operation
 
-/*type PathItem struct {
-	Get       *Operation
-	Post      *Operation
-	Put       *Operation
-	Delete    *Operation
-	Options   *Operation
-	Patch     *Operation
-	Head      *Operation
-	Trace     *Operation
-	Connect   *Operation
-}*/
-
 type ExternalDocs struct {
 	Description string `json:"description,omitempty"`
 	URL         string `json:"url,omitempty"`
@@ -77,44 +67,76 @@ type Security []map[string][]string
 
 type SecurityDefinitions map[string]security.Definition
 
+type Models map[string]interface{}
+
 const (
 	InPath     = "path"
 	InQuery    = "query"
 	InHeader   = "header"
 	InBody     = "body"
 	InFormData = "formData"
-)
 
-const (
 	TypeString  = "string"
 	TypeArray   = "array"
 	TypeFile    = "file"
 	TypeInteger = "integer"
 	TypeObject  = "object"
 	TypeBoolean = "boolean"
-)
 
-const (
 	CollectionFormatMulti = "multi"
-)
 
-const (
 	RefDefinitions = "#/definitions/"
 )
 
+// JSON Преобразование в структуру json
 func (s *Swagger) JSON() ([]byte, error) {
 	return json.Marshal(s)
 }
 
-// SetDefinitions Преобразование моделей в формат JSON Schema
-func (s *Swagger) SetDefinitions(models ...interface{}) *Swagger {
-	for _, model := range models {
-		schema := jsonschema.Reflect(model)
-		for key, value := range schema.Definitions {
-			s.Definitions[key] = value
+// setDefinition Преобразование модели в формат JSON Schema
+func (s *Swagger) setDefinition(model interface{}, name string) *Swagger {
+	r := jsonschema.Reflector{}
+	if len(name) > 0 {
+		r.Namer = func(r reflect.Type) string {
+			if r.Kind() == reflect.Ptr {
+				r = r.Elem()
+			}
+			if r.Kind() == reflect.Struct && s.models.contains(r) {
+				return name
+			}
+			return r.Name()
 		}
 	}
+	schema := r.Reflect(model)
+	for key, value := range schema.Definitions {
+		s.Definitions[key] = value
+	}
 	return s
+}
+
+// contains Проверка на соответствие модели
+func (m Models) contains(mt reflect.Type) bool {
+	for _, value := range m {
+		vt := reflect.TypeOf(value)
+		if vt.Kind() == reflect.Ptr {
+			vt = vt.Elem()
+		}
+		if vt.Kind() == reflect.Struct {
+			if vt == mt {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// setRefDefinitions Проверка модели на существование
+func (s *Swagger) setRefDefinitions(ref string) (string, bool) {
+	if model, ok := s.models[ref]; ok {
+		s.setDefinition(model, ref)
+		return RefDefinitions + ref, ok
+	}
+	return "", false
 }
 
 // SetSchemes устанавливаем схему
@@ -129,14 +151,6 @@ func (s *Swagger) setPort(port string) *Swagger {
 	return s
 }
 
-// setRefDefinitions Проверка модели на существование
-func (s *Swagger) setRefDefinitions(ref string) (string, bool) {
-	if _, ok := s.Definitions[ref]; ok {
-		return RefDefinitions + ref, ok
-	}
-	return ref, false
-}
-
 // Устанавливаем путь с операциями
 func (s *Swagger) setPath(path, method string, operation Operation) *Swagger {
 
@@ -146,24 +160,24 @@ func (s *Swagger) setPath(path, method string, operation Operation) *Swagger {
 			continue
 		}
 		// Пытаемся найти модель в определениях
-		var exists bool
-		response.Schema.Ref, exists = s.setRefDefinitions(response.Schema.Ref)
-		if !exists && response.Schema.Items != nil {
-			response.Schema.Items.Ref, _ = s.setRefDefinitions(response.Schema.Items.Ref)
+		if !s.setSchemaRef(response.Schema) {
+			response.Schema = nil
 		}
 	}
 
 	// Настраиваем ссылку на модель в параметрах
-	for _, param := range operation.Parameters {
+	for i, param := range operation.Parameters {
+		if param == nil {
+			continue
+		}
 		switch param.In {
 		case InBody:
 			if param.Schema == nil {
 				break
 			}
-			if _, ok := s.Definitions[param.Schema.Ref]; ok {
-				param.Schema.Ref = RefDefinitions + param.Schema.Ref
+			if !s.setSchemaRef(param.Schema) {
+				operation.Parameters = append(operation.Parameters[:i], operation.Parameters[i+1:]...)
 			}
-			break
 		}
 	}
 
@@ -177,43 +191,15 @@ func (s *Swagger) setPath(path, method string, operation Operation) *Swagger {
 	return s
 }
 
-/*func (p *PathItem) setOperation(method string, operation *Operation) {
-	switch method {
-	case MethodGet:
-		p.Get = operation
-		break
-	case MethodPost:
-		p.Post = operation
-		break
-	case MethodPut:
-		p.Put = operation
-		break
-	case MethodDelete:
-		p.Delete = operation
-		break
-	case MethodOptions:
-		p.Options = operation
-		break
-	case MethodPatch:
-		p.Patch = operation
-		break
-	case MethodHead:
-		p.Head = operation
-		break
-	case MethodTrace:
-		p.Trace = operation
-		break
-	case MethodConnect:
-		p.Connect = operation
-		break
+func (s *Swagger) setSchemaRef(schema *Schema) (exists bool) {
+	schema.Ref, exists = s.setRefDefinitions(schema.Ref)
+	if !exists {
+		if schema.Items != nil {
+			schema.Items.Ref, exists = s.setRefDefinitions(schema.Items.Ref)
+		}
 	}
+	return exists
 }
-
-func (p PathItem) MarshalJSON() ([]byte, error) {
-	m := map[string]Operation{}
-
-	return json.Marshal(m)
-}*/
 
 // setSecurityDefinition Устанавливаем необходимые поля для определения авторизации
 func (s *Swagger) setSecurityDefinition(authName string, sec security.Definition) *Swagger {
@@ -243,4 +229,35 @@ func (s *Swagger) compareBasePath(path string) (bool, int) {
 		return true, l
 	}
 	return false, l
+}
+
+// SetModel Добавить модель для определения параметров для swagger
+func (s *Swagger) SetModel(name string, model interface{}) *Swagger {
+	s.models[name] = model
+	return s
+}
+
+// SetModelByStruct Добавить модель для определения параметров для swagger
+func (s *Swagger) SetModelByStruct(model interface{}) *Swagger {
+	t := reflect.TypeOf(model)
+	if t.Kind() == reflect.Struct {
+		s.models[t.Name()] = model
+	}
+	return s
+}
+
+// SetModels Добавить модель для определения параметров для swagger
+func (s *Swagger) SetModels(models Models) *Swagger {
+	for key, model := range models {
+		s.SetModel(key, model)
+	}
+	return s
+}
+
+// SetModelsByStruct Добавить модель для определения параметров для swagger
+func (s *Swagger) SetModelsByStruct(models ...interface{}) *Swagger {
+	for _, model := range models {
+		s.SetModelByStruct(model)
+	}
+	return s
 }

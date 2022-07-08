@@ -25,6 +25,12 @@ func main() {
 		return false
 	}
 
+	contextHandler := func(handler ewa.Handler) interface{} {
+		return func(ctx *fiber.Ctx) error {
+			return handler(ewa.NewContext(&f.Context{Ctx: ctx}))
+		}
+	}
+
 	// Fiber
 	app := fiber.New()
 	// Cors
@@ -43,6 +49,7 @@ func main() {
 				Handler: basicAuthHandler,
 			},
 		},
+		ContextHandler: contextHandler,
 	}
 
 	info := ewa.Info{
@@ -71,8 +78,11 @@ func main() {
 	ws.Register(new(controllers.Api)).NotShow()
 
 	// Описываем swagger
-	ws.Swagger.SetInfo(fmt.Sprintf("10.28.0.73:%d", cfg.Port), &info, nil).SetBasePath("/api")
-	ws.Swagger.SetDefinitions(models.User{})
+	ws.Swagger.SetInfo("10.28.0.73", &info, nil).SetBasePath("/api")
+	ws.Swagger.SetModels(ewa.Models{
+		models.ModelUser:     models.User{},
+		models.ModelResponse: models.Response{},
+	})
 
 	// Канал для получения ошибки, если таковая будет
 	errChan := make(chan error, 2)

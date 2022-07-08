@@ -1,6 +1,7 @@
 package egowebapi
 
 import (
+	"reflect"
 	"regexp"
 	"strings"
 )
@@ -19,6 +20,10 @@ type Parameter struct {
 	Items            *Items  `json:"items,omitempty"`
 }
 
+const (
+	tagEWA = "ewa"
+)
+
 // NewPathParam Инициализация параметра in: path
 func NewPathParam(path string, desc ...string) *Parameter {
 
@@ -36,22 +41,22 @@ func NewPathParam(path string, desc ...string) *Parameter {
 		Type:     TypeString,
 	}
 	if desc != nil {
-		p.Description = desc[0]
+		p.SetDescription(desc[0])
 	}
 
 	return p
 }
 
 // NewBodyParam Инициализация параметра in: body
-func NewBodyParam(required bool, schema *Schema, desc ...string) *Parameter {
+func NewBodyParam(required bool, modelName string, isArray bool, desc ...string) *Parameter {
 	p := &Parameter{
 		In:       InBody,
 		Name:     InBody,
 		Required: required,
-		Schema:   schema,
+		Schema:   NewSchema(modelName, isArray),
 	}
 	if desc != nil {
-		p.Description = desc[0]
+		p.SetDescription(desc[0])
 	}
 	return p
 }
@@ -65,7 +70,7 @@ func NewHeaderParam(name string, required bool, desc ...string) *Parameter {
 		Required: required,
 	}
 	if desc != nil {
-		p.Description = desc[0]
+		p.SetDescription(desc[0])
 	}
 	return p
 }
@@ -79,43 +84,24 @@ func NewQueryParam(name string, required bool, desc ...string) *Parameter {
 		Required: required,
 	}
 	if desc != nil {
-		p.Description = desc[0]
+		p.SetDescription(desc[0])
 	}
 	return p
 }
 
 // NewQueryArrayParam Инициализация параметра in: query с типом массив
 func NewQueryArrayParam(name, array string, required bool, desc ...string) *Parameter {
-	var (
-		enum        []interface{}
-		defaultItem string
-	)
-	for i, a := range strings.Split(array, ",") {
-		a = strings.Trim(a, " ")
-		if i == 0 {
-			defaultItem = a
-		}
-		enum = append(enum, a)
-	}
+
 	p := &Parameter{
 		In:               InQuery,
 		Name:             name,
 		Type:             TypeArray,
 		CollectionFormat: CollectionFormatMulti,
 		Required:         required,
-		Items: &Items{
-			CommonValidations: CommonValidations{
-				Enum: enum,
-			},
-			SimpleSchema: SimpleSchema{
-				Type: TypeString,
-				//CollectionFormat: CollectionFormatMulti,
-				Default: defaultItem,
-			},
-		},
 	}
+	p.SetItems(array)
 	if desc != nil {
-		p.Description = desc[0]
+		p.SetDescription(desc[0])
 	}
 	return p
 }
@@ -129,15 +115,107 @@ func NewFormDataParam(name, t string, required bool, desc ...string) *Parameter 
 		Type:     t,
 	}
 	if desc != nil {
-		p.Description = desc[0]
+		p.SetDescription(desc[0])
 	}
 	return p
 }
 
+func ModelToParameters(v interface{}) (p []*Parameter) {
+
+	if v == nil {
+		return
+	}
+
+	t := reflect.TypeOf(v)
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	if t.Kind() != reflect.Struct {
+		return nil
+	}
+
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		if field.Anonymous {
+			p = append(p, ModelToParameters(reflect.ValueOf(v).Field(i).Interface())...)
+			continue
+		}
+		if tag, ok := field.Tag.Lookup(tagEWA); ok {
+			var param *Parameter
+			for _, tagValue := range strings.Split(tag, ";") {
+
+				inNames := strings.Split(tagValue, ":")
+				if (len(inNames) == 0 || len(inNames) < 2) || inNames[1] == "" {
+					continue
+				}
+				tp, fm := setTypeFormat(reflect.ValueOf(v).Field(i).Interface())
+				inName := strings.ToLower(strings.Trim(inNames[0], " "))
+				switch inName {
+				case InPath, InHeader, InQuery:
+
+					// Инициализация параметра
+					param = NewParameter(inName).SetName(strings.ToLower(field.Name)).SetType(tp).SetFormat(fm)
+					// Если параметр пути, то прописываем свойства *обязательно
+					if inName == InPath {
+						param.SetRequired(true)
+					}
+
+					// Значения
+					values := strings.Split(inNames[1], ",")
+
+					// Получаем значения и устанавливаем в параметры
+					for _, value := range values {
+						items := strings.Split(value, "=")
+						if len(items) == 0 {
+							continue
+						}
+						item := strings.ToLower(strings.Trim(items[0], " "))
+						switch item {
+						case "required":
+							param.Required = true
+						case "empty":
+							param.SetAllowEmptyValue(true)
+						default:
+							// Проверяем является значение форматом пути, если да, то добавляем в путь параметра
+							if len(item) > 0 && item[0] == '/' && inName == InPath {
+								param.Path = item
+								break
+							}
+						}
+						// Если нет значений после равно, то выходим
+						if len(items) < 2 {
+							continue
+						}
+						// Получаем значения после равно
+						switch item {
+						case "name":
+							param.SetName(items[1])
+						case "format":
+							param.SetFormat(items[1])
+						case "type":
+							param.SetType(items[1])
+						case "array":
+							if inName == InQuery {
+								param.SetItems(items[1])
+							}
+						}
+					}
+					// Добавляем параметры в список
+					if len(values) > 0 {
+						p = append(p, param)
+					}
+				}
+			}
+		}
+	}
+
+	return
+}
+
 // NewParameter Инициализация параметра
-func NewParameter(name string) *Parameter {
+func NewParameter(in string) *Parameter {
 	return &Parameter{
-		Name: name,
+		In: in,
 	}
 }
 
@@ -147,9 +225,9 @@ func (p *Parameter) SetType(t string) *Parameter {
 	return p
 }
 
-// SetIn Установка типа параметра
-func (p *Parameter) SetIn(i string) *Parameter {
-	p.In = i
+// SetName Установка типа параметра
+func (p *Parameter) SetName(name string) *Parameter {
+	p.Name = name
 	return p
 }
 
@@ -186,5 +264,39 @@ func (p *Parameter) SetTypeFormat(t interface{}) *Parameter {
 // SetAllowEmptyValue Установка на отправку пустого параметра
 func (p *Parameter) SetAllowEmptyValue(allowEmptyValue bool) *Parameter {
 	p.AllowEmptyValue = allowEmptyValue
+	return p
+}
+
+// SetCollectionFormat Установка на отправку пустого параметра
+func (p *Parameter) SetCollectionFormat(format string) *Parameter {
+	p.CollectionFormat = format
+	return p
+}
+
+// SetItems Установка на отправку пустого параметра
+func (p *Parameter) SetItems(array string) *Parameter {
+
+	var (
+		enum        []interface{}
+		defaultItem string
+	)
+	for i, a := range strings.Split(array, "&") {
+		a = strings.Trim(a, " ")
+		if i == 0 {
+			defaultItem = a
+		}
+		enum = append(enum, a)
+	}
+	p.SetCollectionFormat(CollectionFormatMulti)
+	p.Items = &Items{
+		CommonValidations: CommonValidations{
+			Enum: enum,
+		},
+		SimpleSchema: SimpleSchema{
+			Type: TypeString,
+			//CollectionFormat: CollectionFormatMulti,
+			Default: defaultItem,
+		},
+	}
 	return p
 }

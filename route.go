@@ -12,14 +12,15 @@ type Route struct {
 	emptyPathParam *EmptyPathParam
 	session        SessionTurn
 	isPermission   bool
+	models         Models
 	Handler        Handler
 	Operation
 }
 
 type EmptyPathParam struct {
-	Summary     string              `json:"summary,omitempty"`
-	Description string              `json:"description,omitempty"`
-	Responses   map[string]Response `json:"responses,omitempty"`
+	Summary     string               `json:"summary,omitempty"`
+	Description string               `json:"description,omitempty"`
+	Responses   map[string]*Response `json:"responses,omitempty"`
 }
 
 // Map тип список
@@ -34,28 +35,41 @@ const (
 	Off
 )
 
-// NewEmptyPathParam Инициализация пустого параметра пути маршрута
-func NewEmptyPathParam(summary string, desc ...string) *EmptyPathParam {
-	e := &EmptyPathParam{
-		Summary:   summary,
-		Responses: map[string]Response{},
+// setResponse описываем варианты ответов для Swagger
+func (e *EmptyPathParam) setResponse(code int, modelName string, isArray bool, headers Headers, desc ...string) {
+	response := &Response{
+		Headers: headers,
+		Schema:  NewSchema(modelName, isArray),
 	}
 	if desc != nil {
-		e.Description = desc[0]
+		response.Description = desc[0]
 	}
-	return e
+	e.Responses[strconv.Itoa(code)] = response
 }
 
 // SetResponse описываем варианты ответов для Swagger
-func (e *EmptyPathParam) SetResponse(code int, resp Response) *EmptyPathParam {
-	e.Responses[strconv.Itoa(code)] = resp
+func (e *EmptyPathParam) SetResponse(code int, modelName string, headers Headers, desc ...string) *EmptyPathParam {
+	e.setResponse(code, modelName, false, headers, desc...)
+	return e
+}
+
+// SetResponseArray описываем варианты ответов для Swagger
+func (e *EmptyPathParam) SetResponseArray(code int, modelName string, headers Headers, desc ...string) *EmptyPathParam {
+	e.setResponse(code, modelName, true, headers, desc...)
 	return e
 }
 
 // SetEmptyParam указываем параметры маршрута
-func (r *Route) SetEmptyParam(e *EmptyPathParam) *Route {
+func (r *Route) SetEmptyParam(summary string, desc ...string) *EmptyPathParam {
+	e := &EmptyPathParam{
+		Summary:   summary,
+		Responses: map[string]*Response{},
+	}
+	if desc != nil {
+		e.Description = desc[0]
+	}
 	r.emptyPathParam = e
-	return r
+	return r.emptyPathParam
 }
 
 // SetParameters указываем параметры маршрута
@@ -64,6 +78,20 @@ func (r *Route) SetParameters(params ...*Parameter) *Route {
 		r.Parameters = append(r.Parameters, param)
 	}
 	return r
+}
+
+// InitParametersByModel Формирование параметров на основе модели
+func (r *Route) InitParametersByModel(name string) *Route {
+	r.SetParameters(ModelToParameters(r.Model(name))...)
+	return r
+}
+
+// Model Вернуть модель параметров
+func (r *Route) Model(name string) interface{} {
+	if model, ok := r.models[name]; ok {
+		return model
+	}
+	return nil
 }
 
 // SetConsumes устанавливаем Content-Type запроса для Swagger
@@ -84,15 +112,40 @@ func (r *Route) SetOperationID(id string) *Route {
 	return r
 }
 
+// setResponse описываем варианты ответов для Swagger
+func (r *Route) setResponse(code int, modelName string, isArray bool, headers Headers, desc ...string) {
+	response := &Response{
+		Headers: headers,
+		Schema:  NewSchema(modelName, isArray),
+	}
+	if desc != nil {
+		response.Description = desc[0]
+	}
+	r.Responses[strconv.Itoa(code)] = response
+}
+
 // SetDefaultResponse описываем варианты ответов для Swagger
-func (r *Route) SetDefaultResponse(resp Response) *Route {
-	r.Responses["default"] = resp
+func (r *Route) SetDefaultResponse(modelName string, isArray bool, headers Headers, desc ...string) *Route {
+	response := &Response{
+		Schema:  NewSchema(modelName, isArray),
+		Headers: headers,
+	}
+	if desc != nil {
+		response.Description = desc[0]
+	}
+	r.Responses["default"] = response
 	return r
 }
 
 // SetResponse описываем варианты ответов для Swagger
-func (r *Route) SetResponse(code int, resp Response) *Route {
-	r.Responses[strconv.Itoa(code)] = resp
+func (r *Route) SetResponse(code int, modelName string, headers Headers, desc ...string) *Route {
+	r.setResponse(code, modelName, false, headers, desc...)
+	return r
+}
+
+// SetResponseArray описываем варианты ответов для Swagger
+func (r *Route) SetResponseArray(code int, modelName string, headers Headers, desc ...string) *Route {
+	r.setResponse(code, modelName, true, headers, desc...)
 	return r
 }
 
@@ -153,12 +206,12 @@ func (r *Route) SetHandler(handler Handler) *Route {
 }
 
 // getHandler возвращаем обработчик основанный на параметрах конфигурации маршрута
-func (r *Route) getHandler(config Config, view *View, swagger Swagger) Handler {
+func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 
 	return func(c *Context) error {
 
-		c.View = view
-		c.Swagger = swagger
+		//c.View = view
+		c.Swagger = *swagger
 
 		var (
 			err        error
@@ -239,15 +292,14 @@ func (r *Route) getHandler(config Config, view *View, swagger Swagger) Handler {
 
 		// Проверка на ошибку авторизации и отправку кода 401
 		if err != nil {
-			if isSecurity {
-				if config.Authorization.Unauthorized != nil && config.Authorization.Unauthorized(err) {
-					return c.SendString(consts.StatusUnauthorized, err.Error())
-				}
-				return c.SendStatus(consts.StatusUnauthorized)
-			} else if r.session != None {
+			if r.session != None {
 				// Если cookie не существует, то перенаправляем запрос условно на "/login"
 				return c.Redirect(config.Session.RedirectPath, config.Session.RedirectStatus)
 			}
+			if config.Authorization.Unauthorized != nil && config.Authorization.Unauthorized(err) {
+				return c.SendString(consts.StatusUnauthorized, err.Error())
+			}
+			return c.SendStatus(consts.StatusUnauthorized)
 		}
 
 		// Доступ к маршрутам
