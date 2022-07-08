@@ -2,8 +2,8 @@ package web
 
 import (
 	"fmt"
-	ewa "github.com/egovorukhin/egowebapi"
-	"github.com/egovorukhin/egowebapi/example/fiber/src/storage"
+	ewa "github.com/ewa-go/ewa"
+	"github.com/ewa-go/ewa/example/fiber/src/storage"
 )
 
 type Logout struct{}

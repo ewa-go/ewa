@@ -1,7 +1,7 @@
 package api
 
 import (
-	ewa "github.com/egovorukhin/egowebapi"
+	ewa "github.com/ewa-go/ewa"
 	"github.com/gofiber/fiber/v2"
 )
 

@@ -1,8 +1,8 @@
 package session
 
 import (
-	"github.com/egovorukhin/egowebapi/consts"
-	"github.com/egovorukhin/egowebapi/security"
+	"github.com/ewa-go/ewa/consts"
+	"github.com/ewa-go/ewa/security"
 	"github.com/gofiber/fiber/v2/utils"
 	"time"
 )

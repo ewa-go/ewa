@@ -1,8 +1,8 @@
 package egowebapi
 
 import (
-	"github.com/egovorukhin/egowebapi/consts"
-	"github.com/egovorukhin/egowebapi/security"
+	"github.com/ewa-go/ewa/consts"
+	"github.com/ewa-go/ewa/security"
 	"net/http"
 	"strconv"
 	"time"

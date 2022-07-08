@@ -3,9 +3,9 @@ package egowebapi
 import (
 	"errors"
 	"fmt"
-	"github.com/egovorukhin/egowebapi/consts"
-	"github.com/egovorukhin/egowebapi/security"
-	"github.com/mustan989/jsonschema"
+	"github.com/ewa-go/ewa/consts"
+	"github.com/ewa-go/ewa/security"
+	"github.com/ewa-go/jsonschema"
 	p "path"
 	"regexp"
 	"strings"

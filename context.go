@@ -1,7 +1,7 @@
 package egowebapi
 
 import (
-	"github.com/egovorukhin/egowebapi/security"
+	"github.com/ewa-go/ewa/security"
 	"io"
 	"mime/multipart"
 	"net/http"

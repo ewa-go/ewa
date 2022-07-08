@@ -1,6 +1,6 @@
 package controllers
 
-import ewa "github.com/egovorukhin/egowebapi"
+import ewa "github.com/ewa-go/ewa"
 
 type Home struct {
 }

@@ -1,9 +1,9 @@
 package storage
 
 import (
-	ewa "github.com/egovorukhin/egowebapi"
-	"github.com/egovorukhin/egowebapi/example/fiber-api/models"
-	"github.com/egovorukhin/egowebapi/security"
+	ewa "github.com/ewa-go/ewa"
+	"github.com/ewa-go/ewa/example/fiber-api/models"
+	"github.com/ewa-go/ewa/security"
 	"strconv"
 	"time"
 )

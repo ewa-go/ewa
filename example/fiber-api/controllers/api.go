@@ -1,8 +1,8 @@
 package controllers
 
 import (
-	ewa "github.com/egovorukhin/egowebapi"
-	"github.com/egovorukhin/egowebapi/consts"
+	ewa "github.com/ewa-go/ewa"
+	"github.com/ewa-go/ewa/consts"
 )
 
 type Api struct{}

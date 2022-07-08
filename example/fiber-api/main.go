@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-	ewa "github.com/egovorukhin/egowebapi"
-	"github.com/egovorukhin/egowebapi/example/fiber-api/controllers"
-	"github.com/egovorukhin/egowebapi/example/fiber-api/controllers/api/storage"
-	"github.com/egovorukhin/egowebapi/example/fiber-api/models"
-	f "github.com/egovorukhin/egowebapi/fiber"
-	"github.com/egovorukhin/egowebapi/security"
+	ewa "github.com/ewa-go/ewa"
+	"github.com/ewa-go/ewa/example/fiber-api/controllers"
+	"github.com/ewa-go/ewa/example/fiber-api/controllers/api/storage"
+	"github.com/ewa-go/ewa/example/fiber-api/models"
+	f "github.com/ewa-go/ewa/fiber"
+	"github.com/ewa-go/ewa/security"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"os"

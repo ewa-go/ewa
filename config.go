@@ -1,8 +1,8 @@
 package egowebapi
 
 import (
-	"github.com/egovorukhin/egowebapi/security"
-	"github.com/egovorukhin/egowebapi/session"
+	"github.com/ewa-go/ewa/security"
+	"github.com/ewa-go/ewa/session"
 	"path/filepath"
 )
 

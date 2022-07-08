@@ -1,7 +1,7 @@
 package web
 
 import (
-	ewa "github.com/egovorukhin/egowebapi"
+	ewa "github.com/ewa-go/ewa"
 )
 
 type Home struct{}

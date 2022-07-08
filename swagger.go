@@ -2,8 +2,8 @@ package egowebapi
 
 import (
 	"encoding/json"
-	"github.com/egovorukhin/egowebapi/security"
-	"github.com/mustan989/jsonschema"
+	"github.com/ewa-go/ewa/security"
+	"github.com/ewa-go/jsonschema"
 	"reflect"
 )
 

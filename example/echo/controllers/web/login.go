@@ -2,8 +2,8 @@ package web
 
 import (
 	"errors"
-	ewa "github.com/egovorukhin/egowebapi"
-	"github.com/egovorukhin/egowebapi/example/echo/src/storage"
+	ewa "github.com/ewa-go/ewa"
+	"github.com/ewa-go/ewa/example/echo/src/storage"
 )
 
 type Login struct {
