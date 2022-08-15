@@ -1,4 +1,4 @@
-package egowebapi
+package ewa
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ func TestParameters(t *testing.T) {
 		Firstname string `json:"firstname"`
 	}
 
-	param := NewBodyParam(true, NewSchema(Person{}), "Описание")
+	param := NewBodyParam(true, "Person", false, "Описание")
 	fmt.Printf("In Body: %+v\n", param)
 
 	param = NewPathParam("/{id}", "Описание").SetType(TypeInteger)

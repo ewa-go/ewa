@@ -3,7 +3,7 @@ package session
 import (
 	"github.com/ewa-go/ewa/consts"
 	"github.com/ewa-go/ewa/security"
-	"github.com/gofiber/fiber/v2/utils"
+	"github.com/google/uuid"
 	"time"
 )
 
@@ -51,7 +51,7 @@ func (s *Config) Default() {
 	// Обработчик генерации SessionId
 	if s.GenSessionIdHandler == nil {
 		s.GenSessionIdHandler = func() string {
-			return utils.UUID()
+			return uuid.New().String()
 		}
 	}
 }

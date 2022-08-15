@@ -1,4 +1,4 @@
-package egowebapi
+package ewa
 
 import (
 	"time"

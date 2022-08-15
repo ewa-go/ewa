@@ -1,4 +1,4 @@
-package egowebapi
+package ewa
 
 // Permission структура описывает разрешения на запрос
 type Permission struct {

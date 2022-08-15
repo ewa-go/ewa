@@ -1,4 +1,4 @@
-package egowebapi
+package ewa
 
 import (
 	"errors"
@@ -13,7 +13,7 @@ import (
 
 const (
 	Name    = "EgoWebApi"
-	Version = "v0.2.35"
+	Version = "v0.2.36"
 )
 
 type Server struct {

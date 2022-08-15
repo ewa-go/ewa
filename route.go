@@ -1,4 +1,4 @@
-package egowebapi
+package ewa
 
 import (
 	"github.com/ewa-go/ewa/consts"
