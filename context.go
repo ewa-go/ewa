@@ -1,6 +1,7 @@
 package ewa
 
 import (
+	"context"
 	"github.com/ewa-go/ewa/security"
 	"io"
 	"mime/multipart"
@@ -57,6 +58,8 @@ type IContext interface {
 	FormFile(name string) (*multipart.FileHeader, error)
 	Scheme() string
 	MultipartForm() (*multipart.Form, error)
+	IP() string
+	Context() context.Context
 }
 
 func NewContext(c IContext) *Context {
