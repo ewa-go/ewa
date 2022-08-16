@@ -31,9 +31,9 @@ go get -u github.com/ewa-go/ewa
 +-- models
 | +-- public
 |   +-- user.go
-|   go.mod
-|   go.sum
-|   main.go
+go.mod
+go.sum
+main.go
 ```
 ## Примеры
 - [Все](https://github.com/ewa-go/ewa-example)
