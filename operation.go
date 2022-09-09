@@ -119,7 +119,7 @@ func (o *Operation) getParams(excludes ...string) (params []*Parameter) {
 	for _, param := range o.Parameters {
 		isTrue := true
 		for _, ex := range excludes {
-			if param.In == InPath && param.Path == ex {
+			if param == nil || (param.In == InPath && param.Path == ex) {
 				isTrue = false
 				break
 			}
