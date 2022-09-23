@@ -284,7 +284,7 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 				}
 			case Off:
 				c.Identity, err = config.Session.Check(c.Cookies(keyName))
-				if config.Session.DeleteSessionHandler(c.Session.Value) {
+				if c.Session != nil && config.Session.DeleteSessionHandler != nil && config.Session.DeleteSessionHandler(c.Session.Value) {
 					c.ClearCookie(config.Session.KeyName)
 					c.Session = nil
 					return c.Redirect(config.Session.RedirectPath, config.Session.RedirectStatus)
