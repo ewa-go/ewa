@@ -9,18 +9,20 @@ import (
 
 // Config структура, которая описывает сессию
 type Config struct {
-	RedirectPath        string
-	RedirectStatus      int
-	AllRoutes           bool
-	Expires             time.Duration
-	SessionHandler      Handler
-	GenSessionIdHandler GenSessionIdHandler
-	KeyName             string
-	m                   map[string]string
+	RedirectPath         string
+	RedirectStatus       int
+	AllRoutes            bool
+	Expires              time.Duration
+	SessionHandler       Handler
+	DeleteSessionHandler DeleteSessionHandler
+	GenSessionIdHandler  GenSessionIdHandler
+	KeyName              string
+	m                    map[string]string
 }
 
 type Handler func(value string) (user string, err error)
 type GenSessionIdHandler func() string
+type DeleteSessionHandler func(value string) bool
 
 func (s *Config) Default() {
 

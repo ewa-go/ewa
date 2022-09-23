@@ -52,6 +52,7 @@ type Controller struct {
 	FileTree  []string
 	Tag       Tag
 	Models    Models
+	Security  string
 }
 
 // SetName Устанавливаем имя контроллера
@@ -91,6 +92,12 @@ func (c *Controller) SetSuffix(suffix ...Suffix) *Controller {
 // NotShow Установка флага отображения контроллера в swagger
 func (c *Controller) NotShow() *Controller {
 	c.IsShow = false
+	return c
+}
+
+// SetSecurity Установка авторизации неа контролер
+func (c *Controller) SetSecurity(security string) *Controller {
+	c.Security = security
 	return c
 }
 
