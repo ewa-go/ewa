@@ -31,9 +31,10 @@ type Static struct {
 }
 
 type Secure struct {
-	Path string
-	Key  string
-	Cert string
+	Path       string
+	Key        string
+	Cert       string
+	ClientCert string
 }
 
 type Handler func(c *Context) error
@@ -41,11 +42,21 @@ type ContextHandler func(handler Handler) interface{}
 type PermissionHandler func(username string, path string) bool
 type ErrorHandler func(c *Context, statusCode int, err interface{}) error
 
-func (s *Secure) Get() (cert string, key string) {
+// Get Вернуть сертификат и ключ с путями
+func (s *Secure) Get() (cert, key, clientCert string) {
 	key = filepath.Join(s.Path, s.Key)
 	cert = filepath.Join(s.Path, s.Cert)
-	return cert, key
+	clientCert = filepath.Join(s.Path, s.ClientCert)
+	return
 }
+
+// GetMutual Вернуть сертификат, ключ и файл с паролем с путями
+/*func (s *Secure) GetMutual() (cert, key, clientCert string) {
+	key = filepath.Join(s.Path, s.Key)
+	cert = filepath.Join(s.Path, s.Cert)
+	clientCert = filepath.Join(s.Path, s.ClientCert)
+	return
+}*/
 
 type Timeout struct {
 	Read  int

@@ -13,7 +13,7 @@ import (
 
 const (
 	Name    = "EWebApi"
-	Version = "v0.0.5"
+	Version = "v0.0.6"
 )
 
 type Server struct {
@@ -27,6 +27,7 @@ type Server struct {
 type IServer interface {
 	Start(addr string) error
 	StartTLS(addr, cert, key string) error
+	StartMutualTLS(addr, cert, key, clientCert string) error
 	Stop() error
 	Static(prefix, root string)
 	Any(path string, handler interface{})
@@ -171,8 +172,11 @@ func (s *Server) Start() (err error) {
 		// Добавляем схему в Swagger
 		s.Swagger.SetSchemes("https")
 		// Возвращаем данные по сертификату
-		cert, key := s.Config.Secure.Get()
+		cert, key, clientCert := s.Config.Secure.Get()
 		// Запускаем слушатель с TLS настройкой
+		if clientCert != "" {
+			return s.WebServer.StartMutualTLS(addr, cert, key, clientCert)
+		}
 		return s.WebServer.StartTLS(addr, cert, key)
 	}
 	// Добавляем схему в Swagger
