@@ -6,6 +6,7 @@ import (
 	"github.com/ewa-go/ewa/consts"
 	"github.com/ewa-go/ewa/security"
 	"github.com/ewa-go/jsonschema"
+	"net"
 	p "path"
 	"regexp"
 	"strings"
@@ -28,6 +29,7 @@ type IServer interface {
 	Start(addr string) error
 	StartTLS(addr, cert, key string) error
 	StartMutualTLS(addr, cert, key, clientCert string) error
+	Listener(ln net.Listener) error
 	Stop() error
 	Static(prefix, root string)
 	Any(path string, handler interface{})
