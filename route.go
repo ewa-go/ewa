@@ -268,7 +268,6 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 					Created:  now,
 					LastTime: now,
 				}
-				c.Identity, err = config.Session.Check(value)
 			}
 
 			switch r.session {
@@ -276,9 +275,8 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 				if isSecurity {
 					break
 				}
-				// Если сессия пустая, то выходим
-				if c.Session == nil {
-					return c.Redirect(config.Session.RedirectPath, config.Session.RedirectStatus)
+				if c.Session != nil {
+					c.Identity, err = config.Session.Check(c.Session.Value)
 				}
 			case On:
 				value = config.Session.GenSessionIdHandler()
@@ -289,7 +287,6 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 				}
 				c.SetCookie(cookie)
 			case Off:
-				c.Identity, err = config.Session.Check(c.Cookies(keyName))
 				if c.Session != nil && config.Session.DeleteSessionHandler != nil && config.Session.DeleteSessionHandler(c.Session.Value) {
 					c.ClearCookie(config.Session.KeyName)
 					c.Session = nil
@@ -324,14 +321,5 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 
 		// Обычный маршрут
 		return r.Handler(c)
-	}
-}
-
-func (r *Route) newSession(keyName, value string) *Session {
-	return &Session{
-		Key:      keyName,
-		Value:    "",
-		Created:  time.Time{},
-		LastTime: time.Time{},
 	}
 }
