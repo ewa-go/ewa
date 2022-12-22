@@ -257,24 +257,10 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 
 		// Проверка на сессию
 		if config.Session != nil && r.session != None {
+
 			keyName := config.Session.KeyName
-			switch r.session {
-			case Is:
-				if isSecurity {
-					break
-				}
-				c.Identity, err = config.Session.Check(c.Cookies(keyName))
-				if c.Session != nil {
-					c.Session.LastTime = time.Now()
-				}
-			case On:
-				value := config.Session.GenSessionIdHandler()
-				cookie := &http.Cookie{
-					Name:    keyName,
-					Value:   value,
-					Expires: time.Now().Add(config.Session.Expires),
-				}
-				c.SetCookie(cookie)
+			value := c.Cookies(keyName)
+			if len(value) > 0 {
 				now := time.Now()
 				c.Session = &Session{
 					Key:      keyName,
@@ -282,6 +268,26 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 					Created:  now,
 					LastTime: now,
 				}
+				c.Identity, err = config.Session.Check(value)
+			}
+
+			switch r.session {
+			case Is:
+				if isSecurity {
+					break
+				}
+				// Если сессия пустая, то выходим
+				if c.Session == nil {
+					return c.Redirect(config.Session.RedirectPath, config.Session.RedirectStatus)
+				}
+			case On:
+				value = config.Session.GenSessionIdHandler()
+				cookie := &http.Cookie{
+					Name:    keyName,
+					Value:   value,
+					Expires: time.Now().Add(config.Session.Expires),
+				}
+				c.SetCookie(cookie)
 			case Off:
 				c.Identity, err = config.Session.Check(c.Cookies(keyName))
 				if c.Session != nil && config.Session.DeleteSessionHandler != nil && config.Session.DeleteSessionHandler(c.Session.Value) {
@@ -318,5 +324,14 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 
 		// Обычный маршрут
 		return r.Handler(c)
+	}
+}
+
+func (r *Route) newSession(keyName, value string) *Session {
+	return &Session{
+		Key:      keyName,
+		Value:    "",
+		Created:  time.Time{},
+		LastTime: time.Time{},
 	}
 }
