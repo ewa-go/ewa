@@ -305,7 +305,7 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 		}
 
 		// Проверка на ошибку авторизации и отправку кода 401
-		if err != nil {
+		if r.session == None && err != nil {
 			if config.Authorization.Unauthorized != nil && config.Authorization.Unauthorized(err) {
 				return c.SendString(consts.StatusUnauthorized, err.Error())
 			}
