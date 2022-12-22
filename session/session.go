@@ -22,6 +22,9 @@ type Config struct {
 
 type Handler func(value string) (user string, err error)
 type GenSessionIdHandler func() string
+
+// DeleteSessionHandler Возвращаемый флаг означает переход на страницу входа.
+// True - переходить сразу на страницу входа. False - не переходить
 type DeleteSessionHandler func(value string) bool
 
 func (s *Config) Default() {

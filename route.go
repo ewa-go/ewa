@@ -268,6 +268,13 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 					Created:  now,
 					LastTime: now,
 				}
+				c.Identity, err = config.Session.Check(c.Session.Value)
+				if err != nil {
+					c.ClearCookie(config.Session.KeyName)
+					c.Session = nil
+					// Если cookie не существует, то перенаправляем запрос условно на "/login"
+					return c.Redirect(config.Session.RedirectPath, config.Session.RedirectStatus)
+				}
 			}
 
 			switch r.session {
@@ -297,10 +304,9 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 
 		// Проверка на ошибку авторизации и отправку кода 401
 		if err != nil {
-			if r.session != None {
-				// Если cookie не существует, то перенаправляем запрос условно на "/login"
-				return c.Redirect(config.Session.RedirectPath, config.Session.RedirectStatus)
-			}
+			/*if r.session != None {
+
+			}*/
 			if config.Authorization.Unauthorized != nil && config.Authorization.Unauthorized(err) {
 				return c.SendString(consts.StatusUnauthorized, err.Error())
 			}
