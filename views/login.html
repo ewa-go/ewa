@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <form onsubmit="return false;">
+        <label>Имя
+            <input type="text" id="name">
+        </label>
+        <label>Пароль
+            <input type="text" id="pass">
+        </label>
+        <button onclick="login();">Войти</button>
+    </form>
+<script>
+    function login() {
+        let data = {
+            "username": document.getElementById('name'),
+            "password": document.getElementById('pass')
+        }
+        fetch('/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        }).then(result => {
+            if (result.status === 200) {
+                window.location = '/home'
+            }
+        })
+    }
+</script>
+</body>
+</html>

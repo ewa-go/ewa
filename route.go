@@ -268,12 +268,10 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 					Created:  now,
 					LastTime: now,
 				}
-				c.Identity, err = config.Session.Check(c.Session.Value)
+				c.Identity, err = config.Session.Check(value)
 				if err != nil {
-					c.ClearCookie(config.Session.KeyName)
+					c.ClearCookie(keyName)
 					c.Session = nil
-					// Если cookie не существует, то перенаправляем запрос условно на "/login"
-					return c.Redirect(config.Session.RedirectPath, config.Session.RedirectStatus)
 				}
 			}
 
@@ -282,8 +280,8 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 				if isSecurity {
 					break
 				}
-				if c.Session != nil {
-					c.Identity, err = config.Session.Check(c.Session.Value)
+				if c.Session == nil {
+					return c.Redirect(config.Session.RedirectPath, config.Session.RedirectStatus)
 				}
 			case On:
 				value = config.Session.GenSessionIdHandler()
@@ -294,9 +292,13 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 				}
 				c.SetCookie(cookie)
 			case Off:
-				if c.Session != nil && config.Session.DeleteSessionHandler != nil && config.Session.DeleteSessionHandler(c.Session.Value) {
+				ok := true
+				if c.Session != nil && config.Session.DeleteSessionHandler != nil {
+					ok = config.Session.DeleteSessionHandler(c.Session.Value)
 					c.ClearCookie(config.Session.KeyName)
 					c.Session = nil
+				}
+				if ok {
 					return c.Redirect(config.Session.RedirectPath, config.Session.RedirectStatus)
 				}
 			}
@@ -304,9 +306,6 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 
 		// Проверка на ошибку авторизации и отправку кода 401
 		if err != nil {
-			/*if r.session != None {
-
-			}*/
 			if config.Authorization.Unauthorized != nil && config.Authorization.Unauthorized(err) {
 				return c.SendString(consts.StatusUnauthorized, err.Error())
 			}
