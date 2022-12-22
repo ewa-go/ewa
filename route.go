@@ -261,17 +261,11 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 			keyName := config.Session.KeyName
 			value := c.Cookies(keyName)
 			if len(value) > 0 {
-				now := time.Now()
-				c.Session = &Session{
-					Key:      keyName,
-					Value:    value,
-					Created:  now,
-					LastTime: now,
-				}
 				c.Identity, err = config.Session.Check(value)
 				if err != nil {
 					c.ClearCookie(keyName)
-					c.Session = nil
+				} else {
+					c.Session = newSession(keyName, value)
 				}
 			}
 
@@ -291,6 +285,7 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 					Expires: time.Now().Add(config.Session.Expires),
 				}
 				c.SetCookie(cookie)
+				c.Session = newSession(keyName, value)
 			case Off:
 				ok := true
 				if c.Session != nil && config.Session.DeleteSessionHandler != nil {
@@ -326,5 +321,13 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 
 		// Обычный маршрут
 		return r.Handler(c)
+	}
+}
+
+func newSession(keyName, value string) *Session {
+	return &Session{
+		Key:      keyName,
+		Value:    value,
+		LastTime: time.Now(),
 	}
 }

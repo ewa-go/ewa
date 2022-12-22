@@ -21,7 +21,6 @@ type Context struct {
 type Session struct {
 	Key      string
 	Value    string
-	Created  time.Time
 	LastTime time.Time
 }
 
