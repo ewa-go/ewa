@@ -14,7 +14,7 @@ import (
 
 const (
 	Name    = "EWebApi"
-	Version = "v0.0.12"
+	Version = "v0.0.16"
 )
 
 type Server struct {
@@ -65,12 +65,17 @@ func New(server IServer, config Config) *Server {
 		config.Session.Default()
 	}
 
+	host := config.Addr
+	if host == "" {
+		host = fmt.Sprintf("localhost:%d", config.Port)
+	}
+
 	s := &Server{
 		Config:    config,
 		WebServer: server,
 		Swagger: &Swagger{
 			Swagger:             "2.0",
-			Host:                fmt.Sprintf("localhost:%d", config.Port),
+			Host:                host,
 			BasePath:            "/",
 			SecurityDefinitions: SecurityDefinitions{},
 			Paths:               Paths{},
@@ -166,7 +171,10 @@ func (s *Server) Start() (err error) {
 	//Флаг старта
 	s.IsStarted = true
 	// Получение адреса
-	addr := fmt.Sprintf(":%d", s.Config.Port)
+	addr := s.Config.Addr
+	if addr == "" {
+		addr = fmt.Sprintf(":%d", s.Config.Port)
+	}
 	// Установка порта в swagger
 	s.Swagger.setPort(addr)
 	// Если флаг для безопасности true, то запускаем механизм с TLS
