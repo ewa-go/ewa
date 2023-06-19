@@ -14,7 +14,7 @@ type Context struct {
 	Identity *security.Identity
 	Swagger  Swagger
 	Session  *Session
-	//View     *View
+
 	IContext
 }
 
@@ -59,6 +59,9 @@ type IContext interface {
 	MultipartForm() (*multipart.Form, error)
 	IP() string
 	Context() context.Context
+	Method() string
+	Request() interface{}
+	HttpRequest() *http.Request
 }
 
 func NewContext(c IContext) *Context {

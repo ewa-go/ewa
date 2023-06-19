@@ -294,8 +294,8 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 					c.Session = nil
 				}
 				if ok {
-					return c.Redirect(config.Session.RedirectPath, config.Session.RedirectStatus)
 				}
+				return c.Redirect(config.Session.RedirectPath, config.Session.RedirectStatus)
 			}
 		}
 
