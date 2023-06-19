@@ -8,6 +8,7 @@ import (
 
 type Config struct {
 	Port           int
+	Addr           string
 	Secure         *Secure
 	Authorization  security.Authorization
 	Session        *session.Config
