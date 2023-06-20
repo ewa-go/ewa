@@ -59,6 +59,7 @@ type IContext interface {
 	MultipartForm() (*multipart.Form, error)
 	IP() string
 	Context() context.Context
+	Ctx() interface{}
 	Method() string
 	Request() interface{}
 	HttpRequest() *http.Request
