@@ -62,7 +62,7 @@ type IContext interface {
 	Ctx() interface{}
 	Method() string
 	Request() interface{}
-	HttpRequest() (*http.Request, error)
+	HttpRequest() *http.Request
 }
 
 func NewContext(c IContext) *Context {
