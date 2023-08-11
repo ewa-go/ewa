@@ -1,11 +1,15 @@
 package security
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 // Identity Структура описывает идентификацию пользователя
 type Identity struct {
-	Username string
-	AuthName string
+	Username string    `json:"username"`
+	AuthName string    `json:"auth_name"`
+	Datetime time.Time `json:"datetime"`
 }
 
 func (i Identity) String() string {

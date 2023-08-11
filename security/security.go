@@ -1,17 +1,24 @@
 package security
 
 const (
-	NoAuth     = ""
-	BasicAuth  = "Basic"
-	DigestAuth = "Digest"
-	ApiKeyAuth = "ApiKey"
-	OAuth2Auth = "OAuth2"
+	NoAuth          = ""
+	BasicAuth       = "Basic"
+	DigestAuth      = "Digest"
+	ApiKeyAuth      = "ApiKey"
+	OAuth1Auth      = "OAuth1"
+	OAuth2Auth      = "OAuth2"
+	BearerTokenAuth = "BearerToken"
+	JWTBearerAuth   = "JWTBearer"
 )
 
 const (
-	TypeBasic  = "basic"
-	TypeApiKey = "apiKey"
-	TypeOAuth2 = "oauth2"
+	TypeBasic       = "basic"
+	TypeApiKey      = "apiKey"
+	TypeOAuth1      = "oauth1"
+	TypeOAuth2      = "oauth2"
+	TypeDigest      = "digest"
+	TypeBearerToken = "bearerToken"
+	TypeJWTBearer   = "jwtBearer"
 )
 
 type Authorization struct {
@@ -20,7 +27,10 @@ type Authorization struct {
 	Basic        *Basic
 	Digest       *Digest
 	ApiKey       *ApiKey
+	OAuth1       *OAuth1
 	OAuth2       *OAuth2
+	BearerToken  *BearerToken
+	JWTBearer    *JWTBearer
 }
 
 type Definition struct {
@@ -41,16 +51,32 @@ type IAuthorization interface {
 	Definition() Definition
 }
 
-func (a Authorization) Get(auth string) IAuthorization {
+func Do(a IAuthorization) (*Identity, error) {
+	return a.Do()
+}
+
+func (a Authorization) Get(auth string, values ...interface{}) IAuthorization {
 	switch auth {
 	case BasicAuth:
+		if len(values) > 0 {
+			a.Basic.SetHeader(values[0].(string))
+		}
 		return a.Basic
 	case ApiKeyAuth:
+		if len(values) > 0 {
+			a.ApiKey.SetValue(values[0].(string))
+		}
 		return a.ApiKey
 	case DigestAuth:
 		return a.Digest
+	case OAuth1Auth:
+		return a.OAuth1
 	case OAuth2Auth:
 		return a.OAuth2
+	case BearerTokenAuth:
+		return a.BearerToken
+	case JWTBearerAuth:
+		return a.JWTBearer
 	}
 	return nil
 }

@@ -25,6 +25,10 @@ const (
 	Sha512256SessAlgorithm = "SHA-512-256-sess"
 )
 
+func (Digest) SetValues(v Values) {
+
+}
+
 func (Digest) Do() (identity *Identity, err error) {
 	return
 }

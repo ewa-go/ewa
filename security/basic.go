@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"strings"
+	"time"
 )
 
 type Basic struct {
@@ -13,7 +14,7 @@ type Basic struct {
 
 type BasicAuthHandler func(user string, pass string) bool
 
-func (b Basic) parseBasicAuth(auth string) (username, password string, ok bool) {
+func (b *Basic) parseBasicAuth(auth string) (username, password string, ok bool) {
 	const prefix = "Basic "
 	if len(auth) < len(prefix) || !strings.EqualFold(auth[:len(prefix)], prefix) {
 		return
@@ -30,13 +31,14 @@ func (b Basic) parseBasicAuth(auth string) (username, password string, ok bool) 
 	return cs[:i], cs[i+1:], true
 }
 
-func (b *Basic) SetHeader(header string) {
+func (b *Basic) SetHeader(header string) *Basic {
 	b.header = header
+	return b
 }
 
-func (b Basic) Do() (*Identity, error) {
+func (b *Basic) Do() (*Identity, error) {
 
-	err := errors.New(`Basic realm="Необходимо указать имя пользователя и пароль"`)
+	err := errors.New(`basic realm="Необходимо указать имя пользователя и пароль"`)
 	if b.header == "" {
 		return nil, err
 	}
@@ -49,12 +51,13 @@ func (b Basic) Do() (*Identity, error) {
 	identity := &Identity{
 		Username: username,
 		AuthName: BasicAuth,
+		Datetime: time.Now(),
 	}
 
 	return identity, nil
 }
 
-func (b Basic) Definition() Definition {
+func (b *Basic) Definition() Definition {
 	return Definition{
 		Type:        TypeBasic,
 		Description: "Basic Authorization",

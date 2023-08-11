@@ -29,7 +29,7 @@ func TestAuthorization_Get(t *testing.T) {
 	}
 
 	def := a.Get(BasicAuth).Definition()
-	fmt.Printf("%v+", def)
+	fmt.Printf("%v+\n", def)
 	def = a.Get(ApiKeyAuth).Definition()
-	fmt.Printf("%v+", def)
+	fmt.Printf("%v+\n", def)
 }

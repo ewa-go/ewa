@@ -3,6 +3,7 @@ package security
 import (
 	"errors"
 	"fmt"
+	"time"
 )
 
 type ApiKey struct {
@@ -19,12 +20,11 @@ const (
 	ParamHeader = "header"
 )
 
-func (a *ApiKey) SetValue(value string) *ApiKey {
+func (a *ApiKey) SetValue(value string) {
 	a.value = value
-	return a
 }
 
-func (a ApiKey) Do() (identity *Identity, err error) {
+func (a *ApiKey) Do() (identity *Identity, err error) {
 
 	if a.value == "" {
 		return nil, errors.New(fmt.Sprintf("Not found token by [%s]", a.Param))
@@ -38,12 +38,13 @@ func (a ApiKey) Do() (identity *Identity, err error) {
 	identity = &Identity{
 		Username: username,
 		AuthName: ApiKeyAuth,
+		Datetime: time.Now(),
 	}
 
 	return
 }
 
-func (a ApiKey) Definition() Definition {
+func (a *ApiKey) Definition() Definition {
 	return Definition{
 		Type:        TypeApiKey,
 		In:          a.Param,

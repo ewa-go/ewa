@@ -219,45 +219,44 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 		)
 		for _, sec := range r.Security {
 			for key := range sec {
+				var values []interface{}
 				switch key {
 				case security.BasicAuth:
-					if config.Authorization.Basic != nil {
-						config.Authorization.Basic.SetHeader(c.Get(consts.HeaderAuthorization))
-						c.Identity, err = config.Authorization.Basic.Do()
-						if err != nil {
-							c.Set(consts.HeaderWWWAuthenticate, err.Error())
-						}
-					}
-				case security.DigestAuth:
-					if config.Authorization.Digest != nil {
-						c.Identity, err = config.Authorization.Digest.Do()
-					}
+					values = append(values, c.Get(consts.HeaderAuthorization))
 				case security.ApiKeyAuth:
 					if config.Authorization.ApiKey != nil {
-						a := config.Authorization.ApiKey
-						var value string
-						switch a.Param {
+						apiKey := config.Authorization.ApiKey
+						switch apiKey.Param {
 						// Если не нашли в заголовке, то ищем в переменных запроса адресной строки
 						case security.ParamQuery:
-							value = c.QueryParam(a.KeyName)
-							break
+							values = append(values, c.QueryParam(apiKey.KeyName))
 						// Пытаемся получить из заголовка токен
 						case security.ParamHeader:
-							value = c.Get(a.KeyName)
-							break
+							values = append(values, c.Get(apiKey.KeyName))
 						}
-						c.Identity, err = a.SetValue(value).Do()
 					}
 				}
-				if err == nil {
-					isSecurity = true
+				a := config.Authorization.Get(key, values...)
+				if a != nil {
+					// Получаем пользователя, если нет ошибок, то выходим
+					c.Identity, err = a.Do()
+					if err != nil {
+						switch key {
+						case security.BasicAuth:
+							c.Set(consts.HeaderWWWAuthenticate, err.Error())
+						}
+						continue
+					}
+					break
 				}
 			}
 		}
 
+		// Если нет ошибок с авторизацией, то пропускаем запрос
+		isSecurity = err == nil
+
 		// Проверка на сессию
 		if config.Session != nil && r.session != None {
-
 			keyName := config.Session.KeyName
 			value := c.Cookies(keyName)
 			if len(value) > 0 {
