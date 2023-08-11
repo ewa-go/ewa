@@ -15,10 +15,6 @@ type JWTBearer struct {
 
 type JWTBearerAuthHandler func(token string) (username string, err error)
 
-func (*JWTBearer) SetValues(v Values) {
-
-}
-
 func (a *JWTBearer) Do() (identity *Identity, err error) {
 
 	if a.value == "" {

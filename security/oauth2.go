@@ -3,10 +3,6 @@ package security
 type OAuth2 struct {
 }
 
-func (OAuth2) SetValues(v Values) {
-
-}
-
 func (OAuth2) Do() (identity *Identity, err error) {
 	return
 }
