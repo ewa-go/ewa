@@ -218,6 +218,9 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 			isSecurity bool
 		)
 		for _, sec := range r.Security {
+			if isSecurity {
+				break
+			}
 			for key := range sec {
 				var values []interface{}
 				switch key {
@@ -236,10 +239,10 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 						}
 					}
 				}
-				a := config.Authorization.Get(key, values...)
-				if a != nil {
+				auth := config.Authorization.Get(key, values...)
+				if auth != nil {
 					// Получаем пользователя, если нет ошибок, то выходим
-					c.Identity, err = a.Do()
+					c.Identity, err = auth.Do()
 					if err != nil {
 						switch key {
 						case security.BasicAuth:
@@ -247,13 +250,12 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 						}
 						continue
 					}
+					// Если нет ошибок с авторизацией, то пропускаем запрос
+					isSecurity = true
 					break
 				}
 			}
 		}
-
-		// Если нет ошибок с авторизацией, то пропускаем запрос
-		isSecurity = err == nil
 
 		// Проверка на сессию
 		if config.Session != nil && r.session != None {
