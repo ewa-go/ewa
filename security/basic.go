@@ -12,7 +12,7 @@ type Basic struct {
 	Handler BasicAuthHandler
 }
 
-type BasicAuthHandler func(user string, pass string) bool
+type BasicAuthHandler func(user string, pass string) (bool, error)
 
 func (b *Basic) parseBasicAuth(auth string) (username, password string, ok bool) {
 	const prefix = "Basic "
@@ -44,7 +44,12 @@ func (b *Basic) Do() (*Identity, error) {
 	}
 
 	username, password, ok := b.parseBasicAuth(b.header)
-	if !ok || !b.Handler(username, password) {
+	if !ok {
+		return nil, err
+	}
+
+	ok, err = b.Handler(username, password)
+	if err != nil || !ok {
 		return nil, err
 	}
 

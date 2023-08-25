@@ -13,9 +13,9 @@ func TestAuthorization_Get(t *testing.T) {
 			return true
 		},
 		Basic: &Basic{
-			Handler: func(user string, pass string) bool {
+			Handler: func(user string, pass string) (bool, error) {
 				fmt.Println(user, pass)
-				return true
+				return true, nil
 			},
 		},
 		ApiKey: &ApiKey{
