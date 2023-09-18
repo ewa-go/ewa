@@ -3,6 +3,7 @@ package main
 import (
 	"fiber/controllers/api"
 	"fiber/controllers/web"
+
 	"fmt"
 	"github.com/ewa-go/ewa"
 	f "github.com/ewa-go/ewa-fiber"
