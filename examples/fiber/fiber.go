@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/ewa-go/ewa"
 	f "github.com/ewa-go/ewa-fiber"
+	"github.com/ewa-go/ewa/consts"
 	"github.com/ewa-go/ewa/security"
 	"github.com/ewa-go/ewa/session"
 	"github.com/gofiber/fiber/v2"
@@ -23,7 +24,20 @@ func main() {
 			SessionHandler:       sessionHandler,
 			DeleteSessionHandler: deleteSessionHandler,
 		},
-		Permission: nil,
+		Permission: &ewa.Permission{
+			AllRoutes: true,
+			Handler: func(c *ewa.Context, identity *security.Identity, method, path string) bool {
+				if identity != nil && identity.Username == "user" {
+					switch method {
+					// ReadOnly
+					case consts.MethodPost, consts.MethodPut, consts.MethodDelete:
+						return false
+					}
+				}
+				return true
+			},
+			NotPermissionHandler: nil,
+		},
 		Static: &ewa.Static{
 			Prefix: "/",
 			Root:   "./views",

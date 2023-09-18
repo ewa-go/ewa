@@ -25,7 +25,11 @@ func (User) Get(route *ewa.Route) {
 }
 
 func (User) Post(route *ewa.Route) {
-	route.EmptyHandler()
+	route.SetSecurity(security.BasicAuth).Handler = func(c *ewa.Context) error {
+		return c.JSON(200, ewa.Map{
+			"ok": true,
+		})
+	}
 }
 
 func (User) Put(route *ewa.Route) {

@@ -5,7 +5,7 @@ go 1.21
 toolchain go1.21.1
 
 require (
-	github.com/ewa-go/ewa v0.0.22
+	github.com/ewa-go/ewa v0.0.23
 	github.com/ewa-go/ewa-fiber v0.0.15
 	github.com/gofiber/fiber/v2 v2.49.2
 )
