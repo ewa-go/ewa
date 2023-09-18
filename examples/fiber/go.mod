@@ -5,7 +5,7 @@ go 1.21
 toolchain go1.21.1
 
 require (
-	github.com/ewa-go/ewa v0.0.23
+	github.com/ewa-go/ewa v0.0.24
 	github.com/ewa-go/ewa-fiber v0.0.15
 	github.com/gofiber/fiber/v2 v2.49.2
 )
@@ -33,7 +33,7 @@ require (
 	github.com/gofiber/utils v1.1.0 // indirect
 	github.com/google/uuid v1.3.1 // indirect
 	github.com/iancoleman/orderedmap v0.3.0 // indirect
-	github.com/klauspost/compress v1.16.7 // indirect
+	github.com/klauspost/compress v1.17.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect

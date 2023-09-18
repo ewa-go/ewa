@@ -29,6 +29,8 @@ func main() {
 			AllRoutes: true,
 			Handler: func(c *ewa.Context, identity *security.Identity, method, path string) bool {
 				if identity != nil && identity.Username == "user" {
+					// Set admin variable
+					identity.SetVariable("is_admin", false)
 					switch method {
 					// ReadOnly
 					case consts.MethodPost, consts.MethodPut, consts.MethodDelete:

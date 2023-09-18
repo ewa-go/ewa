@@ -17,9 +17,16 @@ func (User) Get(route *ewa.Route) {
 	route.Handler = func(c *ewa.Context) error {
 		req := c.HttpRequest()
 		fmt.Println(req)
+		var isAdmin bool
+		if c.Identity != nil {
+			if value, ok := c.Identity.Variables["is_admin"]; ok {
+				isAdmin = value.(bool)
+			}
+		}
 		return c.JSON(200, ewa.Map{
-			"id":   1,
-			"name": "User1",
+			"id":       1,
+			"name":     "User1",
+			"is_admin": isAdmin,
 		})
 	}
 }

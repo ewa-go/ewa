@@ -21,9 +21,18 @@ func TestIdentity_SetVariable(t *testing.T) {
 	fmt.Println(i.String())
 }
 
-func TestIdentity_SetVariables(t *testing.T) {
+func TestIdentity_GetVariable(t *testing.T) {
 	i := newIdentity()
+	i.Variables = make(map[string]interface{})
+	i.Variables["is_admin"] = true
+	fmt.Println(i.GetVariable("is_admin"))
+}
+
+func TestIdentity_DeleteVariable(t *testing.T) {
+	i := newIdentity()
+	i.Variables = make(map[string]interface{})
+	i.Variables["is_admin"] = true
 	fmt.Println(i.String())
-	i.SetVariables(map[string]interface{}{"is_admin": false})
+	i.DeleteVariable("is_admin")
 	fmt.Println(i.String())
 }
