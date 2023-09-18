@@ -189,8 +189,8 @@ func (r *Route) Session(t ...SessionTurn) *Route {
 }
 
 // Permission ставим флаг для проверки маршрута на право доступа
-func (r *Route) Permission() *Route {
-	r.isPermission = true
+func (r *Route) Permission(b bool) *Route {
+	r.isPermission = b
 	return r
 }
 
@@ -210,7 +210,6 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 
 	return func(c *Context) error {
 
-		//c.View = view
 		c.Swagger = *swagger
 
 		var (
@@ -310,13 +309,11 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 
 		// Доступ к маршрутам
 		if r.isPermission && config.Permission != nil {
-			if c.Identity != nil {
-				if !config.Permission.check(c.Identity.Username, c.Path()) {
-					if config.Permission.NotPermissionHandler != nil {
-						return config.Permission.NotPermissionHandler(c, consts.StatusForbidden, "Forbidden")
-					}
-					return c.SendStatus(consts.StatusForbidden)
+			if config.Permission.Handler != nil && !config.Permission.Handler(c, c.Identity, c.Method(), c.Path()) {
+				if config.Permission.NotPermissionHandler != nil {
+					return config.Permission.NotPermissionHandler(c, consts.StatusForbidden, "Forbidden")
 				}
+				return c.SendStatus(consts.StatusForbidden)
 			}
 		}
 

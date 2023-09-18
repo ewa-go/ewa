@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"github.com/ewa-go/ewa"
 	"github.com/ewa-go/ewa/security"
 )
@@ -14,6 +15,8 @@ func (User) Get(route *ewa.Route) {
 		).
 		SetEmptyParam("users", "Все пользователи")
 	route.Handler = func(c *ewa.Context) error {
+		req := c.HttpRequest()
+		fmt.Println(req)
 		return c.JSON(200, ewa.Map{
 			"id":   1,
 			"name": "User1",

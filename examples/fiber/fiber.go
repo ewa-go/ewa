@@ -41,11 +41,11 @@ func main() {
 				return true
 			},
 			Basic: &security.Basic{
-				Handler: func(user string, pass string) bool {
+				Handler: func(user string, pass string) (bool, error) {
 					if user == "user" && pass == "Qq123456" {
-						return true
+						return true, nil
 					}
-					return false
+					return false, nil
 				},
 			},
 			Digest: nil,

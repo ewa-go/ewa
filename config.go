@@ -38,9 +38,16 @@ type Secure struct {
 	ClientCert string
 }
 
+// Permission структура описывает разрешения на запрос
+type Permission struct {
+	AllRoutes            bool
+	Handler              PermissionHandler
+	NotPermissionHandler ErrorHandler
+}
+
 type Handler func(c *Context) error
 type ContextHandler func(handler Handler) interface{}
-type PermissionHandler func(username string, path string) bool
+type PermissionHandler func(c *Context, identity *security.Identity, method, path string) bool
 type ErrorHandler func(c *Context, statusCode int, err interface{}) error
 
 // Get Вернуть сертификат и ключ с путями
