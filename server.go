@@ -292,7 +292,7 @@ func (s *Server) add(method string, c *Controller, route *Route) error {
 	}
 
 	params := route.Operation.getPathParams()
-	if route.emptyPathParam != nil && len(params) > 0 /*&& pathParams != ""*/ {
+	if route.emptyPathParam != nil || len(params) == 0 {
 		params = append(params, "")
 	}
 
