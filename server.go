@@ -291,9 +291,9 @@ func (s *Server) add(method string, c *Controller, route *Route) error {
 		return nil
 	}
 
-	pathParams := route.Operation.getPathParams()
-	params := []string{pathParams}
-	if route.emptyPathParam != nil && pathParams != "" {
+	params := route.Operation.getPathParams()
+	//params := []string{pathParams}
+	if route.emptyPathParam != nil /*&& pathParams != ""*/ {
 		params = append(params, "")
 	}
 

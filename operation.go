@@ -104,12 +104,12 @@ func NewSchema(modelName string, isArray bool) *Schema {
 }
 
 // getPathParams Извлекаем пути из параметров
-func (o *Operation) getPathParams() (params string) {
+func (o *Operation) getPathParams() (params []string) {
 	for _, param := range o.Parameters {
 		if param == nil || param.In != InPath {
 			continue
 		}
-		params += param.Path
+		params = append(params, param.Path)
 	}
 	return
 }

@@ -309,12 +309,14 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 
 		// Доступ к маршрутам
 		if r.isPermission && config.Permission != nil {
-			if config.Permission.Handler != nil && !config.Permission.Handler(c, c.Identity, c.Method(), c.Path()) {
+			identity := c.Identity
+			if config.Permission.Handler != nil && !config.Permission.Handler(c, identity, c.Method(), c.Path()) {
 				if config.Permission.NotPermissionHandler != nil {
 					return config.Permission.NotPermissionHandler(c, consts.StatusForbidden, "Forbidden")
 				}
 				return c.SendStatus(consts.StatusForbidden)
 			}
+			c.Identity = identity
 		}
 
 		// Обычный маршрут

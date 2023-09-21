@@ -1,6 +1,7 @@
 package ewa
 
 import (
+	"fmt"
 	"reflect"
 	"regexp"
 	"strings"
@@ -299,4 +300,8 @@ func (p *Parameter) SetItems(array string) *Parameter {
 		},
 	}
 	return p
+}
+
+func (p *Parameter) String() string {
+	return fmt.Sprintf("%+v", *p)
 }
