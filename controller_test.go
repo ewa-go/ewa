@@ -8,7 +8,9 @@ import (
 type User struct{}
 
 func (User) Get(route *Route) {
-
+	route.Handler = func(c *Context) error {
+		return nil
+	}
 }
 
 func TestInitialize(t *testing.T) {
@@ -22,7 +24,7 @@ func TestInitialize(t *testing.T) {
 	c.initialize("/api")
 	fmt.Println(c.Name, c.Path, c.Tag.Name)
 
-	hostname := Suffix{
+	hostname := &Suffix{
 		Index: 3,
 		Value: "{hostname}",
 	}
@@ -31,7 +33,7 @@ func TestInitialize(t *testing.T) {
 		Interface: new(User),
 		IsShow:    true,
 		Path:      "/api/storage",
-		Suffix: []Suffix{
+		Suffix: []*Suffix{
 			hostname,
 		},
 	}

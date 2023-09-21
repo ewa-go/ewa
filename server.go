@@ -14,7 +14,7 @@ import (
 
 const (
 	Name    = "EWebApi"
-	Version = "v0.0.23"
+	Version = "v0.0.27"
 )
 
 type Server struct {
@@ -292,8 +292,7 @@ func (s *Server) add(method string, c *Controller, route *Route) error {
 	}
 
 	params := route.Operation.getPathParams()
-	//params := []string{pathParams}
-	if route.emptyPathParam != nil /*&& pathParams != ""*/ {
+	if route.emptyPathParam != nil && len(params) > 0 /*&& pathParams != ""*/ {
 		params = append(params, "")
 	}
 

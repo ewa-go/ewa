@@ -47,7 +47,7 @@ type Controller struct {
 	IsShow    bool
 	Name      string
 	Path      string
-	Suffix    []Suffix
+	Suffix    []*Suffix
 	PathTree  []string
 	FileTree  []string
 	Tag       Tag
@@ -84,7 +84,7 @@ func (c *Controller) SetDescription(desc string) *Controller {
 }
 
 // SetSuffix Устанавливаем суффикс пути контроллера
-func (c *Controller) SetSuffix(suffix ...Suffix) *Controller {
+func (c *Controller) SetSuffix(suffix ...*Suffix) *Controller {
 	c.Suffix = append(c.Suffix, suffix...)
 	return c
 }
@@ -129,11 +129,11 @@ func (c *Controller) initialize(basePath string) {
 	c.FileTree = strings.Split(pkgPath, "/")
 	c.PathTree = c.FileTree
 	// Вставляем суффиксы по индексу пути
-	for _, item := range c.Suffix {
-		if regexp.MustCompile(`{\w+}`).MatchString(item.Value) {
-			item.isParam = true
+	for _, suffix := range c.Suffix {
+		if regexp.MustCompile(`{\w+}`).MatchString(suffix.Value) {
+			suffix.isParam = true
 		}
-		c.PathTree = insert(c.FileTree, item.Index, item.Value)
+		c.PathTree = insert(c.FileTree, suffix.Index, suffix.Value)
 	}
 	pkgPath = strings.Join(c.PathTree, "/")
 
