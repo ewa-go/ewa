@@ -14,12 +14,12 @@ type Basic struct {
 
 type BasicAuthHandler func(user string, pass string) (bool, error)
 
-func (b *Basic) parseBasicAuth(auth string) (username, password string, ok bool) {
+func (b *Basic) parseBasicAuth() (username, password string, ok bool) {
 	const prefix = "Basic "
-	if len(auth) < len(prefix) || !strings.EqualFold(auth[:len(prefix)], prefix) {
+	if len(b.header) < len(prefix) || !strings.EqualFold(b.header[:len(prefix)], prefix) {
 		return
 	}
-	c, err := base64.StdEncoding.DecodeString(auth[len(prefix):])
+	c, err := base64.StdEncoding.DecodeString(b.header[len(prefix):])
 	if err != nil {
 		return
 	}
@@ -43,7 +43,7 @@ func (b *Basic) Do() (*Identity, error) {
 		return nil, err
 	}
 
-	username, password, ok := b.parseBasicAuth(b.header)
+	username, password, ok := b.parseBasicAuth()
 	if !ok {
 		return nil, err
 	}
