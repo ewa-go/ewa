@@ -58,6 +58,7 @@ type IContext interface {
 	Scheme() string
 	MultipartForm() (*multipart.Form, error)
 	IP() string
+	IPs() []string
 	Context() context.Context
 	Ctx() interface{}
 	Method() string
