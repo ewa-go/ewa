@@ -28,6 +28,10 @@ func TestInitialize(t *testing.T) {
 		Index: 3,
 		Value: "{hostname}",
 	}
+	id := &Suffix{
+		Index: 4,
+		Value: "{id}",
+	}
 
 	c = Controller{
 		Interface: new(User),
@@ -35,6 +39,7 @@ func TestInitialize(t *testing.T) {
 		Path:      "/api/storage",
 		Suffix: []*Suffix{
 			hostname,
+			id,
 		},
 	}
 

@@ -49,10 +49,10 @@ type Controller struct {
 	Path      string
 	Suffix    []*Suffix
 	PathTree  []string
-	FileTree  []string
-	Tag       Tag
-	Models    Models
-	Security  string
+	//FileTree  []string
+	Tag      Tag
+	Models   Models
+	Security string
 }
 
 // SetName Устанавливаем имя контроллера
@@ -126,14 +126,15 @@ func (c *Controller) initialize(basePath string) {
 	}
 
 	// Формирование дерева путей
-	c.FileTree = strings.Split(pkgPath, "/")
-	c.PathTree = c.FileTree
+	//c.FileTree = strings.Split(pkgPath, "/")
+	c.PathTree = strings.Split(pkgPath, "/")
+	//c.PathTree = c.FileTree
 	// Вставляем суффиксы по индексу пути
 	for _, suffix := range c.Suffix {
 		if regexp.MustCompile(`{\w+}`).MatchString(suffix.Value) {
 			suffix.isParam = true
 		}
-		c.PathTree = insert(c.FileTree, suffix.Index, suffix.Value)
+		c.PathTree = insert(c.PathTree, suffix.Index, suffix.Value)
 	}
 	pkgPath = strings.Join(c.PathTree, "/")
 
