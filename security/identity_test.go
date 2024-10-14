@@ -14,6 +14,15 @@ func newIdentity() *Identity {
 	}
 }
 
+func TestVariables(t *testing.T) {
+	i := newIdentity()
+	i.SetVariable("is_admin", true)
+	i.SetVariable("name", "user")
+	fmt.Println(i.String())
+	i.DeleteVariable("is_admin")
+	fmt.Println(i.String())
+}
+
 func TestIdentity_SetVariable(t *testing.T) {
 	i := newIdentity()
 	fmt.Println(i.String())

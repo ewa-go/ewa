@@ -1,7 +1,11 @@
 package security
 
+import "fmt"
+
 type Digest struct {
 	Handler DigestAuthHandler
+
+	header string
 }
 
 type Advanced struct {
@@ -25,10 +29,22 @@ const (
 	Sha512256SessAlgorithm = "SHA-512-256-sess"
 )
 
-func (Digest) Do() (identity *Identity, err error) {
+func (d *Digest) Name() string {
+	return DigestAuth
+}
+
+func (d *Digest) Do() (identity *Identity, err error) {
 	return
 }
 
-func (Digest) Definition() Definition {
-	return Definition{}
+func (d *Digest) Definition() Definition {
+	return Definition{
+		Type:        TypeDigest,
+		Description: fmt.Sprintf("Digest Authorization"),
+	}
+}
+
+func (d *Digest) SetHeader(header string) *Digest {
+	d.header = header
+	return d
 }

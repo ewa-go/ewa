@@ -1,29 +1,35 @@
 package security
 
-import (
-	"errors"
-	"fmt"
-	"time"
-)
-
-type JWTBearer struct {
-	KeyName string
+/*type JWTBearer struct {
+	payload map[string]string
 	Param   string
 	value   string
 	Handler JWTBearerAuthHandler
 }
 
-type JWTBearerAuthHandler func(token string) (username string, err error)
+type JWTBearerAuthHandler func(jot *jwt.JWT) (username string, err error)
 
-func (a *JWTBearer) Do() (identity *Identity, err error) {
+func (j *JWTBearer) Name() string {
+	return JWTBearerAuth
+}
 
-	if a.value == "" {
-		return nil, errors.New(fmt.Sprintf("Not found token by [%s]", a.Param))
+func (j *JWTBearer) Do() (identity *Identity, err error) {
+
+	if j.value == "" {
+		return nil, errors.New(fmt.Sprintf("Not found token by [%s]", j.Param))
+	}
+
+	jot, ok := j.parse()
+	if !ok {
+		return nil, errors.New("invalid token")
 	}
 
 	username := ""
-	if a.Handler != nil {
-		username, err = a.Handler(a.value)
+	if j.Handler != nil {
+		username, err = j.Handler(jot)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	identity = &Identity{
@@ -35,11 +41,27 @@ func (a *JWTBearer) Do() (identity *Identity, err error) {
 	return
 }
 
-func (a *JWTBearer) Definition() Definition {
+func (j *JWTBearer) Definition() Definition {
 	return Definition{
 		Type:        TypeJWTBearer,
-		In:          a.Param,
-		Name:        a.KeyName,
-		Description: fmt.Sprintf("JWTBearer Authorization. Set name: %s, in: %s", a.KeyName, a.Param),
+		In:          j.Param,
+		Description: fmt.Sprintf("JWTBearer Authorization"),
 	}
 }
+
+func (j *JWTBearer) SetValue(value string) *JWTBearer {
+	j.value = value
+	return j
+}
+
+func (j *JWTBearer) parse() (*jwt.JWT, bool) {
+	const prefix = "Bearer "
+	if j.value[:len(prefix)] == prefix {
+		jot, err := jwt.FromString(j.value[len(prefix):])
+		if err != nil {
+			return nil, false
+		}
+		return jot, true
+	}
+	return nil, false
+}*/

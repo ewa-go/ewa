@@ -14,7 +14,7 @@ type Basic struct {
 
 type BasicAuthHandler func(user string, pass string) (bool, error)
 
-func (b *Basic) parseBasicAuth() (username, password string, ok bool) {
+func (b *Basic) parse() (username, password string, ok bool) {
 	const prefix = "Basic "
 	if len(b.header) < len(prefix) || !strings.EqualFold(b.header[:len(prefix)], prefix) {
 		return
@@ -36,6 +36,10 @@ func (b *Basic) SetHeader(header string) *Basic {
 	return b
 }
 
+func (b *Basic) Name() string {
+	return BasicAuth
+}
+
 func (b *Basic) Do() (*Identity, error) {
 
 	err := errors.New(`basic realm="Необходимо указать имя пользователя и пароль"`)
@@ -43,7 +47,7 @@ func (b *Basic) Do() (*Identity, error) {
 		return nil, err
 	}
 
-	username, password, ok := b.parseBasicAuth()
+	username, password, ok := b.parse()
 	if !ok {
 		return nil, err
 	}

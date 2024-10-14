@@ -220,11 +220,21 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 			if isSecurity {
 				break
 			}
+
+			auth := config.Authorization.ByHeader(c.Get(consts.HeaderAuthorization))
+			if auth != nil {
+				if _, ok := sec[auth.Name()]; ok {
+					goto IDENT
+				}
+			}
+			// Поиск данных по указанным механизмам авторизации
 			for key := range sec {
 				var values []interface{}
 				switch key {
-				case security.BasicAuth:
-					values = append(values, c.Get(consts.HeaderAuthorization))
+				case security.BearerTokenAuth:
+					if config.Authorization.BearerToken != nil && config.Authorization.BearerToken.Param == security.ParamQuery {
+						values = append(values, c.QueryParam("token"))
+					}
 				case security.ApiKeyAuth:
 					if config.Authorization.ApiKey != nil {
 						apiKey := config.Authorization.ApiKey
@@ -237,22 +247,36 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 							values = append(values, c.Get(apiKey.KeyName))
 						}
 					}
-				}
-				auth := config.Authorization.Get(key, values...)
-				if auth != nil {
-					// Получаем пользователя, если нет ошибок, то выходим
-					c.Identity, err = auth.Do()
-					if err != nil {
-						switch key {
-						case security.BasicAuth:
-							c.Set(consts.HeaderWWWAuthenticate, err.Error())
+				case security.OAuth2Auth:
+					if config.Authorization.OAuth2 != nil {
+						oauth2 := config.Authorization.OAuth2
+						switch oauth2.Param {
+						// Если не нашли в заголовке, то ищем в переменных запроса адресной строки
+						case security.ParamQuery:
+							values = append(values, c.QueryParam("access_token"))
+						// Пытаемся получить из заголовка токен
+						case security.ParamHeader:
+							values = append(values, c.Get(consts.HeaderAuthorization))
 						}
-						continue
 					}
-					// Если нет ошибок с авторизацией, то пропускаем запрос
-					isSecurity = true
-					break
 				}
+				auth = config.Authorization.Get(key, values...)
+			}
+		IDENT:
+			if auth != nil {
+
+				// Получаем пользователя, если нет ошибок, то выходим
+				c.Identity, err = auth.Do()
+				if err != nil {
+					switch auth.Name() {
+					case security.BasicAuth:
+						c.Set(consts.HeaderWWWAuthenticate, err.Error())
+					}
+					continue
+				}
+				// Если нет ошибок с авторизацией, то пропускаем запрос
+				isSecurity = true
+				continue
 			}
 		}
 

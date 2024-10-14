@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	github.com/ewa-go/jsonschema v0.5.0
+	github.com/gbrlsnchs/jwt v1.1.0
 	github.com/google/uuid v1.3.1
 )
 

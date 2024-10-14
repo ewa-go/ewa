@@ -15,13 +15,13 @@ type ApiKey struct {
 
 type ApiKeyAuthHandler func(token string) (username string, err error)
 
-const (
-	ParamQuery  = "query"
-	ParamHeader = "header"
-)
-
-func (a *ApiKey) SetValue(value string) {
+func (a *ApiKey) SetValue(value string) *ApiKey {
 	a.value = value
+	return a
+}
+
+func (a *ApiKey) Name() string {
+	return ApiKeyAuth
 }
 
 func (a *ApiKey) Do() (identity *Identity, err error) {
