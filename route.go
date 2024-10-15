@@ -1,6 +1,7 @@
 package ewa
 
 import (
+	"errors"
 	"github.com/ewa-go/ewa/consts"
 	"github.com/ewa-go/ewa/security"
 	"net/http"
@@ -208,76 +209,57 @@ func (r *Route) SetHandler(handler Handler) *Route {
 // getHandler возвращаем обработчик основанный на параметрах конфигурации маршрута
 func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 
-	return func(c *Context) error {
+	return func(c *Context) (err error) {
 
 		c.Swagger = *swagger
 
-		var (
-			err        error
-			isSecurity bool
-		)
+		auth := config.Authorization.ByHeader(c.Get(consts.HeaderAuthorization))
 		for _, sec := range r.Security {
-			if isSecurity {
-				break
-			}
-
-			auth := config.Authorization.ByHeader(c.Get(consts.HeaderAuthorization))
+			// Пытаемся найти авторизацию среди установок
 			if auth != nil {
 				if _, ok := sec[auth.Name()]; ok {
-					goto IDENT
+					break
 				}
 			}
-			// Поиск данных по указанным механизмам авторизации
-			for key := range sec {
-				var values []interface{}
-				switch key {
-				case security.BearerTokenAuth:
-					if config.Authorization.BearerToken != nil && config.Authorization.BearerToken.Param == security.ParamQuery {
-						values = append(values, c.QueryParam("token"))
+			// BearerToken получение из query параметра
+			if _, ok := sec[security.BearerTokenAuth]; ok {
+				if config.Authorization.BearerToken != nil && config.Authorization.BearerToken.Param == security.ParamQuery {
+					auth = config.Authorization.Get(security.BearerTokenAuth, c.QueryParam("token"))
+					break
+				}
+			}
+			// ApiKey получение токена
+			if _, ok := sec[security.ApiKeyAuth]; ok {
+				if config.Authorization.ApiKey != nil {
+					var value string
+					apiKey := config.Authorization.ApiKey
+					switch apiKey.Param {
+					// Если не нашли в заголовке, то ищем в переменных запроса адресной строки
+					case security.ParamQuery:
+						value = c.QueryParam(apiKey.KeyName)
+					// Пытаемся получить из заголовка токен
+					case security.ParamHeader:
+						value = c.Get(apiKey.KeyName)
 					}
-				case security.ApiKeyAuth:
-					if config.Authorization.ApiKey != nil {
-						apiKey := config.Authorization.ApiKey
-						switch apiKey.Param {
-						// Если не нашли в заголовке, то ищем в переменных запроса адресной строки
-						case security.ParamQuery:
-							values = append(values, c.QueryParam(apiKey.KeyName))
-						// Пытаемся получить из заголовка токен
-						case security.ParamHeader:
-							values = append(values, c.Get(apiKey.KeyName))
-						}
-					}
-				case security.OAuth2Auth:
-					if config.Authorization.OAuth2 != nil {
-						oauth2 := config.Authorization.OAuth2
-						switch oauth2.Param {
-						// Если не нашли в заголовке, то ищем в переменных запроса адресной строки
-						case security.ParamQuery:
-							values = append(values, c.QueryParam("access_token"))
-						// Пытаемся получить из заголовка токен
-						case security.ParamHeader:
-							values = append(values, c.Get(consts.HeaderAuthorization))
-						}
+					if len(value) > 0 {
+						auth = config.Authorization.Get(security.ApiKeyAuth, value)
+						break
 					}
 				}
-				auth = config.Authorization.Get(key, values...)
 			}
-		IDENT:
-			if auth != nil {
+		}
 
-				// Получаем пользователя, если нет ошибок, то выходим
-				c.Identity, err = auth.Do()
-				if err != nil {
-					switch auth.Name() {
-					case security.BasicAuth:
-						c.Set(consts.HeaderWWWAuthenticate, err.Error())
-					}
-					continue
+		if auth != nil {
+			// Получаем пользователя, если нет ошибок, то выходим
+			c.Identity, err = auth.Do()
+			if err != nil {
+				switch auth.Name() {
+				case security.BasicAuth:
+					c.Set(consts.HeaderWWWAuthenticate, err.Error())
 				}
-				// Если нет ошибок с авторизацией, то пропускаем запрос
-				isSecurity = true
-				continue
 			}
+		} else if len(r.Security) > 0 {
+			err = errors.New("unauthorized")
 		}
 
 		// Проверка на сессию
@@ -295,9 +277,6 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 
 			switch r.session {
 			case Is:
-				if isSecurity {
-					break
-				}
 				if c.Session == nil {
 					return c.Redirect(config.Session.RedirectPath, config.Session.RedirectStatus)
 				}
@@ -318,8 +297,8 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 					c.Session = nil
 				}
 				if ok {
+					return c.Redirect(config.Session.RedirectPath, config.Session.RedirectStatus)
 				}
-				return c.Redirect(config.Session.RedirectPath, config.Session.RedirectStatus)
 			}
 		}
 

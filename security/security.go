@@ -99,6 +99,9 @@ func (a Authorization) Get(auth string, values ...interface{}) IAuthorization {
 
 func (a Authorization) ByHeader(header string) IAuthorization {
 
+	if len(header) == 0 {
+		return nil
+	}
 	index := strings.Index(header, " ")
 	// Проверка заголовка Authorization
 	switch header[:index] {
