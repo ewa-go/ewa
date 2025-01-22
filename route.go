@@ -213,7 +213,10 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 
 		c.Swagger = *swagger
 
-		auth := config.Authorization.ByHeader(c.Get(consts.HeaderAuthorization))
+		var auth security.IAuthorization
+		if len(r.Security) > 0 {
+			auth = config.Authorization.ByHeader(c.Get(consts.HeaderAuthorization))
+		}
 		for _, sec := range r.Security {
 			// Пытаемся найти авторизацию среди установок
 			if auth != nil {
