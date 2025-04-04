@@ -305,7 +305,7 @@ func (s *Server) add(method string, c *Controller, route *Route) error {
 
 	// Добавляем в swagger параметр указанный в суффиксе
 	for _, suffix := range c.Suffix {
-		if suffix.isParam {
+		if !suffix.isParam {
 			continue
 		}
 		route.Operation.Parameters = append(route.Operation.Parameters, NewPathParam(suffix.Value, suffix.Description))
@@ -315,7 +315,10 @@ func (s *Server) add(method string, c *Controller, route *Route) error {
 	route.Operation.addTag(c.Tag.Name)
 
 	// Получаем handler маршрута
-	h := s.Config.ContextHandler(route.getHandler(s.Config, s.Swagger))
+	var h interface{}
+	if s.Config.ContextHandler != nil {
+		h = s.Config.ContextHandler(route.getHandler(s.Config, s.Swagger))
+	}
 
 	// Перебираем параметры адресной строки
 	for _, param := range params {

@@ -26,6 +26,22 @@ func marshal(v interface{}) string {
 	return string(data)
 }
 
+type User struct {
+	Login string `json:"login"`
+	m     map[string]interface{}
+}
+
+func (u *User) Username() string {
+	return u.Login
+}
+
+func (u *User) Get(name string) any {
+	if v, ok := u.m[name]; ok {
+		return v
+	}
+	return nil
+}
+
 func getAuthorization() Authorization {
 	return Authorization{
 		Unauthorized: func(err error) bool {
@@ -36,11 +52,11 @@ func getAuthorization() Authorization {
 		},
 		Basic: &Basic{
 			header: "Basic dXNlcjpRcTEyMzQ1Ng==",
-			Handler: func(user string, pass string) (bool, error) {
+			Handler: func(user string, pass string) error {
 				if user == "user" && pass == "Qq123456" {
-					return true, nil
+					return nil
 				}
-				return false, errors.New("Unauthorized")
+				return errors.New("Unauthorized")
 			},
 		},
 		ApiKey: &ApiKey{
