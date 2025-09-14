@@ -1,36 +1,36 @@
-package session
+package ewa
 
 import (
-	"github.com/ewa-go/ewa/consts"
-	"github.com/ewa-go/ewa/security"
-	"github.com/google/uuid"
 	"time"
+
+	"github.com/ewa-go/ewa/consts"
+	"github.com/google/uuid"
 )
 
-// Config структура, которая описывает сессию
-type Config struct {
+// Session структура, которая описывает сессию
+type Session struct {
 	RedirectPath         string
 	RedirectStatus       int
 	AllRoutes            bool
 	Expires              time.Duration
-	SessionHandler       Handler
+	SessionHandler       SessionHandler
 	DeleteSessionHandler DeleteSessionHandler
 	GenSessionIdHandler  GenSessionIdHandler
 	KeyName              string
 	m                    map[string]string
 }
 
-type Handler func(value string) (user string, err error)
+type SessionHandler func(c *Context, value string) (user string, err error)
 type GenSessionIdHandler func() string
 
 // DeleteSessionHandler Возвращаемый флаг означает переход на страницу входа.
 // True - переходить сразу на страницу входа. False - не переходить
 type DeleteSessionHandler func(value string) bool
 
-func (s *Config) Default() {
+func (s *Session) Default() {
 
 	// Хэш с данными
-	s.m = map[string]string{}
+	s.m = make(map[string]string)
 	// Имя ключа сессии
 	if s.KeyName == "" {
 		s.KeyName = "session_id"
@@ -47,12 +47,6 @@ func (s *Config) Default() {
 	if s.RedirectStatus == 0 {
 		s.RedirectStatus = consts.StatusFound
 	}
-	// Обработчик сессии
-	if s.SessionHandler == nil {
-		s.SessionHandler = func(value string) (user string, err error) {
-			return s.get(value), nil
-		}
-	}
 	// Обработчик генерации SessionId
 	if s.GenSessionIdHandler == nil {
 		s.GenSessionIdHandler = func() string {
@@ -62,12 +56,12 @@ func (s *Config) Default() {
 }
 
 // Добавить запись в хэш сессий
-func (s *Config) add(id string, user string) {
+func (s *Session) add(id string, user string) {
 	s.m[id] = user
 }
 
 // Вернуть сессию из хэша
-func (s *Config) get(id string) string {
+func (s *Session) get(id string) string {
 	if value, ok := s.m[id]; ok {
 		return value
 	}
@@ -75,18 +69,18 @@ func (s *Config) get(id string) string {
 }
 
 // Удалить из хэша сессию
-func (s *Config) delete(id string) {
+func (s *Session) delete(id string) {
 	delete(s.m, id)
 }
 
 // Check Проверяем куки и извлекаем по ключу id по которому в бд/файле/памяти находим запись
-func (s *Config) Check(value string) (*security.Identity, error) {
+func (s *Session) Check(c *Context, value string) (*Identity, error) {
 
-	user, err := s.SessionHandler(value)
+	user, err := s.SessionHandler(c, value)
 	if err != nil {
 		return nil, err
 	}
-	identity := &security.Identity{
+	identity := &Identity{
 		Username: user,
 		AuthName: "Session",
 	}

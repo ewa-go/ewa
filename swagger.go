@@ -2,9 +2,9 @@ package ewa
 
 import (
 	"encoding/json"
-	"github.com/ewa-go/ewa/security"
-	"github.com/ewa-go/jsonschema"
 	"reflect"
+
+	"github.com/ewa-go/jsonschema"
 )
 
 type Swagger struct {
@@ -65,7 +65,7 @@ type ExternalDocs struct {
 
 type Security []map[string][]string
 
-type SecurityDefinitions map[string]security.Definition
+type SecurityDefinitions map[string]Definition
 
 type Models map[string]interface{}
 
@@ -202,7 +202,7 @@ func (s *Swagger) setSchemaRef(schema *Schema) (exists bool) {
 }
 
 // setSecurityDefinition Устанавливаем необходимые поля для определения авторизации
-func (s *Swagger) setSecurityDefinition(authName string, sec security.Definition) *Swagger {
+func (s *Swagger) setSecurityDefinition(authName string, sec Definition) *Swagger {
 	s.SecurityDefinitions[authName] = sec
 	return s
 }

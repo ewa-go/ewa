@@ -3,13 +3,13 @@ package ewa
 import (
 	"errors"
 	"fmt"
-	"github.com/ewa-go/ewa/consts"
-	"github.com/ewa-go/ewa/security"
-	"github.com/ewa-go/jsonschema"
 	"net"
 	p "path"
 	"regexp"
 	"strings"
+
+	"github.com/ewa-go/ewa/consts"
+	"github.com/ewa-go/jsonschema"
 )
 
 const (
@@ -213,7 +213,7 @@ func (s *Server) newRoute() *Route {
 	if s.Config.Permission != nil {
 		route.isPermission = s.Config.Permission.AllRoutes
 	}
-	if s.Config.Authorization.AllRoutes != security.NoAuth {
+	if s.Config.Authorization.AllRoutes != NoAuth {
 		route.SetSecurity(s.Config.Authorization.AllRoutes)
 	}
 

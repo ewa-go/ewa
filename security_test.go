@@ -1,10 +1,11 @@
-package security
+package ewa
 
 import (
 	"encoding/json"
 	"errors"
-	"github.com/gbrlsnchs/jwt"
 	"testing"
+
+	"github.com/gbrlsnchs/jwt"
 )
 
 func equal(t *testing.T, values ...interface{}) {
@@ -26,16 +27,16 @@ func marshal(v interface{}) string {
 	return string(data)
 }
 
-type User struct {
+type SecurityUser struct {
 	Login string `json:"login"`
 	m     map[string]interface{}
 }
 
-func (u *User) Username() string {
+func (u *SecurityUser) Username() string {
 	return u.Login
 }
 
-func (u *User) Get(name string) any {
+func (u *SecurityUser) Get(name string) any {
 	if v, ok := u.m[name]; ok {
 		return v
 	}
@@ -52,7 +53,7 @@ func getAuthorization() Authorization {
 		},
 		Basic: &Basic{
 			header: "Basic dXNlcjpRcTEyMzQ1Ng==",
-			Handler: func(user string, pass string) error {
+			Handler: func(c *Context, user string, pass string) error {
 				if user == "user" && pass == "Qq123456" {
 					return nil
 				}
@@ -63,7 +64,7 @@ func getAuthorization() Authorization {
 			KeyName: "Token",
 			Param:   ParamHeader,
 			value:   "e6217493-0f45-447c-bd6d-7331544a9e5e",
-			Handler: func(token string) (username string, err error) {
+			Handler: func(c *Context, token string) (username string, err error) {
 				if token != "e6217493-0f45-447c-bd6d-7331544a9e5e" {
 					return "", errors.New("invalid token")
 				}
@@ -72,7 +73,7 @@ func getAuthorization() Authorization {
 		},
 		BearerToken: &BearerToken{
 			value: "Bearer e6217493-0f45-447c-bd6d-7331544a9e5e",
-			Handler: func(token string, isJWT bool) (username string, err error) {
+			Handler: func(c *Context, token string, isJWT bool) (username string, err error) {
 				if !isJWT {
 					if token != "e6217493-0f45-447c-bd6d-7331544a9e5e" {
 						return "", errors.New("invalid token")
@@ -99,7 +100,7 @@ func getAuthorization() Authorization {
 				Type: FlowImplicit,
 				Url:  "https://www.googleapis.com/auth/userinfo.email",
 			},
-			Handler: func(token string) (username string, err error) {
+			Handler: func(c *Context, token string) (username string, err error) {
 				return "oAuth2User", nil
 			},
 			value: "",
@@ -153,7 +154,8 @@ func TestBasicParse(t *testing.T) {
 }
 
 func TestBasicHandler(t *testing.T) {
-	i, err := getAuthorization().Get(BasicAuth).Do()
+	c := new(Context)
+	i, err := Do(getAuthorization().Get(BasicAuth), c)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -181,12 +183,13 @@ func TestBearerTokenParse(t *testing.T) {
 }
 
 func TestBearerTokenHandler(t *testing.T) {
-	i, err := getAuthorization().Get(BearerTokenAuth, "Bearer e6217493-0f45-447c-bd6d-7331544a9e5e").Do()
+	c := new(Context)
+	i, err := Do(getAuthorization().Get(BearerTokenAuth, "Bearer e6217493-0f45-447c-bd6d-7331544a9e5e"), c)
 	if err != nil {
 		t.Fatal(err)
 	}
 	equal(t, i.Username, "bearerUser")
-	i, err = getAuthorization().Get(BearerTokenAuth, "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c").Do()
+	i, err = Do(getAuthorization().Get(BearerTokenAuth, "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"), c)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -195,7 +198,8 @@ func TestBearerTokenHandler(t *testing.T) {
 
 /* ApiKey */
 func TestApiKeyHandler(t *testing.T) {
-	i, err := getAuthorization().Get(ApiKeyAuth).Do()
+	c := new(Context)
+	i, err := Do(getAuthorization().Get(ApiKeyAuth), c)
 	if err != nil {
 		t.Fatal(err)
 	}

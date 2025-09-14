@@ -2,14 +2,13 @@ package ewa
 
 import (
 	"fmt"
-	f "github.com/ewa-go/ewa-fiber"
-	"github.com/ewa-go/ewa/consts"
-	"github.com/ewa-go/ewa/security"
-	"github.com/ewa-go/ewa/session"
-	"github.com/ewa-go/jsonschema"
-	"github.com/gofiber/fiber/v2"
 	"testing"
 	"time"
+
+	f "github.com/ewa-go/ewa-fiber"
+	"github.com/ewa-go/ewa/consts"
+	"github.com/ewa-go/jsonschema"
+	"github.com/gofiber/fiber/v2"
 )
 
 type Test struct{}
@@ -66,7 +65,7 @@ func newServer() *Server {
 
 	cfg := Config{
 		Port: 8877,
-		Session: &session.Config{
+		Session: &Session{
 			RedirectPath:         "/login",
 			Expires:              24 * time.Hour,
 			SessionHandler:       sessionHandler,
@@ -74,7 +73,7 @@ func newServer() *Server {
 		},
 		Permission: &Permission{
 			AllRoutes: true,
-			Handler: func(c *Context, identity *security.Identity, method, path string) bool {
+			Handler: func(c *Context, identity *Identity, method, path string) bool {
 				if identity != nil && identity.Username == "user" {
 					// Set admin variable
 					identity.SetVariable("is_admin", false)
@@ -99,13 +98,13 @@ func newServer() *Server {
 		},
 		ContextHandler: contextHandler,
 		ErrorHandler:   nil,
-		Authorization: security.Authorization{
+		Authorization: Authorization{
 			Unauthorized: func(err error) bool {
 				fmt.Println(err)
 				return true
 			},
-			Basic: &security.Basic{
-				Handler: func(user string, pass string) error {
+			Basic: &Basic{
+				Handler: func(c *Context, user string, pass string) error {
 					if user == "user" && pass == "Qq123456" {
 						return nil
 					}
@@ -137,7 +136,7 @@ func contextHandler(handler Handler) interface{} {
 	}
 }
 
-func sessionHandler(value string) (string, error) {
+func sessionHandler(c *Context, value string) (string, error) {
 	fmt.Println("sessionHandler", value)
 	return "user", nil
 }

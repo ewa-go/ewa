@@ -1,14 +1,12 @@
 module github.com/ewa-go/ewa
 
-go 1.21
-
-toolchain go1.22.5
+go 1.23
 
 require (
 	github.com/ewa-go/ewa-fiber v0.0.16
 	github.com/ewa-go/jsonschema v0.5.0
 	github.com/gbrlsnchs/jwt v1.1.0
-	github.com/gofiber/fiber/v2 v2.52.6
+	github.com/gofiber/fiber/v2 v2.52.9
 	github.com/google/uuid v1.6.0
 )
 

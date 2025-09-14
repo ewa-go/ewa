@@ -1,8 +1,6 @@
 package ewa
 
 import (
-	"github.com/ewa-go/ewa/security"
-	"github.com/ewa-go/ewa/session"
 	"path/filepath"
 )
 
@@ -10,8 +8,8 @@ type Config struct {
 	Port           int
 	Addr           string
 	Secure         *Secure
-	Authorization  security.Authorization
-	Session        *session.Config
+	Authorization  Authorization
+	Session        *Session
 	Permission     *Permission
 	Static         *Static
 	NotFoundPage   string
@@ -47,7 +45,7 @@ type Permission struct {
 
 type Handler func(c *Context) error
 type ContextHandler func(handler Handler) interface{}
-type PermissionHandler func(c *Context, identity *security.Identity, method, path string) bool
+type PermissionHandler func(c *Context, identity *Identity, method, path string) bool
 type ErrorHandler func(c *Context, statusCode int, err interface{}) error
 
 // Get Вернуть сертификат и ключ с путями

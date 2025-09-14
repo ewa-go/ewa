@@ -1,10 +1,9 @@
 package ewa
 
 import (
-	"github.com/ewa-go/ewa/consts"
-	"github.com/ewa-go/ewa/security"
-	"github.com/ewa-go/ewa/session"
 	"testing"
+
+	"github.com/ewa-go/ewa/consts"
 )
 
 func TestRoute_Session(t *testing.T) {
@@ -19,10 +18,10 @@ func TestRoute_Session(t *testing.T) {
 	_ = route.getHandler(Config{
 		Port:          0,
 		Secure:        nil,
-		Authorization: security.Authorization{},
-		Session: &session.Config{
+		Authorization: Authorization{},
+		Session: &Session{
 			RedirectPath: "/login",
-			SessionHandler: func(value string) (user string, err error) {
+			SessionHandler: func(c *Context, value string) (user string, err error) {
 				return "username", nil
 			},
 		},
@@ -48,16 +47,16 @@ func TestRoute_Permission(t *testing.T) {
 	_ = route.getHandler(Config{
 		Port:          0,
 		Secure:        nil,
-		Authorization: security.Authorization{},
-		Session: &session.Config{
+		Authorization: Authorization{},
+		Session: &Session{
 			RedirectPath: "/login",
-			SessionHandler: func(value string) (user string, err error) {
+			SessionHandler: func(c *Context, value string) (user string, err error) {
 				return "username", nil
 			},
 		},
 		Permission: &Permission{
 			AllRoutes: true,
-			Handler: func(c *Context, identity *security.Identity, method, path string) bool {
+			Handler: func(c *Context, identity *Identity, method, path string) bool {
 				if identity != nil && identity.Username == "username" {
 					switch method {
 					// ReadOnly

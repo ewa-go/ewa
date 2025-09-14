@@ -2,11 +2,11 @@ package ewa
 
 import (
 	"errors"
-	"github.com/ewa-go/ewa/consts"
-	"github.com/ewa-go/ewa/security"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/ewa-go/ewa/consts"
 )
 
 type Route struct {
@@ -179,7 +179,7 @@ func (r *Route) SetSecurity(security ...string) *Route {
 	return r
 }
 
-// Session вешаем получение аутентификации сессии,
+// BrowserSession вешаем получение аутентификации сессии,
 func (r *Route) Session(t ...SessionTurn) *Route {
 	if t == nil {
 		r.session = Is
@@ -206,6 +206,10 @@ func (r *Route) SetHandler(handler Handler) *Route {
 	return r
 }
 
+type ISession interface {
+	GetSession(string) ISession
+}
+
 // getHandler возвращаем обработчик основанный на параметрах конфигурации маршрута
 func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 
@@ -213,7 +217,7 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 
 		c.Swagger = *swagger
 
-		var auth security.IAuthorization
+		var auth IAuthorization
 		if len(r.Security) > 0 {
 			auth = config.Authorization.ByHeader(c.Get(consts.HeaderAuthorization))
 		}
@@ -225,27 +229,27 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 				}
 			}
 			// BearerToken получение из query параметра
-			if _, ok := sec[security.BearerTokenAuth]; ok {
-				if config.Authorization.BearerToken != nil && config.Authorization.BearerToken.Param == security.ParamQuery {
-					auth = config.Authorization.Get(security.BearerTokenAuth, c.QueryParam("token"))
+			if _, ok := sec[BearerTokenAuth]; ok {
+				if config.Authorization.BearerToken != nil && config.Authorization.BearerToken.Param == ParamQuery {
+					auth = config.Authorization.Get(BearerTokenAuth, c.QueryParam("token"))
 					break
 				}
 			}
 			// ApiKey получение токена
-			if _, ok := sec[security.ApiKeyAuth]; ok {
+			if _, ok := sec[ApiKeyAuth]; ok {
 				if config.Authorization.ApiKey != nil {
 					var value string
 					apiKey := config.Authorization.ApiKey
 					switch apiKey.Param {
 					// Если не нашли в заголовке, то ищем в переменных запроса адресной строки
-					case security.ParamQuery:
+					case ParamQuery:
 						value = c.QueryParam(apiKey.KeyName)
 					// Пытаемся получить из заголовка токен
-					case security.ParamHeader:
+					case ParamHeader:
 						value = c.Get(apiKey.KeyName)
 					}
 					if len(value) > 0 {
-						auth = config.Authorization.Get(security.ApiKeyAuth, value)
+						auth = config.Authorization.Get(ApiKeyAuth, value)
 						break
 					}
 				}
@@ -254,10 +258,10 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 
 		if auth != nil {
 			// Получаем пользователя, если нет ошибок, то выходим
-			c.Identity, err = auth.Do()
+			c.Identity, err = Do(auth, c)
 			if err != nil {
 				switch auth.Name() {
-				case security.BasicAuth:
+				case BasicAuth:
 					c.Set(consts.HeaderWWWAuthenticate, err.Error())
 				}
 			}
@@ -270,7 +274,7 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 			keyName := config.Session.KeyName
 			value := c.Cookies(keyName)
 			if len(value) > 0 {
-				c.Identity, err = config.Session.Check(value)
+				c.Identity, err = config.Session.Check(c, value)
 				if err != nil {
 					c.ClearCookie(keyName)
 				} else {
@@ -330,8 +334,8 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 	}
 }
 
-func newSession(keyName, value string) *Session {
-	return &Session{
+func newSession(keyName, value string) *BrowserSession {
+	return &BrowserSession{
 		Key:      keyName,
 		Value:    value,
 		LastTime: time.Now(),

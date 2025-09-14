@@ -2,7 +2,6 @@ package ewa
 
 import (
 	"context"
-	"github.com/ewa-go/ewa/security"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -11,14 +10,14 @@ import (
 )
 
 type Context struct {
-	Identity *security.Identity
+	Identity *Identity
 	Swagger  Swagger
-	Session  *Session
+	Session  *BrowserSession
 
 	IContext
 }
 
-type Session struct {
+type BrowserSession struct {
 	Key      string
 	Value    string
 	LastTime time.Time
