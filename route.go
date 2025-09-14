@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/ewa-go/ewa/consts"
+	"github.com/ewa-go/ewa/v1/consts"
 )
 
 type Route struct {
