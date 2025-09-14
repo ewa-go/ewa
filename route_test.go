@@ -3,7 +3,7 @@ package ewa
 import (
 	"testing"
 
-	"github.com/ewa-go/ewa/consts"
+	"github.com/ewa-go/ewa/v1/consts"
 )
 
 func TestRoute_Session(t *testing.T) {
