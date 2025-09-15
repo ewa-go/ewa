@@ -18,7 +18,6 @@ require (
 	github.com/Joker/hpp v1.0.0 // indirect
 	github.com/Joker/jade v1.1.3 // indirect
 	github.com/andybalholm/brotli v1.2.0 // indirect
-	github.com/aymerick/raymond v2.0.2+incompatible // indirect
 	github.com/cbroglie/mustache v1.4.0 // indirect
 	github.com/eknkc/amber v0.0.0-20171010120322-cdade1c07385 // indirect
 	github.com/flosch/pongo2/v4 v4.0.2 // indirect
@@ -42,7 +41,6 @@ require (
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.66.0 // indirect
-	github.com/valyala/tcplisten v1.0.0 // indirect
 	github.com/yosssi/ace v0.0.5 // indirect
 	golang.org/x/net v0.44.0 // indirect
 	golang.org/x/sys v0.36.0 // indirect
