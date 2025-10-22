@@ -6,7 +6,7 @@ import (
 	"time"
 
 	f "github.com/ewa-go/ewa-fiber"
-	"github.com/ewa-go/ewa/v1/consts"
+	"github.com/ewa-go/ewa/v2/consts"
 	"github.com/ewa-go/jsonschema"
 	"github.com/gofiber/fiber/v2"
 )

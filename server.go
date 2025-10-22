@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/ewa-go/ewa/v1/consts"
+	"github.com/ewa-go/ewa/v2/consts"
 	"github.com/ewa-go/jsonschema"
 )
 
