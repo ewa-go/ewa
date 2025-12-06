@@ -1,8 +1,6 @@
-module github.com/ewa-go/ewa/v1
+module github.com/ewa-go/ewa
 
 go 1.24.0
-
-toolchain go1.24.5
 
 require (
 	github.com/ewa-go/ewa-fiber v0.0.16
