@@ -8,13 +8,13 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/ewa-go/ewa/v1/consts"
+	"github.com/ewa-go/ewa/consts"
 	"github.com/ewa-go/jsonschema"
 )
 
 const (
 	Name    = "EWebApi"
-	Version = "v0.0.30"
+	Version = "v0.0.39"
 )
 
 type Server struct {
