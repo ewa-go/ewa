@@ -16,6 +16,12 @@ type Route struct {
 	models         Models
 	Handler        Handler
 	Operation
+
+	Logger IRouteLogger
+}
+
+type IRouteLogger interface {
+	Write(c *Context, i *Identity, s Security)
 }
 
 type EmptyPathParam struct {
@@ -329,8 +335,14 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 			c.Identity = identity
 		}
 
-		// Обычный маршрут
-		return r.Handler(c)
+		// Основной обработчик
+		err = r.Handler(c)
+		// Запись логов
+		if r.Logger != nil {
+			go r.Logger.Write(c, c.Identity, r.Security)
+		}
+
+		return err
 	}
 }
 

@@ -23,6 +23,7 @@ type Server struct {
 	WebServer   IServer
 	Controllers []*Controller
 	Swagger     *Swagger
+	RouteLogger IRouteLogger
 }
 
 type IServer interface {
@@ -83,6 +84,11 @@ func New(server IServer, config Config) *Server {
 	jsonschema.SetReferencePrefix(RefDefinitions)
 
 	return s
+}
+
+// SetRouteLogger Установка логера
+func (s *Server) SetRouteLogger(routeLogger IRouteLogger) {
+	s.RouteLogger = routeLogger
 }
 
 // GetWebServer вернуть интерфейс веб сервера
@@ -209,6 +215,7 @@ func (s *Server) newRoute() *Route {
 			},
 		},
 		models: s.Swagger.models,
+		Logger: s.RouteLogger,
 	}
 	if s.Config.Permission != nil {
 		route.isPermission = s.Config.Permission.AllRoutes
