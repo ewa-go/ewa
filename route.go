@@ -339,7 +339,7 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 		err = r.Handler(c)
 		// Запись логов
 		if r.Logger != nil {
-			go r.Logger.Write(c, c.Identity, r.Security)
+			r.Logger.Write(c, c.Identity, r.Security)
 		}
 
 		return err
