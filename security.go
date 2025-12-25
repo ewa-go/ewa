@@ -107,6 +107,9 @@ func (a Authorization) ByHeader(header string) IAuthorization {
 		return nil
 	}
 	index := strings.Index(header, " ")
+	if index == -1 {
+        return nil
+	}
 	// Проверка заголовка Authorization
 	switch header[:index] {
 	case BasicAuth:
