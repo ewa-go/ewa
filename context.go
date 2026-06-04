@@ -40,6 +40,7 @@ type IContext interface {
 	SendFile(file string) error
 	SaveFile(fileHeader *multipart.FileHeader, path string) error
 	SendStream(code int, contentType string, stream io.Reader) error
+	SendStreamWithSize(code int, contentType string, stream io.Reader, size int) error
 	Cookies(key string) string
 	SetCookie(cookie *http.Cookie)
 	ClearCookie(key string)

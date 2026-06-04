@@ -14,7 +14,7 @@ import (
 
 const (
 	Name    = "EWebApi"
-	Version = "v0.0.39"
+	Version = "v0.0.42"
 )
 
 type Server struct {
@@ -306,6 +306,9 @@ func (s *Server) add(method string, c *Controller, route *Route) error {
 	// Авторизация в swagger
 	for _, sec := range route.Security {
 		for key := range sec {
+			if key == NoAuth {
+				continue
+			}
 			s.Swagger.setSecurityDefinition(key, s.Config.Authorization.Get(key).Definition())
 		}
 	}
