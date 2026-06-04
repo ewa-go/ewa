@@ -185,7 +185,7 @@ func (r *Route) SetSecurity(security ...string) *Route {
 	return r
 }
 
-// BrowserSession вешаем получение аутентификации сессии,
+// Session вешаем получение аутентификации сессии,
 func (r *Route) Session(t ...SessionTurn) *Route {
 	if t == nil {
 		r.session = Is
