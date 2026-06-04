@@ -176,12 +176,19 @@ func (r *Route) SetSummary(s string) *Route {
 
 // SetSecurity указываем метод авторизации
 func (r *Route) SetSecurity(security ...string) *Route {
+	noAuth := false
 	for _, sec := range security {
+		if sec == NoAuth {
+			noAuth = true
+			break
+		}
 		r.Security = append(r.Security, map[string][]string{
 			sec: {},
 		})
 	}
-	//r.auth = auth
+	if noAuth {
+		r.Security = nil
+	}
 	return r
 }
 
