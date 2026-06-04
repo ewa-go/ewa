@@ -14,7 +14,7 @@ import (
 
 const (
 	Name    = "EWebApi"
-	Version = "v0.0.42"
+	Version = "v0.0.43"
 )
 
 type Server struct {
