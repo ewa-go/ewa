@@ -17,6 +17,7 @@ const (
 	OAuth2Auth      = "OAuth2"
 	BearerTokenAuth = "Bearer"
 	JWTBearerAuth   = "JWTBearer"
+	KerberosAuth    = "Negotiate"
 )
 
 const (
@@ -26,6 +27,7 @@ const (
 	TypeOAuth2      = "oauth2"
 	TypeDigest      = "digest"
 	TypeBearerToken = "bearerToken"
+	TypeKerberos    = "kerberos"
 	//TypeJWTBearer   = "jwtBearer"
 )
 
@@ -38,6 +40,7 @@ type Authorization struct {
 	OAuth1       *OAuth1
 	OAuth2       *OAuth2
 	BearerToken  *BearerToken
+	Kerberos     *Kerberos
 	//JWTBearer    *JWTBearer
 }
 
@@ -95,6 +98,11 @@ func (a Authorization) Get(auth string, values ...interface{}) IAuthorization {
 			a.BearerToken.SetValue(values[0].(string))
 		}
 		return a.BearerToken
+	case KerberosAuth:
+		if len(values) > 0 {
+			a.Kerberos.SetHeader(values[0].(string))
+		}
+		return a.Kerberos
 		/*case JWTBearerAuth:
 		return a.JWTBearer*/
 	}
@@ -108,13 +116,17 @@ func (a Authorization) ByHeader(header string) IAuthorization {
 	}
 	index := strings.Index(header, " ")
 	if index == -1 {
-        return nil
+		return nil
 	}
 	// Проверка заголовка Authorization
 	switch header[:index] {
 	case BasicAuth:
 		if a.Basic != nil {
 			return a.Basic.SetHeader(header)
+		}
+	case KerberosAuth:
+		if a.Kerberos != nil {
+			return a.Kerberos.SetHeader(header)
 		}
 	case BearerTokenAuth:
 		// BearerToken
@@ -467,6 +479,68 @@ func (o *OAuth2) parse() (token string, ok bool) {
 		return o.value, true
 	}
 	return
+}
+
+// Kerberos Метод авторизации
+type Kerberos struct {
+	header  string
+	Handler KerberosTokenHandler
+}
+
+type KerberosTokenHandler func(c *Context, token string) (username string, err error)
+
+func (b *Kerberos) Name() string {
+	return KerberosAuth
+}
+
+func (b *Kerberos) Do(c *Context) (identity *Identity, err error) {
+
+	if b.header == "" {
+		return nil, errors.New("header is required")
+	}
+
+	token, ok := b.parse()
+	if !ok {
+		return nil, errors.New("Negotiate")
+	}
+
+	var username string
+	if b.Handler != nil {
+		username, err = b.Handler(c, token)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		return nil, fmt.Errorf("[%s] handler not initialized]", KerberosAuth)
+	}
+
+	identity = &Identity{
+		Username: username,
+		AuthName: KerberosAuth,
+		Datetime: time.Now(),
+	}
+
+	return
+}
+
+func (b *Kerberos) Definition() Definition {
+	return Definition{
+		Type:        TypeKerberos,
+		Description: "Kerberos Authorization",
+	}
+}
+
+func (b *Kerberos) SetHeader(value string) *Kerberos {
+	b.header = value
+	return b
+}
+
+func (b *Kerberos) parse() (token string, ok bool) {
+	const prefix = "Negotiate "
+	if len(b.header) < len(prefix) || !strings.EqualFold(b.header[:len(prefix)], prefix) {
+		return
+	}
+	return b.header[len(prefix):], true
 }
 
 // JWTBearer авторизация

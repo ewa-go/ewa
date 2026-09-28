@@ -276,6 +276,8 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 				switch auth.Name() {
 				case BasicAuth:
 					c.Set(consts.HeaderWWWAuthenticate, err.Error())
+				case KerberosAuth:
+					c.Set(consts.HeaderWWWAuthenticate, err.Error())
 				}
 			}
 		} else if len(r.Security) > 0 {

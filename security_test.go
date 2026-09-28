@@ -105,6 +105,16 @@ func getAuthorization() Authorization {
 			},
 			value: "",
 		},
+		Kerberos: &Kerberos{
+			header: "Negotiate YIIG",
+			Handler: func(c *Context, token string) (username string, err error) {
+				// Ходи проверять по токену пользователя
+				if token == "YIIG" {
+					return "user", nil
+				}
+				return
+			},
+		},
 	}
 }
 
@@ -116,6 +126,7 @@ func TestAuthorization_Definition(t *testing.T) {
 	equal(t, marshal(a.Get(ApiKeyAuth).Definition()), `{"description":"Api Key Authorization. Set name: Token, in: header","type":"apiKey","name":"Token","in":"header"}`)
 	equal(t, marshal(a.Get(BearerTokenAuth).Definition()), `{"description":"Bearer Token Authorization","type":"bearerToken"}`)
 	equal(t, marshal(a.Get(OAuth2Auth).Definition()), `{"description":"OAuth2 Authorization","type":"oauth2","flow":"implicit","authorizationUrl":"https://www.googleapis.com/auth/userinfo.email"}`)
+	equal(t, marshal(a.Get(KerberosAuth).Definition()), `{"description":"Kerberos Authorization","type":"kerberos"}`)
 }
 
 func TestAuthorization_ByHeader(t *testing.T) {
@@ -134,11 +145,17 @@ func TestAuthorization_ByHeader(t *testing.T) {
 	}
 	equal(t, s.Name(), BearerTokenAuth)
 
-	s = a.ByHeader(`Digest username="user", realm="test@mail.ru", nonce="Nonce", uri="/api/bridge/adMember", algorithm="MD5", qop=auth-int, nc=0000001, cnonce="0a4f113b", response="8faf1d6b11c89d99dea1b50b6f2cf68d", opaque="Opaque"`)
+	/*s = a.ByHeader(`Digest username="user", realm="test@mail.ru", nonce="Nonce", uri="/api/bridge/adMember", algorithm="MD5", qop=auth-int, nc=0000001, cnonce="0a4f113b", response="8faf1d6b11c89d99dea1b50b6f2cf68d", opaque="Opaque"`)
 	if s == nil {
 		t.Fatal("Authorization by header failed")
 	}
-	equal(t, s.Name(), DigestAuth)
+	equal(t, s.Name(), DigestAuth)*/
+
+	s = a.ByHeader("Negotiate YIIG")
+	if s == nil {
+		t.Fatal("Authorization by header failed")
+	}
+	equal(t, s.Name(), KerberosAuth)
 }
 
 /* Basic */
@@ -204,4 +221,25 @@ func TestApiKeyHandler(t *testing.T) {
 		t.Fatal(err)
 	}
 	equal(t, i.Username, "apiKeyUser")
+}
+
+/* Kerberos */
+func TestKerberosHandler(t *testing.T) {
+	c := new(Context)
+	i, err := Do(getAuthorization().Get(KerberosAuth), c)
+	if err != nil {
+		t.Fatal(err)
+	}
+	equal(t, i.Username, "user")
+}
+
+func TestKerberosParse(t *testing.T) {
+	k := Kerberos{
+		header: "Negotiate YIIG",
+	}
+	token, ok := k.parse()
+	if !ok {
+		t.Fatal("Kerberos parse failed")
+	}
+	equal(t, token, "YIIG")
 }

@@ -3,10 +3,10 @@ module github.com/ewa-go/ewa
 go 1.25.0
 
 require (
-	github.com/ewa-go/ewa-fiber v0.0.16
+	github.com/ewa-go/ewa-fiber v0.0.17
 	github.com/ewa-go/jsonschema v0.5.0
 	github.com/gbrlsnchs/jwt v1.1.0
-	github.com/gofiber/fiber/v2 v2.52.13
+	github.com/gofiber/fiber/v2 v2.52.15
 	github.com/google/uuid v1.6.0
 )
 
