@@ -28,6 +28,7 @@ func (Test) Get(route *Route) {
 type API struct{}
 
 func (API) Get(route *Route) {
+	route.SetSecurity(KerberosAuth)
 	route.Handler = func(c *Context) error {
 		b, err := c.Swagger.JSON()
 		if err != nil {
@@ -114,6 +115,15 @@ func newServer() *Server {
 			Digest: nil,
 			ApiKey: nil,
 			OAuth2: nil,
+			Kerberos: &Kerberos{
+				Handler: func(c *Context, token string) (username string, err error) {
+					// Ходи проверять по токену пользователя
+					if token == "YIIG" {
+						return "user", nil
+					}
+					return
+				},
+			},
 		},
 	}
 	app := fiber.New(fiber.Config{

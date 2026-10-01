@@ -267,6 +267,13 @@ func (r *Route) getHandler(config Config, swagger *Swagger) Handler {
 					}
 				}
 			}
+			// Kerberos проверка на заголовок Host
+			if _, ok := sec[KerberosAuth]; ok {
+				if host := c.Get(consts.HeaderHost); len(host) > 0 {
+					c.Set(consts.HeaderWWWAuthenticate, "Negotiate")
+					return c.SendStatus(consts.StatusUnauthorized)
+				}
+			}
 		}
 
 		if auth != nil {
